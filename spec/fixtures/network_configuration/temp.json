@@ -1,0 +1,2738 @@
+{
+  "criteriaObj": null,
+  "responseCode": 0,
+  "errorObj": null,
+  "requestObj": null,
+  "responseObj": {
+    "id": "ff8080814ee9d7b5014ee9e1bd3f0082",
+    "name": "2x2 Unpartitioned Sample",
+    "description": "",
+    "createdBy": "admin",
+    "createdDate": "2015-08-01T15:29:22.239Z",
+    "updatedBy": "admin",
+    "updatedDate": "2015-08-01T15:29:22.242Z",
+    "draft": true,
+    "components": [
+      {
+        "id": "C71664AF-CE3E-4934-8A88-0CE67C9597CB",
+        "name": "Server",
+        "type": "server",
+        "componentid": "component-server-1",
+        "helptext": null,
+        "relatedcomponents": [],
+        "categories": [
+          {
+            "id": "asm::idrac",
+            "name": "Hardware Settings",
+            "settings": [
+              {
+                "id": "target_boot_device",
+                "value": "HD",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Target Boot Device",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "",
+                    "name": "Select...",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "FC",
+                    "name": "Boot From SAN (FC)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "HD",
+                    "name": "Local Hard Drive",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "iSCSI",
+                    "name": "Boot From SAN (iSCSI)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "NONE",
+                    "name": "None",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "NONE_WITH_RAID",
+                    "name": "None (With RAID Configuration)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "SD",
+                    "name": "SD Card",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "raid_configuration",
+                "value": "{\"raidtype\":\"basic\",\"basicraidlevel\":\"raid1\",\"enableglobalhotspares\":false,\"globalhotspares\":0,\"minimumssd\":0,\"enableglobalhotsparesexternal\":false,\"globalhotsparesexternal\":0,\"minimumssdexternal\":0,\"virtualdisks\":[],\"externalvirtualdisks\":[]}",
+                "datatype": "raidconfiguration",
+                "componentid": "component3",
+                "name": "RAID",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "HD,NONE_WITH_RAID",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "server_source",
+                "value": "pool",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Server Source",
+                "tooltip": "Method for server selection",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "manual",
+                    "name": "Manual Entry",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "pool",
+                    "name": "Server Pool",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "server_pool",
+                "value": "-1",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Server Pool",
+                "tooltip": "Pool from which servers are selected during deployment",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "-1",
+                    "name": "Global",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": true,
+                "hidefromtemplate": false,
+                "dependencyTarget": "server_source",
+                "dependencyValue": "pool",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "server_select",
+                "value": "",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Choose Server",
+                "tooltip": "Select specific server from a drop-down list",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "",
+                    "name": "Select...",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee50d72014ee5521e8500b6",
+                    "name": "3PQW6X1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee50d72014ee55a72540126",
+                    "name": "8WSV6X1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee50d72014ee55a7a01017d",
+                    "name": "7WSV6X1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c262b2016",
+                    "name": "9H870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c7f062054",
+                    "name": "8H870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c8559208f",
+                    "name": "G8Q91Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c86d220d3",
+                    "name": "GH870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c872120f6",
+                    "name": "B12QQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c87742129",
+                    "name": "1HVWQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c8d06218d",
+                    "name": "6DRBQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c8db621c2",
+                    "name": "JZYWQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c8ef621fe",
+                    "name": "20ZWQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c90bc227f",
+                    "name": "2W5QQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c94912316",
+                    "name": "60ZWQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c969e238d",
+                    "name": "HH870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63c99922411",
+                    "name": "6H870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63ca3f82454",
+                    "name": "821HMW1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63ca9e424db",
+                    "name": "10ZWQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63cab7f250c",
+                    "name": "29Q91Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63cb73125a5",
+                    "name": "CH870W1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63cbca425fc",
+                    "name": "19Q91Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee63d6e24268a",
+                    "name": "DXP91Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee645a7a527c7",
+                    "name": "9W4H942",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee65f67a22874",
+                    "name": "6D4QQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66002802917",
+                    "name": "HV7QQV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee6600bdd29ae",
+                    "name": "GP181Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee6600ddf29f2",
+                    "name": "J0MDTV1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee660482e2aa6",
+                    "name": "H4N71Y1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66e84062b86",
+                    "name": "10YLD42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66ec9aa2bc4",
+                    "name": "GQGPD42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66ecece2c97",
+                    "name": "GQGND42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66eed0e2d80",
+                    "name": "8KGND42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66ef6922dfc",
+                    "name": "10YMD42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "ff8080814ee5906f014ee66ef9852e8d",
+                    "name": "8KGMD42",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": "server_source",
+                "dependencyValue": "manual",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "migrate_on_failure",
+                "value": "true",
+                "datatype": "boolean",
+                "componentid": "component3",
+                "name": "Migrate On Failure",
+                "tooltip": "Migrate deployment to another server if failed",
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": "server_source",
+                "dependencyValue": "pool",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "attempted_servers",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Attempted Servers",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ensure",
+                "value": "present",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": null,
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": "none",
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              }
+            ]
+          },
+          {
+            "id": "asm::bios",
+            "name": "BIOS Settings",
+            "settings": [
+              {
+                "id": "bios_configuration",
+                "value": "basic",
+                "datatype": "biosconfiguration",
+                "componentid": "component3",
+                "name": "BIOS Settings",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "SysProfile",
+                "value": "PerfOptimized",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "System Profile",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "Custom",
+                    "name": "Custom",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "DenseCfgOptimized",
+                    "name": "Dense Configuration",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "PerfOptimized",
+                    "name": "Performance",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "PerfPerWattOptimizedDapc",
+                    "name": "Performance Per Watt (DAPC)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "PerfPerWattOptimizedOs",
+                    "name": "Performance Per Watt (OS)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "UsbPorts",
+                "value": "AllOn",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "User Accessible USB Ports",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "AllOff",
+                    "name": "All Ports Off",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "AllOn",
+                    "name": "All Ports On",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "OnlyBackPortsOn",
+                    "name": "Only Back Ports On",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ProcCores",
+                "value": "All",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Number of Cores per Processor",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "1",
+                    "name": "1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "2",
+                    "name": "2",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "4",
+                    "name": "4",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "6",
+                    "name": "6",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "All",
+                    "name": "All",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ProcVirtualization",
+                "value": "Enabled",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Virtualization Technology",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "Disabled",
+                    "name": "Disabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Enabled",
+                    "name": "Enabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "LogicalProc",
+                "value": "Enabled",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Logical Processor",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "Disabled",
+                    "name": "Disabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Enabled",
+                    "name": "Enabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ProcExecuteDisable",
+                "value": "Enabled",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Execute Disable",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "Disabled",
+                    "name": "Disabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Enabled",
+                    "name": "Enabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "NodeInterleave",
+                "value": "Enabled",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Node Interleaving",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "Disabled",
+                    "name": "Disabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Enabled",
+                    "name": "Enabled",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "n/a",
+                    "name": "Not Applicable",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ensure",
+                "value": "present",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": null,
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": "none",
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              }
+            ]
+          },
+          {
+            "id": "asm::server",
+            "name": "OS Settings",
+            "settings": [
+              {
+                "id": "generate_host_name",
+                "value": "true",
+                "datatype": "boolean",
+                "componentid": "component3",
+                "name": "Auto-generate Host Name",
+                "tooltip": "Use the Host Name Template field to auto-generate host names at deployment time. If not selected, a unique host name will be requested when the template is deployed.",
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "HD,SD",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "os_host_name_template",
+                "value": "gs1centos${num}",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Host Name Template",
+                "tooltip": "Template used to generate host names at deployment time. Must contain variables that will produce a unique host name. Allowed variables  are ${num} (an auto-generated unique number), ${service_tag}, ${model}, ${vendor} and ${dns} (ASM-assigned static IP will be resolved to hostname by DNS lookup).",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "generate_host_name",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "os_host_name",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Host Name",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": "generate_host_name",
+                "dependencyValue": "false",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "os_image_type",
+                "value": null,
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "OS Image Type",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "SD,HD",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "razor_image",
+                "value": "CentOS7",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "OS Image",
+                "tooltip": "Location of OS image installation files",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "",
+                    "name": "Select...",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "CentOS7",
+                    "name": "CentOS 7",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "esxi-5.1",
+                    "name": "esxi-5.1",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "esxi-5.5",
+                    "name": "esxi-5.5",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "esxi-6.0",
+                    "name": "esxi-6.0",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "SD,HD",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "hyperv_install",
+                "value": "false",
+                "datatype": "boolean",
+                "componentid": "component3",
+                "name": "Install HyperV",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": " ",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "os_image_version",
+                "value": "",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "OS Image Version",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "",
+                    "name": "Select...",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": " ",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "admin_password",
+                "value": "calvin",
+                "datatype": "password",
+                "componentid": "component3",
+                "name": "Administrator password",
+                "tooltip": "OS administrator password set on the installed OS",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "SD,HD",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "admin_confirm_password",
+                "value": "calvin",
+                "datatype": "password",
+                "componentid": "component3",
+                "name": "Confirm administrator password",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "target_boot_device",
+                "dependencyValue": "SD,HD",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "product_key",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Product Key",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": " ",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "timezone",
+                "value": "Central Standard Time",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Timezone",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "A.U.S. Central Standard Time",
+                    "name": "(GMT+09:30) Darwin",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "A.U.S. Eastern Standard Time",
+                    "name": "(GMT+10:00) Canberra, Melbourne, Sydney",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Alaskan Standard Time",
+                    "name": "(GMT-09:00) Alaska",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Arab Standard Time",
+                    "name": "(GMT+03:00) Kuwait, Riyadh",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Arabian Standard Time",
+                    "name": "(GMT+04:00) Abu Dhabi, Muscat",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Arabic Standard Time",
+                    "name": "(GMT+03:00) Baghdad",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Atlantic Standard Time",
+                    "name": "(GMT-04:00) Atlantic Time (Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Azores Standard Time",
+                    "name": "(GMT-01:00) Azores",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Canada Central Standard Time",
+                    "name": "(GMT-06:00) Saskatchewan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Cape Verde Standard Time",
+                    "name": "(GMT-01:00) Cape Verde Islands",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Caucasus Standard Time",
+                    "name": "(GMT+04:00) Baku, Tbilisi, Yerevan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Cen. Australia Standard Time",
+                    "name": "(GMT+09:30) Adelaide",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central America Standard Time",
+                    "name": "(GMT-06:00) Central America",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central Asia Standard Time",
+                    "name": "(GMT+06:00) Astana, Dhaka",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central Europe Standard Time",
+                    "name": "(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central European Standard Time",
+                    "name": "(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central Pacific Standard Time",
+                    "name": "(GMT+11:00) Magadan, Solomon Islands, New Caledonia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Central Standard Time",
+                    "name": "(GMT-06:00) Central Time (US and Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "China Standard Time",
+                    "name": "(GMT+08:00) Beijing, Chongqing, Hong Kong SAR, Urumqi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Dateline Standard Time",
+                    "name": "(GMT-12:00) International Date Line West",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "E. Africa Standard Time",
+                    "name": "(GMT+03:00) Nairobi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "E. Australia Standard Time",
+                    "name": "(GMT+10:00) Brisbane",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "E. Europe Standard Time",
+                    "name": "(GMT+02:00) Bucharest",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "E. South America Standard Time",
+                    "name": "(GMT-03:00) Brasilia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Eastern Standard Time",
+                    "name": "(GMT-05:00) Eastern Time (US and Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Egypt Standard Time",
+                    "name": "(GMT+02:00) Cairo",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Ekaterinburg Standard Time",
+                    "name": "(GMT+05:00) Ekaterinburg",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Fiji Islands Standard Time",
+                    "name": "(GMT+12:00) Fiji Islands, Kamchatka, Marshall Islands",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "FLE Standard Time",
+                    "name": "(GMT+02:00) Helsinki, Kiev, Riga, Sofia, Tallinn, Vilnius",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "GMT Standard Time",
+                    "name": "(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Greenland Standard Time",
+                    "name": "(GMT-03:00) Greenland",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Greenwich Standard Time",
+                    "name": "(GMT) Casablanca, Monrovia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "GTB Standard Time",
+                    "name": "(GMT+02:00) Athens, Istanbul, Minsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Hawaiian Standard Time",
+                    "name": "(GMT-10:00) Hawaii",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "India Standard Time",
+                    "name": "(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Iran Standard Time",
+                    "name": "(GMT+03:30) Tehran",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Israel Standard Time",
+                    "name": "(GMT+02:00) Jerusalem",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Korea Standard Time",
+                    "name": "(GMT+09:00) Seoul",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Mexico Standard Time",
+                    "name": "(GMT-06:00) Guadalajara, Mexico City, Monterrey",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Mexico Standard Time 2",
+                    "name": "(GMT-07:00) Chihuahua, La Paz, Mazatlan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Mid-Atlantic Standard Time",
+                    "name": "(GMT-02:00) Mid-Atlantic",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Mountain Standard Time",
+                    "name": "(GMT-07:00) Mountain Time (US and Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Myanmar Standard Time",
+                    "name": "(GMT+06:30) Yangon Rangoon",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "N. Central Asia Standard Time",
+                    "name": "(GMT+06:00) Almaty, Novosibirsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Nepal Standard Time",
+                    "name": "(GMT+05:45) Kathmandu",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "New Zealand Standard Time",
+                    "name": "(GMT+12:00) Auckland, Wellington",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Newfoundland and Labrador Standard Time",
+                    "name": "(GMT-03:30) Newfoundland and Labrador",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "North Asia East Standard Time",
+                    "name": "(GMT+08:00) Irkutsk, Ulaanbaatar",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "North Asia Standard Time",
+                    "name": "(GMT+07:00) Krasnoyarsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Pacific S.A. Standard Time",
+                    "name": "(GMT-04:00) Santiago",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Pacific Standard Time",
+                    "name": "(GMT-08:00) Pacific Time (US and Canada); Tijuana",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Romance Standard Time",
+                    "name": "(GMT+01:00) Brussels, Copenhagen, Madrid, Paris",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Russian Standard Time",
+                    "name": "(GMT+03:00) Moscow, St. Petersburg, Volgograd",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "S.A. Eastern Standard Time",
+                    "name": "(GMT-03:00) Buenos Aires, Georgetown",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "S.A. Pacific Standard Time",
+                    "name": "(GMT-05:00) Bogota, Lima, Quito",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "S.A. Western Standard Time",
+                    "name": "(GMT-04:00) Caracas, La Paz",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "S.E. Asia Standard Time",
+                    "name": "(GMT+07:00) Bangkok, Hanoi, Jakarta",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Samoa Standard Time",
+                    "name": "(GMT-11:00) Midway Island, Samoa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Singapore Standard Time",
+                    "name": "(GMT+08:00) Kuala Lumpur, Singapore",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "South Africa Standard Time",
+                    "name": "(GMT+02:00) Harare, Pretoria",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Sri Lanka Standard Time",
+                    "name": "(GMT+06:00) Sri Jayawardenepura",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Taipei Standard Time",
+                    "name": "(GMT+08:00) Taipei",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Tasmania Standard Time",
+                    "name": "(GMT+10:00) Hobart",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Tokyo Standard Time",
+                    "name": "(GMT+09:00) Osaka, Sapporo, Tokyo",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Tonga Standard Time",
+                    "name": "(GMT+13:00) Nuku'alofa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Transitional Islamic State of Afghanistan Standard Time",
+                    "name": "(GMT+04:30) Kabul",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "U.S. Eastern Standard Time",
+                    "name": "(GMT-05:00) Indiana (East)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "U.S. Mountain Standard Time",
+                    "name": "(GMT-07:00) Arizona",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Vladivostok Standard Time",
+                    "name": "(GMT+10:00) Vladivostok",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "W. Australia Standard Time",
+                    "name": "(GMT+08:00) Perth",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "W. Central Africa Standard Time",
+                    "name": "(GMT+01:00) West Central Africa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "W. Europe Standard Time",
+                    "name": "(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "West Asia Standard Time",
+                    "name": "(GMT+05:00) Islamabad, Karachi, Tashkent",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "West Pacific Standard Time",
+                    "name": "(GMT+10:00) Guam, Port Moresby",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "Yakutsk Standard Time",
+                    "name": "(GMT+09:00) Yakutsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "time_zone",
+                "value": "11",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Timezone",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "1",
+                    "name": "(UTC-12:00) International Date Line West",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "10",
+                    "name": "(UTC-06:00) Central America",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "100",
+                    "name": "(UTC+13:00) Samoa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "11",
+                    "name": "(UTC-06:00) Central Time (US & Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "12",
+                    "name": "(UTC-06:00) Guadalajara, Mexico City, Monterrey",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "13",
+                    "name": "(UTC-06:00) Saskatchewan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "14",
+                    "name": "(UTC-05:00) Bogota, Lima, Quito",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "15",
+                    "name": "(UTC-05:00) Eastern Time (US & Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "16",
+                    "name": "(UTC-05:00) Indiana (East)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "17",
+                    "name": "(UTC-04:30) Caracas",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "18",
+                    "name": "(UTC-04:00) Asuncion",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "19",
+                    "name": "(UTC-04:00) Atlantic Time (Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "2",
+                    "name": "(UTC-11:00) Coordinated Universal Time-11",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "20",
+                    "name": "(UTC-04:00) Cuiaba",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "21",
+                    "name": "(UTC-04:00) Georgetown, La Paz, Manaus, San Juan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "22",
+                    "name": "(UTC-04:00) Santiago",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "23",
+                    "name": "(UTC-03:30) Newfoundland",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "24",
+                    "name": "(UTC-03:00) Brasilia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "25",
+                    "name": "(UTC-03:00) Buenos Aires",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "26",
+                    "name": "(UTC-03:00) Cayenne, Fortaleza",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "27",
+                    "name": "(UTC-03:00) Greenland",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "28",
+                    "name": "(UTC-03:00) Montevideo",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "29",
+                    "name": "(UTC-03:00) Salvador",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "3",
+                    "name": "(UTC-10:00) Hawaii",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "30",
+                    "name": "(UTC-02:00) Coordinated Universal Time-02",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "32",
+                    "name": "(UTC-01:00) Azores",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "33",
+                    "name": "(UTC-01:00) Cape Verde Is.",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "34",
+                    "name": "(UTC) Casablanca",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "35",
+                    "name": "(UTC) Coordinated Universal Time",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "36",
+                    "name": "(UTC) Dublin, Edinburgh, Lisbon, London",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "37",
+                    "name": "(UTC) Monrovia, Reykjavik",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "38",
+                    "name": "(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "39",
+                    "name": "(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "4",
+                    "name": "(UTC-09:00) Alaska",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "40",
+                    "name": "(UTC+01:00) Brussels, Copenhagen, Madrid, Paris",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "41",
+                    "name": "(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "42",
+                    "name": "(UTC+01:00) West Central Africa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "43",
+                    "name": "(UTC+01:00) Windhoek",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "44",
+                    "name": "(UTC+02:00) Amman",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "45",
+                    "name": "(UTC+02:00) Athens, Bucharest",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "46",
+                    "name": "(UTC+02:00) Beirut",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "47",
+                    "name": "(UTC+02:00) Cairo",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "48",
+                    "name": "(UTC+02:00) Damascus",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "49",
+                    "name": "(UTC+02:00) Harare, Pretoria",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "5",
+                    "name": "(UTC-08:00) Baja California",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "50",
+                    "name": "(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "51",
+                    "name": "(UTC+02:00) Istanbul",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "52",
+                    "name": "(UTC+02:00) Jerusalem",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "53",
+                    "name": "(UTC+02:00) Nicosia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "54",
+                    "name": "(UTC+03:00) Baghdad",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "55",
+                    "name": "(UTC+03:00) Kaliningrad, Minsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "56",
+                    "name": "(UTC+03:00) Kuwait, Riyadh",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "57",
+                    "name": "(UTC+03:00) Nairobi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "58",
+                    "name": "(UTC+03:30) Tehran",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "59",
+                    "name": "(UTC+04:00) Abu Dhabi, Muscat",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "6",
+                    "name": "(UTC-08:00) Pacific Time (US & Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "60",
+                    "name": "(UTC+04:00) Baku",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "61",
+                    "name": "(UTC+04:00) Moscow, St. Petersburg, Volgograd",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "62",
+                    "name": "(UTC+04:00) Port Louis",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "63",
+                    "name": "(UTC+04:00) Tbilisi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "64",
+                    "name": "(UTC+04:00) Yerevan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "65",
+                    "name": "(UTC+04:30) Kabul",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "66",
+                    "name": "(UTC+05:00) Islamabad, Karachi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "67",
+                    "name": "(UTC+05:00) Tashkent",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "68",
+                    "name": "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "69",
+                    "name": "(UTC+05:30) Sri Jayawardenepura",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "7",
+                    "name": "(UTC-07:00) Arizona",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "70",
+                    "name": "(UTC+05:45) Kathmandu",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "71",
+                    "name": "(UTC+06:00) Astana",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "72",
+                    "name": "(UTC+06:00) Dhaka",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "73",
+                    "name": "(UTC+06:00) Ekaterinburg",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "74",
+                    "name": "(UTC+06:30) Yangon (Rangoon)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "75",
+                    "name": "(UTC+07:00) Bangkok, Hanoi, Jakarta",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "76",
+                    "name": "(UTC+07:00) Novosibirsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "77",
+                    "name": "(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "78",
+                    "name": "(UTC+08:00) Krasnoyarsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "79",
+                    "name": "(UTC+08:00) Kuala Lumpur, Singapore",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "8",
+                    "name": "(UTC-07:00) Chihuahua, La Paz, Mazatlan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "80",
+                    "name": "(UTC+08:00) Perth",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "81",
+                    "name": "(UTC+08:00) Taipei",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "82",
+                    "name": "(UTC+08:00) Ulaanbaatar",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "83",
+                    "name": "(UTC+09:00) Irkutsk",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "84",
+                    "name": "(UTC+09:00) Osaka, Sapporo, Tokyo",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "85",
+                    "name": "(UTC+09:00) Seoul",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "86",
+                    "name": "(UTC+09:30) Adelaide",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "87",
+                    "name": "(UTC+09:30) Darwin",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "88",
+                    "name": "(UTC+10:00) Brisbane",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "89",
+                    "name": "(UTC+10:00) Canberra, Melbourne, Sydney",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "9",
+                    "name": "(UTC-07:00) Mountain Time (US & Canada)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "90",
+                    "name": "(UTC+10:00) Guam, Port Moresby",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "91",
+                    "name": "(UTC+10:00) Hobart",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "92",
+                    "name": "(UTC+10:00) Yakutsk ",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "93",
+                    "name": "(UTC+11:00) Solomon Is., New Caledonia",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "94",
+                    "name": "(UTC+11:00) Vladivostok",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "95",
+                    "name": "(UTC+12:00) Auckland, Wellington",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "96",
+                    "name": "(UTC+12:00) Coordinated Universal Time+12",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "97",
+                    "name": "(UTC+12:00) Fiji",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "98",
+                    "name": "(UTC+12:00) Magadan",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "99",
+                    "name": "(UTC+13:00) Nuku'alofa",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": "CentOS7",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ntp_server",
+                "value": "143.166.226.32",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "NTP Server",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": "CentOS7, ,esxi-5.1,esxi-5.5,esxi-6.0",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "language",
+                "value": "en-US",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Language",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "de-DE",
+                    "name": "German (Germany) ",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "en-US",
+                    "name": "English (United States)",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "keyboard",
+                "value": "00000409",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Keyboard",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "00000409",
+                    "name": "U.S. English",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "domain_name",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Domain Name",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "fqdn",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "FQ Domain Name",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "domain_admin_user",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Domain Admin Username",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "domain_admin_password",
+                "value": null,
+                "datatype": "password",
+                "componentid": "component3",
+                "name": "Domain Admin Password",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "domain_admin_password_confirm",
+                "value": null,
+                "datatype": "password",
+                "componentid": "component3",
+                "name": "Domain Admin Password Confirm",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "hyperv_install",
+                "dependencyValue": "true",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "esx_mem",
+                "value": "",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Install EqualLogic MEM",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "",
+                    "name": "Select...",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "false",
+                    "name": "False",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "true",
+                    "name": "True",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": "razor_image",
+                "dependencyValue": "esxi-5.1,esxi-5.5,esxi-6.0",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "management_ip_source",
+                "value": null,
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Management IP Source",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "automatic",
+                    "name": "ASM Selected IP",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  },
+                  {
+                    "id": "dns",
+                    "name": "Hostname DNS Lookup",
+                    "dependencyTarget": "os_image_type",
+                    "dependencyValue": "vmware_esxi"
+                  },
+                  {
+                    "id": "manual",
+                    "name": "Manual Entry",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": "os_image_type",
+                "dependencyValue": "hyperv,vmware_esxi",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "static_management_ip",
+                "value": null,
+                "datatype": "string",
+                "componentid": "component3",
+                "name": "Management IP Address",
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": true,
+                "hidefromtemplate": true,
+                "dependencyTarget": "management_ip_source",
+                "dependencyValue": "manual",
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ensure",
+                "value": "present",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": null,
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": "none",
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              }
+            ]
+          },
+          {
+            "id": "asm::esxiscsiconfig",
+            "name": "Network Settings",
+            "settings": [
+              {
+                "id": "network_configuration",
+                "value": "{\"id\":\"8EFAB075-D611-440D-8E45-D16C15472DC5\",\"servertype\":\"rack\",\"interfaces\":[{\"id\":\"93E16F08-C112-45FE-B524-A0C437A2E43D\",\"name\":\"Interface\",\"redundancy\":false,\"enabled\":true,\"nictype\":\"2x10Gb,2x1Gb\",\"usedforfc\":false,\"partitioned\":false,\"interfaces\":[{\"id\":\"9BED6F9A-000F-4D5A-A363-D39C2DC7A47C\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"D1D34717-71BD-419C-9D8E-7EC85D2B83AC\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee5122a6d0049\"],\"minimum\":0,\"maximum\":100},{\"id\":\"EAE2E602-8360-4020-AA12-C6F69B55F821\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"9E8C73A8-BFCD-4562-B5AF-5744E614FDA6\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"001CA5A5-7E6F-4069-BA56-AB6E9A0CCC66\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"12420D2F-7C87-40B5-8886-50E3CED0EF8D\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"8BF98BF6-A22E-4FE6-9CDE-1C26A999ABA3\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee512297c0048\"],\"minimum\":0,\"maximum\":100},{\"id\":\"6D0C5E44-B034-44FF-AF0F-64254A2AD198\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"D5E268A1-7B45-414C-8591-4671A638DDC7\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"2EBF5A8F-F042-46FC-96C6-13F1D38AEEDC\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"B77D6D42-8506-444B-A0B1-6B716B4685B3\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"3865F98D-55F2-456C-90C1-0D8CD1F18787\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"6D1EA588-E66C-4C04-807F-3FCB0575DBC2\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"969BE568-4948-4667-A980-0B34FEF83935\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"64CAF84F-14FC-4C54-BBF4-0CDCF455B317\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"DFECE42D-7D04-4D00-9CBD-06B04D01F5C1\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"38F85699-BEEB-478A-A666-6219689C0E27\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"CCB8736E-66CE-4E1B-9784-93A0B5353D94\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"154A1616-DCCD-4952-B804-ABB04B30D4F5\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"40E15FD7-1909-491D-B704-0CF823696688\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]},{\"id\":\"FB2F383D-BD10-4BB7-A2D1-34C295EA12E4\",\"name\":\"Interface\",\"redundancy\":false,\"enabled\":true,\"nictype\":\"2x10Gb\",\"usedforfc\":false,\"partitioned\":false,\"interfaces\":[{\"id\":\"21C5CBC5-E153-47E6-BA36-E1DC0555F7BD\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"F244A7DC-DB42-4349-9898-595D001B4C38\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee5122a6d0049\"],\"minimum\":0,\"maximum\":100},{\"id\":\"26A6D2CA-8CD9-46BE-A88F-4CAEDF707BD7\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"E4B74F2C-FA9B-4844-B6EB-DDE0F5FC3392\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"0E163DB5-C2B9-445F-8FEB-B22DF0106251\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"A61AC52B-DC31-4442-99A7-0E2ECC2A6A57\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"09688166-1813-460D-A293-34FA244F055B\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee512297c0048\"],\"minimum\":0,\"maximum\":100},{\"id\":\"EF032092-BA14-4AE4-9AF6-D8AEFF0CF0AB\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"50CA7CA6-2CCE-455A-8EF3-3EE0C5A93046\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"43766CF8-6A58-4BE9-A70F-03E044F7B5FD\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"2937ABE7-7FFB-496D-A936-16AFAFF02DE2\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"728FC4EF-8EC1-46AD-90FD-59E4FA116437\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"4CBD8632-0C40-4939-97AC-9C8F3A4234CB\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"F9C16723-C0B6-4D16-A76B-17CA07C6082D\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"D8CB68FC-1A88-4BFF-B0E9-A8AABEB1E16A\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"6FD5E32E-EF07-417C-8216-0EB3C40CA41F\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"43C07BD0-4E7F-4B43-9E03-CDDD1A57E64A\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"13F7BF90-139F-49BE-BEB8-B237FE92D713\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"4413D701-C027-44E9-9B69-EE1132AE7C60\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"E7B916C3-F4B5-4CDC-80F1-E6C852D35B8F\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]},{\"id\":\"B98C36EA-E2EB-49C7-B76F-24F7924D3F15\",\"name\":\"Interface\",\"redundancy\":false,\"enabled\":true,\"nictype\":\"2x10Gb\",\"usedforfc\":false,\"partitioned\":false,\"interfaces\":[{\"id\":\"1905A5BF-611C-401C-841A-27C5B6371B8A\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"F7C32FDE-B5F8-4F4E-BDB0-0413A76BCEBC\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee5122a6d0049\"],\"minimum\":0,\"maximum\":100},{\"id\":\"3EF549D6-D99E-48B7-8874-07C8521990B3\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"571AE14C-3786-4467-9B53-0E1D52C8205A\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"2419E21B-71AC-4D91-BC29-E7A1DFCD0CCD\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"D9DECED9-81CB-4BCE-B3A9-33E7E9B482E2\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"05B90300-0147-498F-BC42-700D117AFA8F\",\"name\":\"1\",\"networks\":[\"ff8080814ee50d72014ee512297c0048\"],\"minimum\":0,\"maximum\":100},{\"id\":\"89010D7C-96EC-41EB-90AF-93E10478AD09\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"C1783576-0E60-400B-BB46-0E3778D65542\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"15F64267-1702-4A94-90E2-548004C18E85\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"0A0FFBC2-5CC3-4084-BF2D-C09C219EE293\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"F5002637-D4E2-4E8C-8E05-85ED59334AF4\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"D0DB494C-28AD-43B7-8893-6F9B42DA522B\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"E4FD309C-793C-4602-B551-0BCF45DFD2E7\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"2701B232-4570-4061-B92D-629DE5054C04\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"7EC36FBC-1915-412C-86FC-1897106107F7\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"2AEEE292-8CC5-48F9-9A93-E4C8F731D6A0\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"EB98C81F-98FD-4BD7-89AF-818FF1E11E31\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"4A1DA0C8-385F-46F3-8353-655C562E6108\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"15ED7DE1-52DA-4919-8FB3-90075DF0A69E\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]}],\"teams\":[],\"vswitches\":[],\"fabrics\":[{\"id\":\"D6056A72-4F19-43D9-9C92-55E743CB7DAD\",\"name\":\"Fabric A / onboard NIC\",\"redundancy\":true,\"enabled\":true,\"nictype\":\"2x10Gb\",\"partitioned\":true,\"usedforfc\":false,\"interfaces\":[{\"id\":\"A08EAF19-7715-4F99-A0D5-770EBDC64AC0\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"F00CC9ED-1CCE-4D3D-8CA8-F8BCB635669A\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"3CE200B7-1F6C-4DCA-9165-07E24BBC1409\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"98145F87-6BA4-45FD-A128-54EAD23B3F68\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"39657E15-366F-43BE-A03C-AD8B8597D191\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"5833DC09-E784-4868-92D8-D1412FDED94B\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"9CE97735-A9BB-4004-99DE-0432F570168F\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"15EBE121-09A3-42F5-9293-E2AE228EDD78\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"150BE722-F8AC-491C-864A-C2643C137162\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"A9979FFC-A526-4A2E-8323-539A94F0E6AC\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"F1DFA826-D2FE-4922-993F-098AED84BC40\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"EFE7EFD3-D5CE-40F9-B34B-F50C8669DA91\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"BF466FDF-D883-483F-9E16-816613B90C2D\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"491B2664-CAAE-485E-89FB-0398113FA50F\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"D76D633D-08A2-4436-9252-F5255DFB7AC4\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"868C560C-F2F9-4FB2-BC54-0745744FD7E4\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"C80DEC8F-E11F-4389-8701-F4B09C8C776D\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"9CA527CA-6D3E-4379-A982-9CCFFB6577DC\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"20C2072E-2867-4BF8-B697-3AA330A388DF\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"B30922AD-7D97-4894-AD2C-5D713D665E7B\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]},{\"id\":\"10F03B8A-3964-4A2D-A6BE-50444890B50F\",\"name\":\"Fabric B / PCIe slot 1\",\"redundancy\":false,\"enabled\":false,\"nictype\":\"2x10Gb\",\"usedforfc\":false,\"partitioned\":true,\"interfaces\":[{\"id\":\"4E2DFC3B-675E-41D0-A511-3165E642BB16\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"9C0806DC-9A0B-42EA-A936-46AC38BE0380\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"E08FABE3-F053-4602-A91A-45B9FD54E0D8\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"4F4826CB-3C68-40E4-A45C-AB07FDF4104B\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"0B311A2E-60B7-4BF4-ACAD-10D3C970F23F\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"975954E8-BE6D-4C7E-9EA7-D400459F99CC\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"50CB7009-B67C-431A-94F0-C8063AC89AA2\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"92448F39-1368-472B-935F-E508DFE4174B\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"A422E55D-CAFC-4C4D-8D5F-D8359C4ED787\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"52FEFDC1-FD3A-400D-A1A6-FBE759636539\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"C9C966F9-266C-4DB6-962D-2883324CFE53\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"6176E5EB-BD0F-4CC2-9A7B-2FF1A5F7277C\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"92274DB3-C877-4DAA-90E7-3F0FB78C3078\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"1C0B84C2-8969-4ECF-895D-90632532DB8D\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"93998F99-2BDC-4290-A255-B7D417BF25D4\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"C7C7C629-3D6A-4192-8E76-71C51C5CB141\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"74D46ED8-D923-4422-9CEA-A82C36F75A0E\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"13A8DF96-F22C-4C92-BF84-D86B3CDA4E18\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"8ADCF431-22E6-4C80-94BC-EC2410E594ED\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"3FE934F5-A178-4976-8B3A-5F38F82385F1\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]},{\"id\":\"B8199DA5-E2B4-4D6F-9D10-C10940849CA9\",\"name\":\"Fabric C / PCIe slot 2\",\"redundancy\":false,\"enabled\":false,\"nictype\":\"2x10Gb\",\"usedforfc\":false,\"partitioned\":true,\"interfaces\":[{\"id\":\"1B0D1B3C-EC87-45DF-AD6E-DEE0830F5895\",\"name\":\"Port 1\",\"partitions\":[{\"id\":\"857B9F52-AFF7-4C8F-9E91-178E8B328352\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"EA5B01F8-9C4D-4736-B861-2E389A948B73\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"8B7289E9-8022-4E7C-89FF-D400F02D4E79\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"283A960E-01F1-43B0-B5D3-0BA59DA55C49\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"84AED3D4-5C4A-4EDE-ABBF-A8166562F1A1\",\"name\":\"Port 2\",\"partitions\":[{\"id\":\"2B94484D-67A0-4279-97EE-DE952E487D93\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"B507F873-A666-4DF2-8527-F90F8FFC06F7\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"00F11FB5-6702-483A-897D-FA37C0B83893\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"652B7CEA-33CB-476A-960A-7371CABC4399\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"F86CA473-AD85-424E-BED7-A51B88BA2EBA\",\"name\":\"Port 3\",\"partitions\":[{\"id\":\"16340C2A-5170-49CB-ADF4-8CEE58F3479C\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"F0FD249E-B33D-420F-B7F4-AE28E2CCEB99\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"2D5DB7EE-95AA-407F-8AA1-BFC6F43CC5D8\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"AD5D96C8-7C7F-42BF-9EF5-8C762B0557B0\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]},{\"id\":\"BC878554-8B7D-4196-A918-ED2901335641\",\"name\":\"Port 4\",\"partitions\":[{\"id\":\"EE8FFA62-A8DA-4C15-BD70-E481BDFD418D\",\"name\":\"1\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"3BAF628E-3145-4543-AC58-3BA211F801E2\",\"name\":\"2\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"874AC343-7E52-4411-B380-3BF1A0F62067\",\"name\":\"3\",\"networks\":[],\"minimum\":0,\"maximum\":100},{\"id\":\"41B641A6-9D54-4F9C-9E59-EFBDFA5A2C54\",\"name\":\"4\",\"networks\":[],\"minimum\":0,\"maximum\":100}]}]}]}",
+                "datatype": "networkconfiguration",
+                "componentid": "component3",
+                "name": "Network Config",
+                "tooltip": null,
+                "required": false,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "identity_pool",
+                "value": "-1",
+                "datatype": "enum",
+                "componentid": "component3",
+                "name": "Identity Pool",
+                "tooltip": "Pool from which virtual identities are selected during deployment",
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [
+                  {
+                    "id": "-1",
+                    "name": "Global",
+                    "dependencyTarget": null,
+                    "dependencyValue": null
+                  }
+                ],
+                "requireatdeployment": false,
+                "hidefromtemplate": false,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": null,
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              },
+              {
+                "id": "ensure",
+                "value": "present",
+                "datatype": "string",
+                "componentid": "component3",
+                "name": null,
+                "tooltip": null,
+                "required": true,
+                "min": 0,
+                "max": 0,
+                "multiple": false,
+                "options": [],
+                "requireatdeployment": false,
+                "hidefromtemplate": true,
+                "dependencyTarget": null,
+                "dependencyValue": null,
+                "addAction": null,
+                "readOnly": false,
+                "group": "none",
+                "generated": false,
+                "useinfotooltip": false,
+                "maxlength": 256,
+                "step": 1
+              }
+            ]
+          }
+        ],
+        "referenceid": null,
+        "referenceip": null,
+        "referenceipurl": "https://null",
+        "showNetworkInfo": null,
+        "network": null,
+        "newComponent": true,
+        "cloned": null,
+        "continueClicked": true,
+        "AsmGUID": null,
+        "puppetCertName": null,
+        "clonedFromId": null,
+        "allowClone": true,
+        "isComponentValid": true,
+        "raid": null,
+        "configfilename": null
+      }
+    ],
+    "attachments": [],
+    "category": "Gavin",
+    "enableApps": false,
+    "enableVMs": false,
+    "enableCluster": false,
+    "enableServer": false,
+    "enableStorage": false,
+    "allStandardUsers": false,
+    "assignedUsers": [],
+    "isValid": true,
+    "manageFirmware": false,
+    "firmwarePackageId": null,
+    "firmwarePackageName": null,
+    "updateServerFirmware": false,
+    "updateNetworkFirmware": false,
+    "updateStorageFirmware": false,
+    "isLocked": false
+  }
+}
