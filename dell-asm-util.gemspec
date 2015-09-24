@@ -9,11 +9,11 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/dell-asm/dell-asm-util'
 
 
-  s.add_dependency 'aescrypt', '1.0.0'
-  s.add_dependency 'hashie', '3.3.1'
-  s.add_dependency 'trollop', '2.0'
-  s.add_dependency 'nokogiri', '1.5.10'
-  s.add_dependency 'i18n', '0.6.9'
+  s.add_dependency 'aescrypt', '~> 1.0.0'
+  s.add_dependency 'hashie', '>= 2.0.5'
+  s.add_dependency 'trollop', '~> 2.0'
+  s.add_dependency 'nokogiri', '~> 1.5.10'
+  s.add_dependency 'i18n', '~> 0.6.5'
 
   s.add_development_dependency 'logger-colors', '~> 1.0.0'
   s.add_development_dependency 'guard-shell'
