@@ -101,13 +101,11 @@ module ASM
     def self.reboot(endpoint, logger = nil)
       # Create the reboot job
       logger.debug("Rebooting server #{endpoint[:host]}") if logger
-      input_file = File.join(Pathname.new(__FILE__).parent, 'reboot.xml')
       instanceid = invoke(endpoint,
       'CreateRebootJob',
       'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate',
       :selector =>'//wsman:Selector Name="InstanceID"',
       :props => { 'RebootJobType' => '1' },
-      :input_file => input_file,
       :logger => logger)
 
       # Execute job
