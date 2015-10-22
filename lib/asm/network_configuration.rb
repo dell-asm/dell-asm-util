@@ -47,6 +47,7 @@ module ASM
 
     attr_accessor(:logger)
     attr_accessor(:cards)
+    attr_accessor(:teams)
 
     def initialize(network_config_hash, logger = nil)
       @mash = Hashie::Mash.new(network_config_hash)
@@ -365,5 +366,34 @@ module ASM
         end
       end
     end
+
+    def nic_team_info(end_point={})
+      add_nics!(end_point) unless end_point.empty?
+
+      network_info = {}
+      partitions = get_all_partitions
+      unless partitions.empty?
+        partitions.each do |partition|
+          networks = begin
+            (partition.networkObjects || []).collect {
+                |network| network.staticNetworkConfiguration.delete('ipRange') if !network.staticNetworkConfiguration.nil?
+            }
+            partition.networkObjects.reject { |network| network.type == 'PXE' }
+          end.flatten.uniq.compact
+
+          # Need to find partitions which has same set of networks, for team
+          if networks && !networks.empty?
+            network_info[networks] ||= []
+            network_info[networks].push(partition.mac_address)
+          end
+        end
+      end
+      @teams = []
+      network_info.each do |network,macs|
+        @teams.push({:networks => network , :mac_addresses => macs})
+      end
+      @teams
+    end
+
   end
 end
