@@ -301,6 +301,9 @@ module ASM
       end
       nic_prefixes = nil
 
+      # Instance variable to track, add_nics! is invoked
+      @network_config_add_nic = true
+
       cards.each do |card|
         card.interfaces.each do |interface|
           interface.partitions.each do |partition|
@@ -367,32 +370,41 @@ module ASM
       end
     end
 
-    def nic_team_info(end_point={})
-      add_nics!(end_point) unless end_point.empty?
+    # Returns the information to be used for creating the NIC Team / NIC Bonding
+    # Information contains the networks and associated MAC Addresses
+    #
+    # @return [Hash] Hash having unique list of networks and corresponding server MAC addresses
+    # @example
+    #   { [ :TeamInfo => { :networks => [...], :mac_addresses => [ ... ] ] }
+    def teams
+      @teams ||= begin
+        err_msg = 'NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!'
+        raise(err_msg) unless @network_config_add_nic
+        network_info = {}
+        partitions = get_all_partitions
+        unless partitions.empty?
+          partitions.each do |partition|
+            networks = begin
+              (partition.networkObjects || []).collect {
+                  |network| network.staticNetworkConfiguration.delete('ipRange') if !network.staticNetworkConfiguration.nil?
+              }
+              partition.networkObjects.reject { |network| network.type == 'PXE' }
+            end.flatten.uniq.compact
 
-      network_info = {}
-      partitions = get_all_partitions
-      unless partitions.empty?
-        partitions.each do |partition|
-          networks = begin
-            (partition.networkObjects || []).collect {
-                |network| network.staticNetworkConfiguration.delete('ipRange') if !network.staticNetworkConfiguration.nil?
-            }
-            partition.networkObjects.reject { |network| network.type == 'PXE' }
-          end.flatten.uniq.compact
-
-          # Need to find partitions which has same set of networks, for team
-          if networks && !networks.empty?
-            network_info[networks] ||= []
-            network_info[networks].push(partition.mac_address)
+            # Need to find partitions which has same set of networks, for team
+            if networks && !networks.empty?
+              network_info[networks] ||= []
+              networks = networks.sort_by { |k| k["id"] }
+              network_info[networks].push(partition.mac_address)
+            end
           end
         end
+        @teams = []
+        network_info.each do |network,macs|
+          @teams.push({:networks => network , :mac_addresses => macs})
+        end
+        @teams
       end
-      @teams = []
-      network_info.each do |network,macs|
-        @teams.push({:networks => network , :mac_addresses => macs})
-      end
-      @teams
     end
 
   end
