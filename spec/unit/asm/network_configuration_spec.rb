@@ -146,6 +146,14 @@ describe ASM::NetworkConfiguration do
       expect(net_config.to_hash.keys).not_to include("cards")
     end
 
+    it "should not include ipRanges in networkObjects" do
+      net_config.get_all_partitions.each do |partition|
+        if partition.static
+          expect(partition.staticNetworkConfiguration.ipRange).to be_nil
+        end
+      end
+    end
+
     it 'should set interface, partition info on partitions' do
       net_config.add_partition_info!
       partition_index = 0
