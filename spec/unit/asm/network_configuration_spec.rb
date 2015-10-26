@@ -776,4 +776,74 @@ describe ASM::NetworkConfiguration do
       end
     end
   end
+
+  describe 'when configuring nic team configuration' do
+    let (:json) { SpecHelper.load_fixture("network_configuration/rack_partitioned.json") }
+    let (:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }
+
+    it "should raise error if add_nics! is not invoked" do
+      expect {
+        net_config.teams
+      }.to raise_error("NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!")
+    end
+
+    it "should return nic team configuration when add_nics! is already invoked" do
+      fqdd_to_mac = {'NIC.Integrated.1-1-1' => '00:0A:F7:06:88:50',
+                     'NIC.Integrated.1-1-2' => '00:0A:F7:06:88:54',
+                     'NIC.Integrated.1-1-3' => '00:0A:F7:06:88:58',
+                     'NIC.Integrated.1-1-4' => '00:0A:F7:06:88:5C',
+                     'NIC.Integrated.1-2-1' => '00:0A:F7:06:88:52',
+                     'NIC.Integrated.1-2-2' => '00:0A:F7:06:88:56',
+                     'NIC.Integrated.1-2-3' => '00:0A:F7:06:88:5A',
+                     'NIC.Integrated.1-2-4' => '00:0A:F7:06:88:5E'}
+
+      ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
+      net_config.add_nics!(Hashie::Mash.new(:host => '127.0.0.1'))
+
+      output = [{:networks=>[{"id"=>"ff80808146056aa20146057c08e503a1",
+                              "name"=>"Hypervisor Management",
+                              "description"=>nil,
+                              "type"=>"HYPERVISOR_MANAGEMENT",
+                              "vlanId"=>28, "static"=>true,
+                              "staticNetworkConfiguration"=>
+                                  {"gateway"=>"172.28.0.1",
+                                   "subnet"=>"255.255.0.0",
+                                   "primaryDns"=>"172.20.0.8",
+                                   "secondaryDns"=>nil,
+                                   "dnsSuffix"=>"aidev.net",
+                                   "ipAddress"=>"172.28.12.116"}}],
+                 :mac_addresses=>["00:0A:F7:06:88:50", "00:0A:F7:06:88:52"]},
+                {:networks=>[{"id"=>"ff80808146056aa20146057c0a0b03b8",
+                              "name"=>"vMotion",
+                              "description"=>nil,
+                              "type"=>"HYPERVISOR_MANAGEMENT",
+                              "vlanId"=>23,
+                              "static"=>false,
+                              "staticNetworkConfiguration"=>nil}],
+                 :mac_addresses=>["00:0A:F7:06:88:54", "00:0A:F7:06:88:56"]},
+                {:networks=>[{"id"=>"ff80808146056aa20146057c0bf003d1",
+                              "name"=>"Workload",
+                              "description"=>nil,
+                              "type"=>"PRIVATE_LAN",
+                              "vlanId"=>27,
+                              "static"=>false,
+                              "staticNetworkConfiguration"=>nil}],
+                 :mac_addresses=>["00:0A:F7:06:88:58", "00:0A:F7:06:88:5A"]},
+                {:networks=>[{"id"=>"ff80808146056aa20146057c0aad03b9",
+                              "name"=>"iSCSI",
+                              "description"=>nil,
+                              "type"=>"STORAGE_ISCSI_SAN",
+                              "vlanId"=>16, "static"=>true,
+                              "staticNetworkConfiguration"=>
+                                  {"gateway"=>"172.16.0.1",
+                                   "subnet"=>"255.255.0.0",
+                                   "primaryDns"=>"172.20.0.8",
+                                   "secondaryDns"=>nil,
+                                   "dnsSuffix"=>"aidev.net",
+                                   "ipAddress"=>"172.16.12.116"}}],
+                 :mac_addresses=>["00:0A:F7:06:88:5C", "00:0A:F7:06:88:5E"]}]
+      expect(net_config.teams).to eq(output)
+    end
+
+  end
 end
