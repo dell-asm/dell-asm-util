@@ -162,27 +162,14 @@ module ASM
       end.compact.uniq
     end
 
+    # TODO:  This function needs to be removed once the switch/blade code in asm-deployer is refactored
     def is_blade?
       @mash.servertype == 'blade'
     end
 
-    def is_rack?
-      @mash.servertype == 'rack'
-    end
-
     def munge!
       # Augment partitions with additional info
-      source = case @mash.servertype
-                 when 'blade'
-                   @mash.interfaces = nil
-                   @mash.fabrics
-                 when 'rack'
-                   @mash.fabrics = nil
-                   @mash.interfaces
-                 else
-                   raise("Unsupported server type in network configuration: #{@mash.servertype}")
-               end
-
+      source = @mash.interfaces
       partition_i = 0
       interface_i = 0
       card_i = 0
@@ -190,7 +177,7 @@ module ASM
       unless source.nil?
         source.each do |orig_card|
           # For now we are discarding FC interfaces!
-          if ASM::Util.to_boolean(orig_card.enabled) && !ASM::Util.to_boolean(orig_card.usedforfc)
+          if ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != 'fc'
             card = Hashie::Mash.new(orig_card)
             card.interfaces = []
             card.nictype = NicType.new(card.nictype)
@@ -310,17 +297,11 @@ module ASM
             partition_no = name_to_partition(partition.name)
             nic_prefixes ||= ordered_nic_prefixes(nics)
             nic = nics.find do |n|
-              if is_blade? and !n.fqdd.match(/ChassisSlot/)
-                (name_to_fabric(card.name) == n.fabric &&
-                    name_to_port(interface.name).to_s == n.port &&
-                    partition_no.to_s == n.partition_no)
-              else
-                nic_prefixes ||= ordered_nic_prefixes(nics)
-                prefix = nic_prefixes[card.card_index] or raise("No slot found for card_index #{card.card_index} in #{nic_prefixes}")
-                (n.fqdd.start_with?(prefix) &&
-                    name_to_port(interface.name).to_s == n.port &&
-                    partition_no.to_s == n.partition_no)
-              end
+              nic_prefixes ||= ordered_nic_prefixes(nics)
+              prefix = nic_prefixes[card.card_index] or raise("No slot found for card_index #{card.card_index} in #{nic_prefixes}")
+              (n.fqdd.start_with?(prefix) &&
+                  name_to_port(interface.name).to_s == n.port &&
+                  partition_no.to_s == n.partition_no)
             end
 
             if nic.nil? && options[:add_partitions]

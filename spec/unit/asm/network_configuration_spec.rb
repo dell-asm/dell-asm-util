@@ -146,30 +146,20 @@ describe ASM::NetworkConfiguration do
       expect(net_config.to_hash.keys).not_to include("cards")
     end
 
-    it 'should set fabric, interface, partition info on partitions' do
+    it 'should set interface, partition info on partitions' do
       net_config.add_partition_info!
       partition_index = 0
-      ('A'..'C').each_with_index do |fabric_letter, fabric_index|
-        fabric = net_config.fabrics.find { |fabric| fabric.name == "Fabric #{fabric_letter}" }
-        (1..2).each do |port_no|
-          port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
-          (1..4).each do |partition_no|
-            partition = port.partitions.find { |p| p.name == partition_no.to_s }
-            if fabric_letter == 'A'
-              # In sample data, Fabric A is enabled
-              partition.fabric_letter.should == fabric_letter
-              partition.port_no.should == port_no
-              partition.partition_no.should == partition_no
-              partition.partition_index.should == partition_index
-              partition_index += 1
-            else
-              # In sample data, Fabrics B and C are not enabled
-              partition.fabric_letter.should be_nil
-              partition.port_no.should be_nil
-              partition.partition_no.should be_nil
-              partition.partition_index.should be_nil
-            end
-          end
+      card = net_config.cards.first
+      # Verify first interface partitions set correctly
+      (1..2).each do |port_no|
+        port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+        (1..4).each do |partition_no|
+          fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
+          partition = port.partitions.find { |p| p.name == partition_no.to_s }
+          partition.port_no.should == port_no
+          partition.partition_no.should == partition_no
+          partition.partition_index.should == partition_index
+          partition_index += 1
         end
       end
     end
@@ -186,29 +176,16 @@ describe ASM::NetworkConfiguration do
       }
       ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
       net_config.add_nics!(Hashie::Mash.new(:host => '127.0.0.1'))
-      fabric = net_config.fabrics.find { |fabric| fabric.name == 'Fabric A' }
+      card = net_config.cards.first
 
-      # Verify all Fabric A partitions set correctly
+      # Verify first interface partitions set correctly
       (1..2).each do |port_no|
-        port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
+        port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
         (1..4).each do |partition_no|
           fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
           partition = port.partitions.find { |p| p.name == partition_no.to_s }
           partition.fqdd.should == fqdd
           partition.mac_address.should == fqdd_to_mac[fqdd]
-        end
-      end
-
-      # Verify nothing set for fabric b or c
-      ('B'..'C').each do |fabric_letter|
-        fabric = net_config.fabrics.find { |fabric| fabric.name == "Fabric #{fabric_letter}" }
-        (1..2).each do |port_no|
-          port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
-          (1..4).each do |partition_no|
-            partition = port.partitions.find { |p| p.name == partition_no.to_s }
-            partition.fqdd.should be_nil
-            partition.mac_address.should be_nil
-          end
         end
       end
     end
@@ -229,11 +206,11 @@ describe ASM::NetworkConfiguration do
       }
       ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
       net_config.add_nics!(Hashie::Mash.new(:host => '127.0.0.1'), :add_partitions => true)
-      fabric = net_config.cards.find { |fabric| fabric.name == 'Fabric A' }
+      card = net_config.cards.first
 
-      # Verify all Fabric A partitions set correctly
+      # Verify all partitions set correctly
       (1..2).each do |port_no|
-        port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
+        port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
         (1..4).each do |partition_no|
           fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
           partition = port.partitions.find { |p| p.name == partition_no.to_s }
@@ -266,7 +243,7 @@ describe ASM::NetworkConfiguration do
       networks.size.should == 1
       network = networks[0]
       network.name.should == 'Hypervisor Management'
-      network.staticNetworkConfiguration.ipAddress.should == '172.28.12.118'
+      network.staticNetworkConfiguration.ipAddress.should == '172.28.113.50'
     end
 
     it 'should not find missing networks' do
@@ -282,7 +259,7 @@ describe ASM::NetworkConfiguration do
     it 'should find single network type' do
       network = net_config.get_network('HYPERVISOR_MANAGEMENT')
       network.name.should == 'Hypervisor Management'
-      network.staticNetworkConfiguration.ipAddress.should == '172.28.12.118'
+      network.staticNetworkConfiguration.ipAddress.should == '172.28.113.50'
     end
 
     it 'should fail to find single network if multiple management networks found' do
@@ -326,7 +303,7 @@ describe ASM::NetworkConfiguration do
 
     it 'should find single network ip addresses' do
       ips = net_config.get_static_ips('HYPERVISOR_MANAGEMENT')
-      ips.should == ['172.28.12.118']
+      ips.should == ['172.28.113.50']
     end
 
     it 'should find multiple static ips of same type' do
@@ -337,7 +314,7 @@ describe ASM::NetworkConfiguration do
     it 'should find multiple static ips with different types' do
       config = net_config
       ips = config.get_static_ips('HYPERVISOR_MANAGEMENT', 'STORAGE_ISCSI_SAN')
-      ips.sort.should == ['172.16.12.120', '172.16.12.121', '172.28.12.118']
+      ips.sort.should == ['172.16.12.120', '172.16.12.121', '172.28.113.50']
     end
 
     it 'should ignore dhcp when finding static ips' do
@@ -362,27 +339,24 @@ describe ASM::NetworkConfiguration do
       ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
       net_config.add_nics!(Hashie::Mash.new({:host => '127.0.0.1'}))
 
+      card_index = 1
+      card_name = "A"
       # Verify all partition 1 set correctly
-      ('A'..'C').each_with_index do |fabric_letter, fabric_index|
-        fabric = net_config.fabrics.find { |fabric| fabric.name == "Fabric #{fabric_letter}" }
+      net_config.cards.each do |card|
         (1..2).each do |port_no|
-          port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
-          (1..4).each do |partition_no|
-            partition = port.partitions.find { |p| p.name == partition_no.to_s }
-            if partition_no == 1
-              fqdd = if fabric_letter == 'A'
-                       "NIC.Integrated.1-#{port_no}-#{partition_no}"
-                     else
-                       "NIC.Mezzanine.#{fabric_index + 1}#{fabric_letter}-#{port_no}-#{partition_no}"
-                     end
-              partition.fqdd.should == fqdd
-              partition.mac_address.should == fqdd_to_mac[fqdd]
-            else
-              partition.fqdd.should be_nil
-              partition.mac_address.should be_nil
-            end
-          end
+          port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+          partition = port.partitions.first
+          #Only need to check partition 1, since other partitions aren't populated in cards if they aren't enabled
+          fqdd = if card_index == 1
+                   "NIC.Integrated.1-#{port_no}-1"
+                 else
+                   "NIC.Mezzanine.#{card_index}#{card_name}-#{port_no}-1"
+                 end
+          partition.fqdd.should == fqdd
+          partition.mac_address.should == fqdd_to_mac[fqdd]
         end
+        card_name = card_name.next
+        card_index += 1
       end
     end
 
@@ -398,27 +372,24 @@ describe ASM::NetworkConfiguration do
       ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
       net_config.add_nics!(Hashie::Mash.new({:host => '127.0.0.1'}))
 
+      card_index = 1
+      card_name = "A"
       # Verify all partition 1 set correctly
-      ('A'..'C').each_with_index do |fabric_letter, fabric_index|
-        fabric = net_config.fabrics.find { |fabric| fabric.name == "Fabric #{fabric_letter}" }
+      net_config.cards.each do |card|
         (1..2).each do |port_no|
-          port = fabric.interfaces.find { |p| p.name == "Port #{port_no}" }
-          (1..4).each do |partition_no|
-            partition = port.partitions.find { |p| p.name == partition_no.to_s }
-            if partition_no == 1
-              fqdd = if fabric_letter == 'A'
-                       "NIC.Integrated.1-#{port_no}-#{partition_no}"
-                     else
-                       "NIC.Mezzanine.#{fabric_index + 1}#{fabric_letter}-#{port_no}"
-                     end
-              partition.fqdd.should == fqdd
-              partition.mac_address.should == fqdd_to_mac[fqdd]
-            else
-              partition.fqdd.should be_nil
-              partition.mac_address.should be_nil
-            end
-          end
+          port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+          partition = port.partitions.first
+          #Only need to check partition 1, since other partitions aren't populated in cards if they aren't enabled
+          fqdd = if card_index == 1
+                   "NIC.Integrated.1-#{port_no}-1"
+                 else
+                   "NIC.Mezzanine.#{card_index}#{card_name}-#{port_no}-1"
+                 end
+          partition.fqdd.should == fqdd
+          partition.mac_address.should == fqdd_to_mac[fqdd]
         end
+        card_name = card_name.next
+        card_index += 1
       end
     end
 

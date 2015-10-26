@@ -1,0 +1,291 @@
+{
+  "id": "6036C6BD-842D-45FB-8297-B7A58C4C39EF",
+  "name": "Interface",
+  "redundancy": false,
+  "enabled": true,
+  "fabrictype": "fc",
+  "partitioned": false,
+  "nictype": "2x10Gb",
+  "interfaces": [
+    {
+      "id": "4D02B5FD-CCDB-45B1-84EA-325D4A77876D",
+      "name": "Port 1",
+      "partitioned": false,
+      "partitions": [
+        {
+          "id": "AEBC7F8E-4878-446C-9294-B96B7EAA7302",
+          "name": "1",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "774C882E-183D-4DE8-B841-8826213715C8",
+          "name": "2",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "09708B88-36F6-4EAC-AA00-5B656F29DA35",
+          "name": "3",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "779F3843-C86F-4788-8A50-A72D75226BA4",
+          "name": "4",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        }
+      ],
+      "enabled": false,
+      "redundancy": false,
+      "nictype": null
+    },
+    {
+      "id": "4C335284-2E31-48D0-BC2D-E8720F964A22",
+      "name": "Port 2",
+      "partitioned": false,
+      "partitions": [
+        {
+          "id": "4765A217-C8F7-454D-B908-BBA567B16BBA",
+          "name": "1",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "31A67866-7568-4716-94F1-C2C5222847FB",
+          "name": "2",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "C7CC19A0-1F77-4F94-AD84-1404FCB70922",
+          "name": "3",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "5F825600-E149-40F6-ACCC-B8677BCF8218",
+          "name": "4",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        }
+      ],
+      "enabled": false,
+      "redundancy": false,
+      "nictype": null
+    },
+    {
+      "id": "69FDE361-4CCD-4CCE-8121-439B4489271D",
+      "name": "Port 3",
+      "partitioned": false,
+      "partitions": [
+        {
+          "id": "24FBC3B1-556D-4AA6-8AC6-467C7F7F83AF",
+          "name": "1",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "5A057150-3199-4B17-8A1C-E552B126BE20",
+          "name": "2",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "BF760E77-F0F5-4B02-92EA-CB80BE267EF9",
+          "name": "3",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "69689361-EEBC-4590-B7ED-9EAFBA064510",
+          "name": "4",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        }
+      ],
+      "enabled": false,
+      "redundancy": false,
+      "nictype": null
+    },
+    {
+      "id": "1640C813-297B-4963-B4F2-14B04A554BEF",
+      "name": "Port 4",
+      "partitioned": false,
+      "partitions": [
+        {
+          "id": "0E44C79A-D3B1-4CF4-BCA4-349D7C025A2F",
+          "name": "1",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "E52A2853-08C8-4808-BB61-7324F2FCE3E4",
+          "name": "2",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "45D7D625-BE93-4B04-B93E-318CC68F9D24",
+          "name": "3",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        },
+        {
+          "id": "A3D31B58-016C-4CC4-BA91-CED4047B96C4",
+          "name": "4",
+          "networks": [
+
+          ],
+          "networkObjects": null,
+          "minimum": 0,
+          "maximum": 100,
+          "lanMacAddress": null,
+          "iscsiMacAddress": null,
+          "iscsiIQN": null,
+          "wwnn": null,
+          "wwpn": null
+        }
+      ],
+      "enabled": false,
+      "redundancy": false,
+      "nictype": null
+    }
+  ]
+}

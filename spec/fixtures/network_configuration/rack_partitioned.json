@@ -1297,8 +1297,8 @@
         }
       ],
       "enabled": true,
-      "redundancy": false,
-      "usedforfc": false,
+      "redundancy": true,
+      "fabrictype": "ethernet",
       "nictype": "2"
     },
     {
@@ -1376,7 +1376,6 @@
           "interfaces": null,
           "enabled": false,
           "redundancy": false,
-          "usedforfc": false,
           "nictype": null
         },
         {
@@ -1596,9 +1595,9 @@
           "nictype": null
         }
       ],
-      "enabled": true,
+      "enabled": false,
       "redundancy": false,
-      "usedforfc": true,
+      "fabrictype": "ethernet",
       "nictype": "2"
     }
   ]
