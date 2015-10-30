@@ -272,7 +272,7 @@ module ASM
         end
       end
     end
-    
+
     #Gets Nic View data for a specified fqdd
     def self.get_fcoe_wwpn(endpoint, logger = nil)
       fcoe_info = {}
@@ -294,37 +294,37 @@ module ASM
             fcoe_wwnn = $1
             fcoe_info[nic_name]['fcoe_wwnn'] = fcoe_wwnn
           end
-          
+
           if line =~ /<n1:PermanentFCOEMACAddress>(\S+)<\/n1:PermanentFCOEMACAddress>/
             fcoe_permanent_fcoe_macaddress = $1
             fcoe_info[nic_name]['fcoe_permanent_fcoe_macaddress'] = fcoe_permanent_fcoe_macaddress
           end
-          
+
           if line =~ /<n1:FCoEOffloadMode>(\S+)<\/n1:FCoEOffloadMode>/
             fcoe_offload_mode = $1
             fcoe_info[nic_name]['fcoe_offload_mode'] = fcoe_offload_mode
           end
-          
+
           if line =~ /<n1:VirtWWN>(\S+)<\/n1:VirtWWN>/
             virt_wwn = $1
             fcoe_info[nic_name]['virt_wwn'] = virt_wwn
           end
-          
+
           if line =~ /<n1:VirtWWPN>(\S+)<\/n1:VirtWWPN>/
             virt_wwpn = $1
             fcoe_info[nic_name]['virt_wwpn'] = virt_wwpn
           end
-          
+
           if line =~ /<n1:WWN>(\S+)<\/n1:WWN>/
             wwn = $1
             fcoe_info[nic_name]['wwn'] = wwn
           end
-          
+
           if line =~ /<n1:WWPN>(\S+)<\/n1:WWPN>/
             wwpn = $1
             fcoe_info[nic_name]['wwpn'] = wwpn
           end
-                
+
         end
       end
 
@@ -340,6 +340,59 @@ module ASM
     #Gets LC status
     def self.lcstatus (endpoint, logger = nil)
       invoke(endpoint, 'GetRemoteServicesAPIStatus','http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_LCService",SystemName="DCIM:ComputerSystem",Name="DCIM:LCService"', :selector => '//n1:LCStatus', :logger => logger)
+    end
+
+    def self.boot_to_network_iso (endpoint, source_address, logger = nil, image_name = 'microkernel.iso', share_name = '/var/nfs')
+      wait_for_lc_ready(endpoint, logger)
+      schema = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_OSDeploymentService",SystemName="DCIM:ComputerSystem",Name="DCIM:OSDeploymentService"'
+      #Want to detach first.  If an iso is already attached, it won't attach the one we're trying to attach.
+      resp = invoke(endpoint, 'DetachISOImage', schema, :logger => logger)
+      #It seems there's sometimes an between Detaching and Attaching the ISO.
+      # Just give it a quick sleep to give it a chance to "catch up"
+      sleep 30
+      props = {'IPAddress' => source_address,
+               'ShareName' => share_name,
+               'ShareType' => 0,
+               'ImageName' => image_name }
+      resp = invoke(endpoint, 'BootToNetworkISO', schema, :logger => logger, :props => props, :selector=>'//n1:ReturnValue')
+      if resp == '4096'
+        logger.info("Successfully attached network ISO. Started CIM_ConcreteJob.")
+        wait_for_iso_boot(endpoint, logger)
+      else
+        raise(Error, "Could not attach network ISO. Error code: #{resp}")
+      end
+
+    end
+
+    # Checks the status of the iso boot once per minute until the timeout is hit
+    def self.wait_for_iso_boot(endpoint, logger=nil, timeout=3600)
+      checks = 0
+      # Default is to wait up to an hour
+      timeout_time = Time.now + timeout
+      loop do
+        break if Time.now > timeout_time
+        checks += 1
+        schema = 'http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=DCIM_OSDConcreteJob:1'
+        resp = ''
+        status = ''
+        message = ''
+        begin
+          resp = invoke(endpoint, 'get', schema, :logger => logger, :selector => ['//n1:JobStatus', '//n1:Message'] )
+          status = resp[0]
+          message = resp[1]
+          logger.debug("Job status: #{status}") if logger
+        rescue ASM::WsMan::Error
+          logger.debug("Invalid response...job may not have been initialized yet.  Waiting...") if logger
+        end
+        if status == 'Success'
+          return
+        elsif status == 'Failed'
+          raise(Error, "Booting from network ISO failed. Error Message: #{message}")
+        else
+          sleep 60
+        end
+      end
+      raise(Error, "Timed out waiting for ISO to boot")
     end
 
     # This function will exit when the LC status is 0, or a puppet error will be raised if the LC status never is 0 (never stops being busy)
