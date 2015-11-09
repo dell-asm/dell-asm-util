@@ -130,9 +130,6 @@ module ASM
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
           port.partitions.collect do |partition|
-            (partition.networkObjects || []).collect {
-                |network| network.staticNetworkConfiguration.delete('ipRange') unless network.staticNetworkConfiguration.nil?
-            }
             (partition.networkObjects || []).find_all do |network|
               network_types.include?(network.type)
             end
@@ -206,6 +203,17 @@ module ASM
                     partition.partition_no = partition_no
                     partition.partition_index = partition_i
                     partition_i += 1
+
+                    # Strip networkObject ipRange which can vary for the same network,
+                    # making it difficult to determine network uniqueness
+                    partition.networkObjects = (partition.networkObjects || []).map do |network|
+                      network = network.dup
+                      if network.staticNetworkConfiguration
+                        network.staticNetworkConfiguration = network.staticNetworkConfiguration.dup
+                        network.staticNetworkConfiguration.delete('ipRange')
+                      end
+                      network
+                    end
 
                     interface.partitions.push(partition)
                   end
