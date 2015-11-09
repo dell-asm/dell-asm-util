@@ -8,6 +8,8 @@ module ASM
 
     class Error < StandardError; end
 
+    DEPLOYMENT_SERVICE_SCHEMA = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_OSDeploymentService",SystemName="DCIM:ComputerSystem",Name="DCIM:OSDeploymentService"'
+
     # Wrapper for the wsman client. endpoint should be a hash of
     # :host, :user, :password
     def self.invoke(endpoint, method, schema, options = {})
@@ -342,26 +344,29 @@ module ASM
       invoke(endpoint, 'GetRemoteServicesAPIStatus','http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_LCService",SystemName="DCIM:ComputerSystem",Name="DCIM:LCService"', :selector => '//n1:LCStatus', :logger => logger)
     end
 
+    def self.detach_network_iso(endpoint, logger = nil)
+      invoke(endpoint, 'DetachISOImage', DEPLOYMENT_SERVICE_SCHEMA, :logger => logger)
+    end
+
     def self.boot_to_network_iso (endpoint, source_address, logger = nil, image_name = 'microkernel.iso', share_name = '/var/nfs')
+      # If an ISO is attached it must be detached or the server will boot off the old ISO
+      detach_network_iso(endpoint, logger)
+
+      # LC must be ready for BootToNetworkISO to succeed
       wait_for_lc_ready(endpoint, logger)
-      schema = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_OSDeploymentService",SystemName="DCIM:ComputerSystem",Name="DCIM:OSDeploymentService"'
-      #Want to detach first.  If an iso is already attached, it won't attach the one we're trying to attach.
-      resp = invoke(endpoint, 'DetachISOImage', schema, :logger => logger)
-      #It seems there's sometimes an between Detaching and Attaching the ISO.
-      # Just give it a quick sleep to give it a chance to "catch up"
-      sleep 30
+
       props = {'IPAddress' => source_address,
                'ShareName' => share_name,
                'ShareType' => 0,
                'ImageName' => image_name }
-      resp = invoke(endpoint, 'BootToNetworkISO', schema, :logger => logger, :props => props, :selector=>'//n1:ReturnValue')
+      resp = invoke(endpoint, 'BootToNetworkISO', DEPLOYMENT_SERVICE_SCHEMA,
+                    :logger => logger, :props => props, :selector=>'//n1:ReturnValue')
       if resp == '4096'
         logger.info("Successfully attached network ISO. Started CIM_ConcreteJob.")
         wait_for_iso_boot(endpoint, logger)
       else
         raise(Error, "Could not attach network ISO. Error code: #{resp}")
       end
-
     end
 
     # Checks the status of the iso boot once per minute until the timeout is hit

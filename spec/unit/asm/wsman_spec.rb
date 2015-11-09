@@ -70,4 +70,46 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#detach_network_iso" do
+    it "should invoke DetachIISOImage" do
+      endpoint = mock()
+      logger = mock()
+      ASM::WsMan.expects(:invoke).with(endpoint, "DetachISOImage", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :logger => logger)
+      ASM::WsMan.detach_network_iso(endpoint, logger)
+    end
+  end
+
+  describe "#boot to_network_iso" do
+    let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
+    let(:endpoint) { mock("rspec-endpoint") }
+
+    it "should detach iso, wait for lc and boot network iso" do
+      ASM::WsMan.expects(:detach_network_iso).with(endpoint, logger)
+      ASM::WsMan.expects(:wait_for_lc_ready).with(endpoint, logger)
+      ASM::WsMan.expects(:wait_for_iso_boot).with(endpoint, logger)
+      props = {'IPAddress' => "rspec-ip",
+               'ShareName' => "/var/rspec",
+               'ShareType' => 0,
+               'ImageName' => "rspec-microkernel.iso"}
+      ASM::WsMan.expects(:invoke).with(endpoint, "BootToNetworkISO",
+                                       ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA,
+                                       :logger => logger, :props => props, :selector => '//n1:ReturnValue').returns("4096")
+      ASM::WsMan.boot_to_network_iso(endpoint, "rspec-ip", logger, "rspec-microkernel.iso", "/var/rspec")
+    end
+
+    it "should fail with invalid response code" do
+      ASM::WsMan.expects(:detach_network_iso).with(endpoint, logger)
+      ASM::WsMan.expects(:wait_for_lc_ready).with(endpoint, logger)
+      props = {'IPAddress' => "rspec-ip",
+               'ShareName' => "/var/rspec",
+               'ShareType' => 0,
+               'ImageName' => "rspec-microkernel.iso"}
+      ASM::WsMan.expects(:invoke).with(endpoint, "BootToNetworkISO",
+                                       ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA,
+                                       :logger => logger, :props => props, :selector => '//n1:ReturnValue').returns("FAIL")
+      expect do
+        ASM::WsMan.boot_to_network_iso(endpoint, "rspec-ip", logger, "rspec-microkernel.iso", "/var/rspec")
+      end.to raise_error("Could not attach network ISO. Error code: FAIL")
+    end
+  end
 end

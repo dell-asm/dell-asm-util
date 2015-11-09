@@ -1,10 +1,17 @@
-/.bundle/
-/.yardoc
-/Gemfile.lock
-/_yardoc/
-/coverage/
-/doc/
-/pkg/
-/spec/reports/
-/tmp/
+.vendor
+vendor
+Gemfile.lock
+*.gem
+*.log
+*~
+*.iml
+.rakeTasks
+.bundle
+.rspec
+.yardoc
+.ruby-version
+doc
+#Vim litter
+*.swo
+*.swp
 .idea
