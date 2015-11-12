@@ -47,7 +47,7 @@ module ASM
     # of the cert name must be exactly 7 chars in length for it to be
     # considered a Dell service tag.
     def self.dell_cert?(cert_name)
-      /^(blade|rack|fx)server-.{7}$/ === cert_name
+      /^(blade|rack|fx|tower)server-.{7}$/ === cert_name
     end
 
     def self.is_ip_address_accessible(ip_address)
