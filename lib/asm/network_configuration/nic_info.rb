@@ -35,9 +35,11 @@ module ASM
             logger.warn("Mismatched fabric information for #{orig_card}: #{ret.fabric} versus #{expected_fabric}") if logger
           end
         else
-          if ret.type == 'Embedded'
+          if ret.type == 'Embedded' && Integer(ret.card) > 1
             ret.port = ret.card
             ret.card = '1'
+            ret.fqdd = "NIC.Embedded.%s-%s-%s" % [ret.card, ret.port, ret.partition_no]
+            require 'pry'; binding.pry
           end
           ret.fabric = card_to_fabric(ret.card)
         end

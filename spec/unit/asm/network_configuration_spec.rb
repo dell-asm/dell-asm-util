@@ -135,7 +135,6 @@ describe ASM::NetworkConfiguration do
 
   end
 
-
   describe 'when parsing a partitioned network config' do
     let (:json) { SpecHelper.load_fixture("network_configuration/blade_partitioned.json") }
     let (:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }
@@ -623,6 +622,41 @@ describe ASM::NetworkConfiguration do
       (0..2).each do |card_index|
         card = net_config.cards.find { |c| c.card_index == card_index }
         fqdd_prefix = to_fqdd[card_index]
+        (1..2).each do |port_no|
+          port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+          (1..4).each do |partition_no|
+            fqdd = "#{fqdd_prefix}-#{port_no}-#{partition_no}"
+            partition = port.partitions.find { |p| p.name == partition_no.to_s }
+            if partition_no > 1
+              partition.should be_nil
+            else
+              partition.fqdd.should == fqdd
+              mac = fqdd_to_mac[fqdd]
+              partition.mac_address.should == mac
+              found_macs.include?(mac).should be(false)
+              found_macs.push(mac)
+            end
+          end
+        end
+      end
+    end
+
+    it "should prefer embedded NICs" do
+      fqdd_to_mac = { "NIC.Mezzanine.1A-1" => "00:8C:FA:F1:CC:8E",
+                      "NIC.Mezzanine.1A-2" => "00:8C:FA:F1:CC:8F",
+                      "NIC.Embedded.1-1-1" => "00:8C:FA:F0:6F:5A",
+                      "NIC.Embedded.2-1-1" => "00:8C:FA:F0:6F:5C" }
+
+      net_config.cards = [ net_config.cards.first ]
+      ASM::WsMan.stubs(:get_mac_addresses).returns(fqdd_to_mac)
+      net_config.add_nics!(Hashie::Mash.new({:host => '127.0.0.1'}))
+
+      # Verify 3 cards, unpartitioned
+      to_fqdd = {0 => 'NIC.Embedded.1-1-1', 1 => 'NIC.Slot.1', 2 => 'NIC.Slot.3', }
+      found_macs = []
+      (0..2).each do |card_index|
+        card = net_config.cards.find { |c| c.card_index == card_index }
+        fqdd_prefix = to_fqdd[card_index] 
         (1..2).each do |port_no|
           port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
           (1..4).each do |partition_no|
