@@ -236,14 +236,14 @@ module ASM
     end
 
     # Gets Nic View data
-    def self.get_nic_view(endpoint, logger = nil)
+    def self.get_nic_view(endpoint, logger = nil, tries = 0)
       mac_info = {}
       resp = invoke(endpoint, 'enumerate',
       'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_NICView',
       :logger => logger)
       nic_views = resp.split("<n1:DCIM_NICView>")
       nic_views.shift
-      nic_views.collect do |nic_view|
+      ret = nic_views.collect do |nic_view|
         nic_view.split("\n").inject({}) do |ret, line|
           if line =~ /<n1:(\S+).*>(.*)<\/n1:\S+>/
             ret[$1] = $2
@@ -253,6 +253,12 @@ module ASM
           ret
         end
       end
+
+      # Apparently we sometimes see a spurious empty return value...
+      if ret.empty? && tries == 0
+        ret = get_nic_view(endpoint, logger, tries + 1)
+      end
+      ret
     end
 
     # Gets Nic View data
