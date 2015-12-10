@@ -216,11 +216,21 @@ module ASM
     def self.get_mac_addresses(endpoint, logger = nil)
       bios_info = get_bios_enumeration(endpoint,logger)
       ret = get_nic_view(endpoint, logger).inject({}) do |result, element|
-        result[element['FQDD']] = element['CurrentMACAddress'] if is_usable_nic?(element,bios_info)
+        result[element['FQDD']] = select_mac_address(element) if is_usable_nic?(element, bios_info)
         result
       end
       logger.debug("********* MAC Address List is #{ret.inspect} **************") if logger
       ret
+    end
+
+    def self.select_mac_address(element)
+      if element['CurrentMACAddress'] != '00:00:00:00:00:00'
+        element['CurrentMACAddress']
+      elsif !element['PermanentMACAddress'].nil?
+        element['PermanentMACAddress']
+      else
+        nil
+      end
     end
 
     def self.get_permanent_mac_addresses(endpoint, logger = nil)
