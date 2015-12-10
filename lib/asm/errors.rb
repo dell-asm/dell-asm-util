@@ -9,4 +9,14 @@ module ASM
 
   # A UserException message can be displayed directly to the user
   class UserException        < Error; end
+
+  class UnconnectedServerException < Error
+    attr_reader :unconnected_servers
+    def initialize(servers)
+      super
+      @unconnected_servers = servers
+    end
+  end
 end
+
+
