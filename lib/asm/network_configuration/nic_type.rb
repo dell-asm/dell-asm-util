@@ -13,12 +13,14 @@ module ASM
       # @param nictype [String]
       # @return [ASM::NicType]
       def initialize(nictype)
-        @nictype = nictype
         @ports = nictype.split(",").map(&:strip).map do |desc|
           n, type = desc.split("x")
           type ||= "10Gb"
           Array.new(n.to_i, type)
         end.flatten
+        @nictype = nictype
+        @nictype = "2x10Gb" if nictype == "2"
+        @nictype = "4x10Gb" if nictype == "4"
       end
 
       def n_10gb_ports
