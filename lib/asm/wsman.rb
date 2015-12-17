@@ -226,7 +226,7 @@ module ASM
     def self.select_mac_address(element)
       if element['CurrentMACAddress'] != '00:00:00:00:00:00'
         element['CurrentMACAddress']
-      elsif !element['PermanentMACAddress'].nil?
+      elsif element['PermanentMACAddress']
         element['PermanentMACAddress']
       else
         nil
