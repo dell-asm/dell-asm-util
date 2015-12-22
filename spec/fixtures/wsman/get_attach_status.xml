@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:n1="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService">
+    <s:Header>
+        <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action>http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService/DisconnectNetworkISOImageResponse</wsa:Action>
+        <wsa:RelatesTo>uuid:85ac9fe2-26c9-16c9-8002-34e5aa565000</wsa:RelatesTo>
+        <wsa:MessageID>uuid:8d901a2a-26ce-16ce-a51f-d46bf0fa8c00</wsa:MessageID>
+    </s:Header>
+    <s:Body>
+        <n1:DisconnectNetworkISOImage_OUTPUT>
+            <n1:ReturnValue>0</n1:ReturnValue>
+        </n1:DisconnectNetworkISOImage_OUTPUT>
+    </s:Body>
+</s:Envelope>

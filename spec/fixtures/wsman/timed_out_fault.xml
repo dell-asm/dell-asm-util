@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+    <s:Header>
+        <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action>http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>
+        <wsa:RelatesTo>uuid:a3ec4d09-24ed-14ed-8002-07bd8a565000</wsa:RelatesTo>
+        <wsa:MessageID>uuid:a7c77dc1-24ed-14ed-97ef-e728defe83b0</wsa:MessageID>
+    </s:Header>
+    <s:Body>
+        <s:Fault>
+            <s:Code>
+                <s:Value>s:Receiver</s:Value>
+                <s:Subcode>
+                    <s:Value>wsman:TimedOut</s:Value>
+                </s:Subcode>
+            </s:Code>
+            <s:Reason>
+                <s:Text xml:lang="en">The operation has timed out.</s:Text>
+            </s:Reason>
+        </s:Fault>
+    </s:Body>
+</s:Envelope>

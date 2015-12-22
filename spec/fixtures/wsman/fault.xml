@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+    <s:Header>
+        <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action>http://schemas.dmtf.org/wbem/wsman/1/wsman/fault</wsa:Action>
+        <wsa:RelatesTo>uuid:eceb0b97-26c9-16c9-8002-34e5aa565000</wsa:RelatesTo>
+        <wsa:MessageID>uuid:f49f08c6-26ce-16ce-a5df-d46bf0fa8c00</wsa:MessageID>
+    </s:Header>
+    <s:Body>
+        <s:Fault>
+            <s:Code>
+                <s:Value>s:Sender</s:Value>
+                <s:Subcode>
+                    <s:Value>wsman:InvalidParameter</s:Value>
+                </s:Subcode>
+            </s:Code>
+            <s:Reason>
+                <s:Text xml:lang="en">CMPI_RC_ERR_INVALID_PARAMETER</s:Text>
+            </s:Reason>
+            <s:Detail>
+                <wsman:FaultDetail>http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MissingValues</wsman:FaultDetail>
+            </s:Detail>
+        </s:Fault>
+    </s:Body>
+</s:Envelope>
