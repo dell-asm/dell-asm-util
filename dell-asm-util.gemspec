@@ -18,6 +18,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logger-colors', '~> 1.0.0'
   s.add_development_dependency 'guard-shell'
   s.add_development_dependency 'yard'
+  s.add_development_dependency 'kramdown'
+  s.add_development_dependency 'rubocop'
   s.add_development_dependency 'rspec', '~>2.14.0'
   s.add_development_dependency 'mocha'
   s.add_development_dependency 'puppet'

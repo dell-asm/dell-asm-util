@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:n1="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+    <s:Header>
+        <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+        <wsa:Action>http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService/ConnectNetworkISOImageResponse</wsa:Action>
+        <wsa:RelatesTo>uuid:52bb5a7f-26a7-16a7-8002-34e5aa565000</wsa:RelatesTo>
+        <wsa:MessageID>uuid:5a5eb66f-26ac-16ac-a7a6-d46bf0fa8c00</wsa:MessageID>
+    </s:Header>
+    <s:Body>
+        <n1:ConnectNetworkISOImage_OUTPUT>
+            <n1:Job>
+                <wsa:EndpointReference>
+                    <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+                    <wsa:ReferenceParameters>
+                        <wsman:ResourceURI>http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob</wsman:ResourceURI>
+                        <wsman:SelectorSet>
+                            <wsman:Selector Name="InstanceID">DCIM_OSDConcreteJob:1</wsman:Selector>
+                            <wsman:Selector Name="__cimnamespace">root/dcim</wsman:Selector>
+                        </wsman:SelectorSet>
+                    </wsa:ReferenceParameters>
+                </wsa:EndpointReference>
+            </n1:Job>
+            <n1:ReturnValue>4096</n1:ReturnValue>
+        </n1:ConnectNetworkISOImage_OUTPUT>
+    </s:Body>
+</s:Envelope>

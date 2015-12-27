@@ -2,16 +2,66 @@ require 'pathname'
 require 'asm/util'
 require 'rexml/document'
 require 'hashie'
+require 'nokogiri'
+require 'logger'
 
 module ASM
   module WsMan
 
     class Error < StandardError; end
 
-    DEPLOYMENT_SERVICE_SCHEMA = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_OSDeploymentService",SystemName="DCIM:ComputerSystem",Name="DCIM:OSDeploymentService"'
+    # Convert a wsman response hash into a human-readable string.
+    #
+    # @example
+    #     response = {:message => "Could not connect to share", :code => "XXX", :return_value => "2"}
+    #     ASM::WsMan.response_string(response) #=> "Could not connect to share [code: XXX, return_value: 2]"
+    #
+    # @api private
+    # @param response [Hash] ws-man response as a Hash, i.e. after calling {#parse} on the response.
+    # @return [String]
+    def self.response_string(response)
+      copy = response.dup
+      message = copy.delete(:message)
+      message = copy.delete(:reason) unless message
+      message = copy.delete(:job_status) unless message
+      ret = copy.keys.map { |k| "%s: %s" % [k, copy[k]]}.join(", ")
+      ret = "%s [%s]" % [message, ret] if message
+      ret
+    end
 
-    # Wrapper for the wsman client. endpoint should be a hash of
-    # :host, :user, :password
+    # An exception that encapsulates a ws-man response.
+    class ResponseError < StandardError
+      attr_reader :response
+
+      def initialize(msg, response)
+        super(msg)
+        @response = response
+      end
+
+      def to_s
+        "%s: %s" % [super.to_s, ASM::WsMan.response_string(response)]
+      end
+    end
+
+    DEPLOYMENT_SERVICE_SCHEMA = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_OSDeploymentService",SystemName="DCIM:ComputerSystem",Name="DCIM:OSDeploymentService"'
+    LC_SERVICE_SCHEMA = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_LCService",SystemName="DCIM:ComputerSystem",Name="DCIM:LCService"'
+
+    # Invoke the wsman CLI cient
+    #
+    # Will automatically retry in the case of authentication errors.
+    #
+    # @param endpoint [Hash]
+    # @option endpoint [String] :host the iDrac host
+    # @option endpoint [String] :user the iDrac user
+    # @option endpoint [String] :password the iDrac password
+    # @param method the wsman method. Should be one of enumerate, get or a custom invoke method
+    # @param schema the wsman schema
+    # @param options [Hash]
+    # @option options [String] :selector an xpath expression to run. Result will be returned as a String if there is one match, an Array of Strings otherwise.
+    # @option options [Hash] :props arguments to an invoke command
+    # @option options [String] :input_file an XML file containing options for an invoke command
+    # @option options Logger] :logger logger for debug messages
+    # @option options [FixNum] :nth_attempt used internally to allow recursive retry
     def self.invoke(endpoint, method, schema, options = {})
       options = {
         :selector => nil,
@@ -100,6 +150,45 @@ module ASM
       end
     end
 
+    # Parse a ws-man response element into a value
+    #
+    # Special-case handling exists for wsman:Selector responses which are used to
+    # indicate job responses and for s:Subcode responses which are used in wsman faults.
+    #
+    # @api private
+    # @param elem [Nokogiri::XML::Element]
+    # @return [String]
+    def self.parse_element(elem)
+      if elem.namespaces.keys.include?("xmlns:wsman") && !(params = elem.xpath(".//wsman:Selector[@Name='InstanceID']")).empty?
+        params.first.text
+      elsif !(params = elem.xpath(".//s:Subcode")).empty? && params.children.size > 0
+        params.children.map(&:text).join(", ")
+      elsif elem.attributes["nil"] && elem.attributes["nil"].value == "true"
+        nil
+      else
+        elem.text
+      end
+    end
+
+    # Parse wsman response into a Hash
+    #
+    # @note currently does not work with enumerate responses
+    # @api private
+    # @param content [String] the response from calling {#invoke}
+    # @return [Hash]
+    def self.parse(content)
+      doc = Nokogiri::XML.parse(content) { |config| config.noblanks }
+      body = doc.search("//s:Body")
+      raise("Unexpected WS-Man Body: %s" % body.children) unless body.children.size == 1
+      ret = {}
+      response = body.children.first
+      response.children.each do |e|
+        key = snake_case(e.name).to_sym
+        ret[key] = parse_element(e)
+      end
+      ret
+    end
+
     def self.reboot(endpoint, logger = nil)
       # Create the reboot job
       logger.debug("Rebooting server #{endpoint[:host]}") if logger
@@ -136,6 +225,22 @@ module ASM
         :logger => logger)
       else
         logger.debug "Server is already powered off" if logger
+      end
+      return true
+    end
+
+    def self.poweron(endpoint, logger = nil)
+      # Create the reboot job
+      logger.debug("Power on server #{endpoint[:host]}") if logger
+
+      power_state = get_power_state(endpoint, logger)
+      if power_state.to_i != 2
+        response = invoke(endpoint, 'RequestStateChange',
+        'http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system',
+        :props => { 'RequestedState' => "2"} ,
+        :logger => logger)
+      else
+        logger.debug "Server is already powered on" if logger
       end
       return true
     end
@@ -357,66 +462,404 @@ module ASM
 
     #Gets LC status
     def self.lcstatus (endpoint, logger = nil)
-      invoke(endpoint, 'GetRemoteServicesAPIStatus','http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName="DCIM_ComputerSystem",CreationClassName="DCIM_LCService",SystemName="DCIM:ComputerSystem",Name="DCIM:LCService"', :selector => '//n1:LCStatus', :logger => logger)
+      invoke(endpoint, 'GetRemoteServicesAPIStatus',LC_SERVICE_SCHEMA, :selector => '//n1:LCStatus', :logger => logger)
     end
 
-    def self.detach_network_iso(endpoint, logger = nil)
-      invoke(endpoint, 'DetachISOImage', DEPLOYMENT_SERVICE_SCHEMA, :logger => logger)
+    # Get the lifecycle controller (LC) status
+    #
+    # @example ready response
+    #   {:lcstatus=>"0", :message=>"Lifecycle Controller Remote Services is ready.",
+    #    :message_id=>"LC061", :rtstatus=>"0", :return_value=>"0", :server_status=>"2", :status=>"0"}
+    #
+    # @example busy response
+    #   {:lcstatus=>"5", :message=>"Lifecycle Controller Remote Services is not ready.",
+    #    :message_id=>"LC060", :rtstatus=>"1", :return_value=>"0", :server_status=>"1", :status=>"1"}
+    #
+    # An lcstatus of "0" indicates that the LC is ready to accept new jobs.
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @option options [Hash] :logger
+    # @return [Hash]
+    def self.get_lc_status(endpoint, options = {})
+      logger = options[:logger] || Logger.new(nil)
+      resp = invoke(endpoint, "GetRemoteServicesAPIStatus", LC_SERVICE_SCHEMA, :logger => logger)
+      parse(resp)
     end
 
-    def self.boot_to_network_iso (endpoint, source_address, logger = nil, image_name = 'microkernel.iso', share_name = '/var/nfs')
-      # If an ISO is attached it must be detached or the server will boot off the old ISO
-      detach_network_iso(endpoint, logger)
-
-      # LC must be ready for BootToNetworkISO to succeed
-      wait_for_lc_ready(endpoint, logger)
-
-      props = {'IPAddress' => source_address,
-               'ShareName' => share_name,
-               'ShareType' => 0,
-               'ImageName' => image_name }
-      resp = invoke(endpoint, 'BootToNetworkISO', DEPLOYMENT_SERVICE_SCHEMA,
-                    :logger => logger, :props => props, :selector=>'//n1:ReturnValue')
-      if resp == '4096'
-        logger.info("Successfully attached network ISO. Started CIM_ConcreteJob.")
-        wait_for_iso_boot(endpoint, logger)
-      else
-        raise(Error, "Could not attach network ISO. Error code: #{resp}")
-      end
-    end
-
-    # Checks the status of the iso boot once per minute until the timeout is hit
-    def self.wait_for_iso_boot(endpoint, logger=nil, timeout=3600)
-      checks = 0
-      # Default is to wait up to an hour
-      timeout_time = Time.now + timeout
-      loop do
-        break if Time.now > timeout_time
-        checks += 1
-        schema = 'http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=DCIM_OSDConcreteJob:1'
-        resp = ''
-        status = ''
-        message = ''
-        begin
-          resp = invoke(endpoint, 'get', schema, :logger => logger, :selector => ['//n1:JobStatus', '//n1:Message'] )
-          status = resp[0]
-          message = resp[1]
-          logger.debug("Job status: #{status}") if logger
-        rescue ASM::WsMan::Error
-          logger.debug("Invalid response...job may not have been initialized yet.  Waiting...") if logger
+    # Converts a ws-man parameter key into snake case
+    #
+    # Special case handling is included for various nouns that are usually (but
+    # not always) capitalized such as ISO, MAC, FCOE, and WWNN>
+    #
+    # @param str [String] the wsman parameter key
+    # @return [String]
+    def self.snake_case(str)
+      ret = str
+      ret = ret.gsub(/ISO([A-Z]?)/) {|e| "Iso%s" % $1}
+      ret = ret.gsub(/MAC([A-Z]?)/) {|e| "Mac%s" % $1}
+      ret = ret.gsub(/FC[oO]E([A-Z]?)/) {|e| "Fcoe%s" % $1}
+      ret = ret.gsub(/WWNN([A-Z]?)/) {|e| "Wwnn%s" % $1}
+      ret = ret.gsub(/([A-Z]+)/) {|e| "_%s" % $1.downcase}
+      if ret =~ /^[_]+(.*)$/
+        ret = $1
+        if str =~ /^([_]+)/
+          ret = "%s%s" % [$1, ret]
         end
-        if status == 'Success'
-          return
-        elsif status == 'Failed'
-          raise(Error, "Booting from network ISO failed. Error Message: #{message}")
+      end
+      ret
+    end
+
+    # Search for the value in both the enum keys and values
+    #
+    # @param key [String] the enum name, used for error messaging only
+    # @param enum [Hash] a hash of key/values. The values should be strings.
+    # @param value [Object]
+    # @return [String]
+    # @raise [StandardError] if the value cannot be found in the enum
+    def self.enum_value(key, enum, value)
+      return enum[value] if enum[value]
+      return value.to_s if enum.values.include?(value.to_s)
+      allowed = enum.keys.map { |k| "%s (%s)" % [k.inspect, enum[k]]}.join(", ")
+      raise("Invalid %s value: %s; allowed values are: %s" % [key.to_s, value, allowed])
+    end
+
+    # Convert known wsman properties to their expected format
+    #
+    # Converts known enum keys such as :share_type and :hash_type to their value.
+    # Value is returned unmodified for other keys.
+    #
+    # @api private
+    # @param key [Symbol] the property key, such as :share_type or :hash_type
+    # @return [String]
+    # @raise [StandardError] if an enum key has an unknown value
+    def self.wsman_value(key, value)
+      case key
+        when :share_type
+          enum_value(:share_type, {:nfs => "0", :cifs => "2"}, value)
+        when :hash_type
+          enum_value(:hash_type, {:md5 => "1", :sha1 => "2"}, value)
         else
-          sleep 60
-        end
+          value
       end
-      raise(Error, "Timed out waiting for ISO to boot")
     end
 
-    # This function will exit when the LC status is 0, or a puppet error will be raised if the LC status never is 0 (never stops being busy)
+    # Convert string to camel case
+    #
+    # @api private
+    # @param str [String]
+    # @param options [Hash]
+    # @option options [Boolean] :capitalize whether to capitalize the final result
+    # @return [String]
+    def self.camel_case(str, options = {})
+      options = {:capitalize => false}.merge(options)
+      ret = str.gsub(/_(.)/) {|e| $1.upcase}
+      ret[0] = ret[0].upcase if options[:capitalize]
+      ret
+    end
+
+    # Convert a symbol to a ws-man parameter key
+    #
+    # @api private
+    # @param sym [Symbol]
+    # @return [String]
+    def self.param_key(sym)
+      if sym == :ip_address
+        "IPAddress"
+      else
+        camel_case(sym.to_s, :capitalize => true)
+      end
+    end
+
+    # Invoke a deployment ISO command
+    #
+    # DCIM_OSDeploymentService includes several commands that operate on ISO
+    # images hosted on network shares that take the same parameters.
+    #
+    # @api private
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param command [String] the deployment command
+    # @param options [Hash]
+    # @option options [Logger] :logger a logger to use
+    # @option options [String] :ip_address CIFS or NFS share IPv4 address. For example, 192.168.10.100. Required.
+    # @option options [String] :share_name NFS or CIFS network share point. For example, "/home/guest" or “guest_smb.”. Required.
+    # @option options [String] :image_name ISO image name. Required.
+    # @option options [String|Fixnum] :share_type share type. 0 or :nfs for NFS and 2 or :cifs for CIFS. Required.
+    # @option options [String] :workgroup workgroup name, if applicable
+    # @option options [String] :user_name user name, if applicable.
+    # @option options [String] :password password, if applicable
+    # @option options [String] :hash_type type of hash algorithm used to compute checksum: 1 or :md5 for MD5 and 2 or :sha1 for SHA1
+    # @option options [String] :hash_value checksum value in string format computed using HashType algorithm
+    # @option options [String] :auto_connect auto-connect to ISO image up on iDRAC reset
+    # @return [Hash]
+    # @raise [ResponseError] if the command fails
+    def self.osd_deployment_invoke_iso(endpoint, command, options = {})
+      options = options.dup
+      required_api_params = [:ip_address, :share_name, :share_type, :image_name]
+      optional_api_params = [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect]
+      missing_params = required_api_params.reject { |k| options.include?(k) }
+      raise("Missing required parameter(s): %s" % missing_params.join(", ")) unless missing_params.empty?
+
+      logger = options.delete(:logger)
+      options.reject! { |k| !(required_api_params + optional_api_params).include?(k) }
+
+      props = options.keys.inject({}) do |acc, key|
+        acc[param_key(key)] = wsman_value(key, options[key])
+        acc
+      end
+      resp = invoke(endpoint, command, DEPLOYMENT_SERVICE_SCHEMA, :logger => logger, :props => props)
+      ret = parse(resp)
+      raise(ResponseError.new("%s failed" % command, ret)) unless ret[:return_value] == "4096"
+      ret
+    end
+
+    # Reboot server to a network ISO
+    #
+    # @note {detach_iso_image} should be called once the ISO is no longer needed.
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash] the ISO parameters. See {osd_deployment_invoke_iso} options hash.
+    # @raise [ResponseError] if the command fails
+    def self.boot_to_network_iso_command(endpoint, options = {})
+      osd_deployment_invoke_iso(endpoint, "BootToNetworkISO", options)
+    end
+
+    # Connect a network ISO as a virtual CD-ROM
+    #
+    # The normal server boot order will be ignored after this call has been made.
+    # The server will only boot into the network ISO until {disconnect_network_iso_image}
+    # is called. The LC controller will be locked while the server is in this
+    # state and no other LC jobs can be run.
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash] the ISO parameters. See {osd_deployment_invoke_iso} options hash.
+    # @raise [ResponseError] if the command fails
+    def self.connect_network_iso_image_command(endpoint, options = {})
+      osd_deployment_invoke_iso(endpoint, "ConnectNetworkISOImage", options)
+    end
+
+    # Invoke a DCIM_DeploymentService command
+    #
+    # @api private
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param command [String]
+    # @param options [Hash]
+    # @option options [String] :return_value Expected ws-man return_value. An exception will be raised if this is not returned.
+    # @return [Hash]
+    def self.deployment_invoke(endpoint, command, options = {})
+      resp = invoke(endpoint, command, DEPLOYMENT_SERVICE_SCHEMA, :logger => options[:logger])
+      ret = parse(resp)
+      if options[:return_value] && ret[:return_value] != options[:return_value]
+        raise(ResponseError.new("%s failed" % command, ret))
+      end
+      ret
+    end
+
+    # Detach an ISO that was mounted with {boot_to_network_iso_command}
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.detach_iso_image(endpoint, options = {})
+      options = options.merge({:return_value => "0"})
+      deployment_invoke(endpoint, "DetachISOImage", options)
+    end
+
+    # @deprecated Use {detach_iso_image} instead.
+    def self.detach_network_iso(endpoint, logger = nil)
+      detach_iso_image(endpoint, {:logger => logger})
+    end
+
+    # Disconnect an ISO that was mounted with {connect_network_iso_image_command}
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.disconnect_network_iso_image(endpoint, options = {})
+      options = options.merge({:return_value => "0"})
+      deployment_invoke(endpoint, "DisconnectNetworkISOImage", options)
+    end
+
+    # Get current drivers and ISO connection status
+    #
+    # @example response
+    #   {:drivers_attach_status=>"0", :iso_attach_status=>"1", :return_value=>"0"}
+    #
+    # The drivers and iso attach status will be reported as "0" for not attached
+    # and "1" for "attached". The overall return_value will be non-zero if nothing
+    # is currently attached.
+    #
+    # The ISO will show as attached if either {boot_to_network_iso_command} or
+    # {connect_network_iso_image_command} have been executed.
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.get_attach_status(endpoint, options = {})
+      deployment_invoke(endpoint, "GetAttachStatus", options)
+    end
+
+    # Get ISO image connection info
+    #
+    # @example response
+    #   {:host_attached_status=>"1", :host_booted_from_iso=>"1", :ipaddr=>"172.25.3.100", :iso_connection_status=>"1", :image_name=>"ipxe.iso", :return_value=>"0", :share_name=>"/var/nfs"}
+    #
+    # The ISO attach status will be "0" for not attached and "1" for attached.
+    #
+    # The ISO will show as attached only if the {connect_network_iso_image_command}
+    # has been executed.
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.get_network_iso_image_connection_info(endpoint, options = {})
+      deployment_invoke(endpoint, "GetNetworkISOConnectionInfo", options)
+    end
+
+    # Get deployment job status
+    #
+    # @example response
+    #   {:delete_on_completion => false, :instance_id => "DCIM_OSDConcreteJob:1",
+    #    :job_name => "ConnectNetworkISOImage", :job_status => "Success",
+    #    :message => "The command was successful", :message_id => "OSD1",
+    #    :name => "ConnectNetworkISOImage"}
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param job [String] the job instance id
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.get_deployment_job(endpoint, job, options = {})
+      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=%s" % job
+      parse(invoke(endpoint, "get", url, :logger => options[:logger]))
+    end
+
+    class RetryException < StandardError; end
+
+    # Check the deployment job status until it is complete or times out
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param job [String] the job instance id
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @return [Hash]
+    def self.poll_deployment_job(endpoint, job, options = {})
+      options = {:logger => Logger.new(nil), :timeout => 600}.merge(options)
+      resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep = 60) do
+        resp = get_deployment_job(endpoint, job, :logger => options[:logger])
+        unless %w(Success Failed).include?(resp[:job_status])
+          options[:logger].info("%s status on %s: %s" % [job, endpoint[:host], response_string(resp)])
+          raise(RetryException)
+        end
+        resp
+      end
+      resp
+    rescue Timeout::Error => e
+      raise(Error, "Timed out waiting for job %s to complete. Final status: %s" % [job, response_string(resp)])
+    end
+
+    # Execute a deployment ISO mount command and await job completion.
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param command [String] the ISO command, e.g. BootToNetworkISO or ConnectNetworkISOImage
+    # @param job [String] the job instance id
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @option options [FixNum] :timeout (5 minutes)
+    # @return [Hash]
+    def self.run_deployment_job(endpoint, command, options = {})
+      options = {:timeout => 5*60}.merge(options)
+      logger = options[:logger] || Logger.new(nil)
+
+      # LC must be ready for deployment jobs to succeed
+      poll_for_lc_ready(endpoint, :logger => logger)
+
+      logger.info("Invoking %s with ISO %s on %s" % [command, options[:image_name], endpoint[:host]])
+      resp = osd_deployment_invoke_iso(endpoint, command, options)
+      logger.info("Initiated %s job %s on %s" % [command, resp[:job], endpoint[:host]])
+      resp = poll_deployment_job(endpoint, resp[:job], options)
+      raise(ResponseError.new("%s job %s failed" % [command, resp[:job]], resp)) unless resp[:job_status] == "Success"
+      logger.info("%s succeeded with ISO %s on %s: %s" % [command, options[:image_name], endpoint[:host], response_string(resp)])
+    end
+
+    # Connect network ISO image and await job completion
+    #
+    # @see {connect_network_iso_image_command}
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @option options [FixNum] :timeout (5 minutes)
+    # @return [Hash]
+    def self.connect_network_iso_image(endpoint, options = {})
+      options = {:timeout => 90}.merge(options)
+      run_deployment_job(endpoint, "ConnectNetworkISOImage", options)
+    end
+
+    # Boot to network ISO image and await job completion
+    #
+    # @see boot_to_network_iso_command
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @option options [Logger] :logger
+    # @option options [FixNum] :timeout (5 minutes)
+    # @return [Hash]
+    def self.boot_to_network_iso_image(endpoint, options = {})
+      options = {:timeout => 15*60}.merge(options)
+      run_deployment_job(endpoint, "BootToNetworkISO", options)
+    end
+
+    # @deprecated Use {boot_to_network_iso_image} instead.
+    def self.boot_to_network_iso(endpoint, source_address, logger = nil, image_name = 'microkernel.iso', share_name = '/var/nfs')
+      options = {:ip_address => source_address,
+                 :image_name => image_name,
+                 :share_name => share_name,
+                 :share_type => :nfs,
+                 :logger => logger}
+      boot_to_network_iso_image(endpoint, options)
+    end
+
+    # Wait for LC to be ready to accept new jobs
+    #
+    # If the server currently has a network ISO attached, it will be disconnected
+    # as that will block LC from becoming ready. Then poll the LC until it
+    # reports a ready status.
+    #
+    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @param options [Hash]
+    # @option options [Logger] :logger
+    # @option options [FixNum] :timeout (5 minutes)
+    # @return [Hash]
+    def self.poll_for_lc_ready(endpoint, options = {})
+      resp = get_lc_status(endpoint, :logger => options[:logger])
+      return if resp[:lcstatus] == "0"
+
+      # If ConnectNetworkISOImage has been executed, LC will be locked until the image is disconnected.
+      resp = get_network_iso_image_connection_info(endpoint, :logger => logger)
+      disconnect_network_iso_image(endpoint, options) if resp["image_name"]
+
+      # Similarly, if BootToNetworkISO has been executed, LC will be locked until
+      # the image is attached. Note that GetAttachStatus will return 1 both for
+      # BootToNetworkISO and ConnectNetworkISOImage so it is important to check
+      # ConnectNetworkISOImage first.
+      resp = get_attach_status(endpoint, options)
+      detach_iso_image(endpoint, options) if resp["iso_attach_status"] == "1"
+
+      options = {:logger => Logger.new(nil), :timeout => 5 * 60}.merge(options)
+      resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep = 60) do
+        resp = get_lc_status(endpoint, :logger => options[:logger])
+        unless resp[:lcstatus] == "0"
+          options[:logger].info("LC status on %s: %s" % [endpoint[:host], response_string(resp)])
+          raise(RetryException)
+        end
+        resp
+      end
+      options[:logger].info("LC services are ready on %s" % endpoint[:host])
+      resp
+    rescue Timeout::Error => e
+      raise(Error, "Timed out waiting for LC. Final status: %s" % response_string(resp))
+    end
+
+    # @deprecated Use {poll_for_lc_ready} instead.
     def self.wait_for_lc_ready(endpoint, logger = nil, attempts=0, max_attempts=30)
       if(attempts > max_attempts)
         raise(Error, "Life cycle controller is busy")
