@@ -1,73 +1,71 @@
-require 'spec_helper'
-require 'asm/wsman'
+require "spec_helper"
+require "asm/wsman"
 
 describe ASM::WsMan do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
   let(:endpoint) { {:host => "rspec-host", :user => "rspec-user", :password => "rspec-password"} }
 
-  describe 'when parsing nicview with disabled 57800 and dual-port slot nic' do
+  describe "when parsing nicview with disabled 57800 and dual-port slot nic" do
     before do
       # NOTE: this data is from a rack with a dual-port slot nic and a quad-port
       # integrated nic. Note the quad-port nic isn't showing any current or
       # permanent mac addresses, so it isn't found in the get_mac_addresses call
-      file_name = File.join(File.dirname(__FILE__), '..', '..',
-                            'fixtures', 'wsman', 'nic_view.xml')
+      file_name = File.join(File.dirname(__FILE__), "..", "..",
+                            "fixtures", "wsman", "nic_view.xml")
       @nic_view_response = File.read(file_name)
     end
 
-    it 'should find current macs' do
+    it "should find current macs" do
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_mac_addresses(nil, nil)
-      macs.should == {'NIC.Slot.2-1-1' => '00:0A:F7:06:9D:C0',
-                      'NIC.Slot.2-1-2' => '00:0A:F7:06:9D:C4',
-                      'NIC.Slot.2-1-3' => '00:0A:F7:06:9D:C8',
-                      'NIC.Slot.2-1-4' => '00:0A:F7:06:9D:CC',
-                      'NIC.Slot.2-2-1' => '00:0A:F7:06:9D:C2',
-                      'NIC.Slot.2-2-2' => '00:0A:F7:06:9D:C6',
-                      'NIC.Slot.2-2-3' => '00:0A:F7:06:9D:CA',
-                      'NIC.Slot.2-2-4' => '00:0A:F7:06:9D:CE',
+      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
+                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
+                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
+                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
+                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
+                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
+                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
+                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"
       }
     end
 
-    it 'should find permanent macs' do
+    it "should find permanent macs" do
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_permanent_mac_addresses(nil, nil)
-      macs.should == {'NIC.Slot.2-1-1' => '00:0A:F7:06:9D:C0',
-                      'NIC.Slot.2-1-2' => '00:0A:F7:06:9D:C4',
-                      'NIC.Slot.2-1-3' => '00:0A:F7:06:9D:C8',
-                      'NIC.Slot.2-1-4' => '00:0A:F7:06:9D:CC',
-                      'NIC.Slot.2-2-1' => '00:0A:F7:06:9D:C2',
-                      'NIC.Slot.2-2-2' => '00:0A:F7:06:9D:C6',
-                      'NIC.Slot.2-2-3' => '00:0A:F7:06:9D:CA',
-                      'NIC.Slot.2-2-4' => '00:0A:F7:06:9D:CE',
+      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
+                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
+                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
+                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
+                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
+                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
+                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
+                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"
       }
     end
-
   end
 
-  describe 'when parsing nicview with enabled 5720 and dual-port slot nic' do
-
+  describe "when parsing nicview with enabled 5720 and dual-port slot nic" do
     before do
       # NOTE: this data is from a rack with a dual-port slot nic and a quad-port
       # integrated nic.
-      file_name = File.join(File.dirname(__FILE__), '..', '..',
-                            'fixtures', 'wsman', 'nic_view_57800.xml')
+      file_name = File.join(File.dirname(__FILE__), "..", "..",
+                            "fixtures", "wsman", "nic_view_57800.xml")
       @nic_view_response = File.read(file_name)
     end
 
-    it 'should ignore Broadcom 5720 NICs' do
+    it "should ignore Broadcom 5720 NICs" do
       # we don't have NicView output, so just make the 57810 look like a 5720
       @nic_view_response.gsub!(/(ProductName[>]Broadcom.*)BCM57800/, '\1BCM5720')
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_mac_addresses(nil, nil)
-      macs.should == {'NIC.Slot.2-1-1' => '00:0A:F7:06:9E:20',
-                      'NIC.Slot.2-1-2' => '00:0A:F7:06:9E:24',
-                      'NIC.Slot.2-1-3' => '00:0A:F7:06:9E:28',
-                      'NIC.Slot.2-1-4' => '00:0A:F7:06:9E:2C',
-                      'NIC.Slot.2-2-1' => '00:0A:F7:06:9E:22',
-                      'NIC.Slot.2-2-2' => '00:0A:F7:06:9E:26',
-                      'NIC.Slot.2-2-3' => '00:0A:F7:06:9E:2A',
-                      'NIC.Slot.2-2-4' => '00:0A:F7:06:9E:2E'}
+      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9E:20",
+                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9E:24",
+                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9E:28",
+                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9E:2C",
+                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9E:22",
+                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9E:26",
+                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9E:2A",
+                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9E:2E"}
     end
   end
 
@@ -81,12 +79,12 @@ describe ASM::WsMan do
 
   describe "ResponseError#to_s" do
     it "should display message" do
-      e = ASM::WsMan::ResponseError.new("Exception message", {:message => "ws-man message", :message_id => "4"})
+      e = ASM::WsMan::ResponseError.new("Exception message", :message => "ws-man message", :message_id => "4")
       expect(e.to_s).to eq("Exception message: ws-man message [message_id: 4]")
     end
 
     it "should display fault reason" do
-      e = ASM::WsMan::ResponseError.new("Exception message", {:reason => "ws-man fault reason", :message_id => "4"})
+      e = ASM::WsMan::ResponseError.new("Exception message", :reason => "ws-man fault reason", :message_id => "4")
       expect(e.to_s).to eq("Exception message: ws-man fault reason [message_id: 4]")
     end
 
@@ -100,7 +98,7 @@ describe ASM::WsMan do
   describe "#parse" do
     it "should parse simple responses" do
       content = SpecHelper.load_fixture("wsman/get_attach_status.xml")
-      expect(ASM::WsMan.parse(content)).to eq({:return_value => "0"})
+      expect(ASM::WsMan.parse(content)).to eq(:return_value => "0")
     end
 
     it "should parse job status responses" do
@@ -182,7 +180,7 @@ describe ASM::WsMan do
       url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=%s" % job_id
       ASM::WsMan.expects(:invoke).with(endpoint, "get", url, :logger => logger).returns("<rspec>")
       ASM::WsMan.expects(:parse).with("<rspec>").returns(:job_status => "Success")
-      expect(ASM::WsMan.get_deployment_job(endpoint, job_id, :logger => logger)).to eq({:job_status => "Success"})
+      expect(ASM::WsMan.get_deployment_job(endpoint, job_id, :logger => logger)).to eq(:job_status => "Success")
     end
   end
 
@@ -240,7 +238,6 @@ describe ASM::WsMan do
     it "should handle MAC as a single word" do
       expect(ASM::WsMan.snake_case("PermanentFCOEMACAddress")).to eq("permanent_fcoe_mac_address")
     end
-
   end
 
   describe "#enum_value" do
@@ -259,7 +256,7 @@ describe ASM::WsMan do
     it "should fail for unknown values" do
       expect do
         ASM::WsMan.enum_value(:share_type, {:foo => "a", :bar => "b"}, :unknown)
-        end.to raise_error("Invalid share_type value: unknown; allowed values are: :foo (a), :bar (b)")
+      end.to raise_error("Invalid share_type value: unknown; allowed values are: :foo (a), :bar (b)")
     end
   end
 
@@ -280,29 +277,31 @@ describe ASM::WsMan do
   end
 
   describe "#run_deployment_job" do
-    let(:options) {{:ip_address => "rspec-ip",
-                    :image_name => "rspec-microkernel.iso",
-                    :share_name => "/var/rspec",
-                    :share_type => :cifs,
-                    :timeout => 60,
-                    :logger => logger}}
+    let(:options) do
+      {:ip_address => "rspec-ip",
+       :image_name => "rspec-microkernel.iso",
+       :share_name => "/var/rspec",
+       :share_type => :cifs,
+       :timeout => 60,
+       :logger => logger}
+    end
 
     before(:each) do
       ASM::WsMan.expects(:poll_for_lc_ready).with(endpoint, :logger => logger)
       ASM::WsMan.expects(:osd_deployment_invoke_iso)
-          .with(endpoint, "BootToNetworkISO", options)
-          .returns({:job => "rspec-job", :job_status => "Started"})
+        .with(endpoint, "BootToNetworkISO", options)
+        .returns(:job => "rspec-job", :job_status => "Started")
     end
 
     it "should poll for LC ready, invoke command and poll job" do
       ASM::WsMan.expects(:poll_deployment_job).with(endpoint, "rspec-job", options)
-          .returns({:job_status => "Success"})
+        .returns(:job_status => "Success")
       ASM::WsMan.run_deployment_job(endpoint, "BootToNetworkISO", options)
     end
 
     it "should fail when job fails" do
       ASM::WsMan.expects(:poll_deployment_job).with(endpoint, "rspec-job", options)
-          .returns({:job => "rspec-job", :job_status => "Failed"})
+        .returns(:job => "rspec-job", :job_status => "Failed")
 
       expect do
         ASM::WsMan.run_deployment_job(endpoint, "BootToNetworkISO", options)
@@ -312,14 +311,14 @@ describe ASM::WsMan do
 
   describe "#connect_network_iso_image" do
     it "should call run_deployment_job with default timeout of 90 seconds" do
-      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "ConnectNetworkISOImage", {:timeout => 90})
+      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "ConnectNetworkISOImage", :timeout => 90)
       ASM::WsMan.connect_network_iso_image(endpoint, {})
     end
   end
 
   describe "#boot to_network_iso_image" do
     it "should call run_deployment_job with default timeout of 15 minutes" do
-      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "BootToNetworkISO", {:timeout => 15 * 60})
+      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "BootToNetworkISO", :timeout => 15 * 60)
       ASM::WsMan.boot_to_network_iso_image(endpoint, {})
     end
   end

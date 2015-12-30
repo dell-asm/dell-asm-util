@@ -1,22 +1,22 @@
-require 'rubygems'
-require 'puppetlabs_spec_helper/rake_tasks'
-require 'rake'
-require 'rspec/core/rake_task'
+require "rubygems"
+require "puppetlabs_spec_helper/rake_tasks"
+require "rake"
+require "rspec/core/rake_task"
 
-Dir.glob('tasks/*.rake').each { |r| load r}
+Dir.glob("tasks/*.rake").each { |r| load r}
 
 RSpec::Core::RakeTask.new(:spec)
 
 # Run unit tests by default
-task :default => 'spec:suite:unit'
+task :default => "spec:suite:unit"
 
 # To run unit tests:                 bundle exec rake spec:suite:unit
 
 namespace :spec do
   namespace :suite do
-    desc 'Run all specs in unit spec suite'
-    RSpec::Core::RakeTask.new('unit') do |t|
-      t.pattern = './spec/unit/**/*_spec.rb'
+    desc "Run all specs in unit spec suite"
+    RSpec::Core::RakeTask.new("unit") do |t|
+      t.pattern = "./spec/unit/**/*_spec.rb"
     end
   end
 end

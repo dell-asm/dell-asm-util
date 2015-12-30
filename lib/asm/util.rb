@@ -1,12 +1,12 @@
-require 'io/wait'
-require 'hashie'
-require 'json'
-require 'open3'
-require 'socket'
-require 'timeout'
-require 'uri'
-require 'yaml'
-require 'time'
+require "io/wait"
+require "hashie"
+require "json"
+require "open3"
+require "socket"
+require "timeout"
+require "uri"
+require "yaml"
+require "time"
 
 module ASM
   # Use this instead of Thread.new, or your exceptions will disappear into the ether...
@@ -14,25 +14,24 @@ module ASM
     Thread.new do
       begin
         yield
-          # NOTE: really do want to rescue Exception and not StandardError here,
-          # otherwise these failures will not be logged anywhere.
-      rescue Exception => e
+      # NOTE: really do want to rescue Exception and not StandardError here,
+      # otherwise these failures will not be logged anywhere.
+      rescue Exception => e # rubocop:disable Lint/RescueException
         logger.error(e.message + "\n" + e.backtrace.join("\n"))
       end
     end
   end
 
   module Util
-
     # TODO: give razor user access to this directory
-    PUPPET_CONF_DIR='/etc/puppetlabs/puppet'
-    DEVICE_CONF_DIR="#{PUPPET_CONF_DIR}/devices"
-    NODE_DATA_DIR="#{PUPPET_CONF_DIR}/node_data"
-    DEVICE_SSL_DIR="/var/opt/lib/pe-puppet/devices"
-    DATABASE_CONF="#{PUPPET_CONF_DIR}/database.yaml"
+    PUPPET_CONF_DIR = "/etc/puppetlabs/puppet"
+    DEVICE_CONF_DIR = "#{PUPPET_CONF_DIR}/devices"
+    NODE_DATA_DIR = "#{PUPPET_CONF_DIR}/node_data"
+    DEVICE_SSL_DIR = "/var/opt/lib/pe-puppet/devices"
+    DATABASE_CONF = "#{PUPPET_CONF_DIR}/database.yaml"
     DEVICE_MODULE_PATH = "/etc/puppetlabs/puppet/modules"
-    INSTALLER_OPTS_DIR = '/opt/razor-server/tasks/'
-    DEVICE_LOG_PATH = '/opt/Dell/ASM/device'
+    INSTALLER_OPTS_DIR = "/opt/razor-server/tasks/"
+    DEVICE_LOG_PATH = "/opt/Dell/ASM/device"
 
     # Extract a server serial number from the certname.
     # For Dell servers, the serial number will be the service tag
@@ -47,11 +46,11 @@ module ASM
     # of the cert name must be exactly 7 chars in length for it to be
     # considered a Dell service tag.
     def self.dell_cert?(cert_name)
-      /^(blade|rack|fx|tower)server-.{7}$/ === cert_name
+      cert_name =~ /^(blade|rack|fx|tower)server-.{7}$/
     end
 
     def self.is_ip_address_accessible(ip_address)
-      system('ping -c 1 -w 1 ' + "#{ip_address}")
+      system("ping -c 1 -w 1 " + "#{ip_address}")
     end
 
     # Hack to figure out cert name from uuid.
@@ -59,27 +58,27 @@ module ASM
     # For UUID 4223-c288-0e73-104e-e6c0-31f5f65ad063
     # Shows up in puppet as VMware-42 23 c2 88 0 e 73 10 4 e-e6 c0 31 f5 f6 5 a d0 63
     def self.vm_uuid_to_serial_number(uuid)
-      without_dashes = uuid.gsub(/-/, '')
+      without_dashes = uuid.delete("-")
       raise("Invalid uuid #{uuid}") unless without_dashes.length == 32
       first_half = []
       last_half = []
-      ( 0 .. 7 ).each do |i|
+      (0..7).each do |i|
         start = i * 2
-        first_half.push(without_dashes[start .. start + 1])
+        first_half.push(without_dashes[start..start + 1])
         start = i * 2 + 16
-        last_half.push(without_dashes[start .. start + 1])
+        last_half.push(without_dashes[start..start + 1])
       end
       "VMware-#{first_half.join(' ')}-#{last_half.join(' ')}"
     end
 
-    def self.rescan_vmware_esxi(esx_endpoint,logger)
+    def self.rescan_vmware_esxi(esx_endpoint, logger)
       cmd = "storage core adapter rescan --all".split
-      ASM::Util.esxcli(cmd, esx_endpoint, logger, true,1200)
+      ASM::Util.esxcli(cmd, esx_endpoint, logger, true, 1200)
     end
 
     def self.first_host_ip
       Socket.ip_address_list.detect do |intf|
-        intf.ipv4? and !intf.ipv4_loopback? and !intf.ipv4_multicast?
+        intf.ipv4? && !intf.ipv4_loopback? && !intf.ipv4_multicast?
       end.ip_address
     end
 
@@ -92,13 +91,13 @@ module ASM
       preferred = nil
 
       while tries < max_tries
-        parts = %x[ip route get #{ipaddress}].split(/\s+/)
+        parts = `ip route get #{ipaddress}`.split(/\s+/)
 
         if position = parts.index("src")
           preferred = parts[position + 1]
           break
         else
-          puts("failed to determine target route from routing table: \n%s" % %x[ip route])
+          puts("failed to determine target route from routing table: \n%s" % `ip route`)
           sleep 1
         end
 
@@ -112,7 +111,6 @@ module ASM
       preferred
     end
 
-
     # Execute esxcli command and parse table into list of hashes.
     #
     # Example output:
@@ -122,34 +120,34 @@ module ASM
     # ----------------------  --------------  --------------  -------
     # Management Network      vSwitch0                     1        0
     # vMotion                 vSwitch1                     1       23
-    def self.esxcli(cmd_array, endpoint, logger = nil, skip_parsing = false, time_out = 600)
-      args = ["VI_PASSWORD=#{endpoint[:password]}","esxcli"]
-      args += [ '-s', endpoint[:host],
-        '-u', endpoint[:user]
-      ]
-      args += cmd_array.map { |arg| arg.to_s }
+    def self.esxcli(cmd_array, endpoint, logger=nil, skip_parsing=false, time_out=600)
+      args = ["VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
+      args += ["-s", endpoint[:host],
+               "-u", endpoint[:user]
+              ]
+      args += cmd_array.map(&:to_s)
 
       if logger
         tmp = args.dup
-        tmp[0] = 'VI_PASSWORD=******' # mask password
+        tmp[0] = "VI_PASSWORD=******" # mask password
         logger.debug("Executing esxcli #{tmp.join(' ')}")
       end
 
-      result = Timeout::timeout(time_out) do
-        ASM::Util.run_command_with_args('env', *args)
+      result = Timeout.timeout(time_out) do
+        ASM::Util.run_command_with_args("env", *args)
       end
 
-      unless result['exit_status'] == 0
+      unless result["exit_status"] == 0
         msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
         logger.error(msg) if logger
-        args[0] = 'VI_PASSWORD=******' # mask password
+        args[0] = "VI_PASSWORD=******" # mask password
         raise("#{msg}: esxcli #{args.join(' ')}: #{result.inspect}")
       end
 
       if skip_parsing
-        result['stdout']
+        result["stdout"]
       else
-        lines = result['stdout'].split(/\n/)
+        lines = result["stdout"].split(/\n/)
         if lines.size >= 2
           header_line = lines.shift
           seps = lines.shift.split
@@ -177,9 +175,9 @@ module ASM
       end
     end
 
-    def self.get_fcoe_adapters(esx_endpoint,logger=nil)
+    def self.get_fcoe_adapters(esx_endpoint, logger=nil)
       fcoe_adapters = []
-      fcoe_adapter = esxcli('fcoe nic list'.split, esx_endpoint,logger,true)
+      fcoe_adapter = esxcli("fcoe nic list".split, esx_endpoint, logger, true)
       if fcoe_adapter
         fcoe_adapter_match = fcoe_adapter.scan(/^(vmnic\d+)\s+/m)
         if fcoe_adapter_match
@@ -192,11 +190,11 @@ module ASM
     end
 
     def self.run_command_simple(cmd)
-      self.run_command(cmd)
+      run_command(cmd)
     end
 
     def self.run_command_with_args(cmd, *args)
-      self.run_command(cmd, *args)
+      run_command(cmd, *args)
     end
 
     # Executes a command with clean environment variables
@@ -209,22 +207,20 @@ module ASM
       args.last.is_a?(Hash) ? env_vars = args.pop : env_vars = {}
       new_args = []
       %w(BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT).each do |e|
-        new_args.insert(0,"--unset=#{e}")
+        new_args.insert(0, "--unset=#{e}")
       end
       new_args.push(cmd)
-      if args
-        new_args.push(*args)
-      end
+      new_args.push(*args) if args
       if fail_on_error
-        run_command_success(env_vars, '/bin/env', *new_args)
+        run_command_success(env_vars, "/bin/env", *new_args)
       else
-        run_command(env_vars, '/bin/env' , *new_args)
+        run_command(env_vars, "/bin/env", *new_args)
       end
     end
 
     def self.run_command_success(cmd, *args)
-      result = self.run_command(cmd, *args)
-      raise(RuntimeError, "Command failed: #{cmd}\n#{result.stdout}\n#{result.stderr}") unless result.exit_status == 0
+      result = run_command(cmd, *args)
+      raise("Command failed: #{cmd}\n#{result.stdout}\n#{result.stderr}") unless result.exit_status == 0
       result
     end
 
@@ -244,7 +240,7 @@ module ASM
     # Run cmd by passing it to the shell and stream stdout and stderr
     # to the specified outfile
     def self.run_command_streaming(cmd, outfile)
-      File.open(outfile, 'a') do |fh|
+      File.open(outfile, "a") do |fh|
         Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
           stdin.close
 
@@ -273,24 +269,21 @@ module ASM
     def self.block_and_retry_until_ready(timeout, exceptions=nil, max_sleep=nil, logger=nil, &block)
       failures = 0
       sleep_time = 0
-      status = Timeout::timeout(timeout) do
+      Timeout.timeout(timeout) do
         begin
           yield
         rescue => e
 
           exceptions = Array(exceptions)
-          if ! exceptions.empty? and (
-            exceptions.include?(key = e.class) or
-            exceptions.include?(key = key.name.to_s) or
+          if !exceptions.empty? && (
+            exceptions.include?(key = e.class) ||
+            exceptions.include?(key = key.name.to_s) ||
             exceptions.include?(key = key.to_sym)
-         )
-            then
+          )
             logger.info("Caught exception #{e.class}: #{e}") if logger
             failures += 1
-            sleep_time     = (((2 ** failures) -1) * 0.1)
-            if max_sleep and (sleep_time > max_sleep)
-              sleep_time = max_sleep
-            end
+            sleep_time = (((2**failures) - 1) * 0.1)
+            sleep_time = max_sleep if max_sleep && (sleep_time > max_sleep)
             sleep sleep_time
             retry
           else
@@ -305,14 +298,14 @@ module ASM
     # This method ensures we get a single-element array in that case
     def self.asm_json_array(elem)
       if elem.is_a?(Hash)
-        [ elem ]
+        [elem]
       else
         elem
       end
     end
 
     def self.to_boolean(b)
-      if(b.is_a?(String))
+      if b.is_a?(String)
         b.downcase == "true"
       else
         b
@@ -322,38 +315,39 @@ module ASM
     def self.sanitize(hash)
       ret = hash.dup
       ret.each do |key, value|
-        if value.is_a? (Hash)
+        if value.is_a?(Hash)
           ret[key] = sanitize(value)
-        elsif key.to_s.downcase.include? ('password')
-          ret[key] = '******'
+        elsif key.to_s.downcase.include?("password")
+          ret[key] = "******"
         end
       end
     end
 
     def self.hostname_to_certname(hostname)
-      "agent-%s" % hostname.downcase.gsub(/[*'_\/!~`@#%^&()$]/,'')
+      "agent-%s" % hostname.downcase.gsub(%r{[*'_/!~`@#%^&()$]}, "")
     end
 
     def self.load_file(filename, base_dir=INSTALLER_OPTS_DIR)
       filepath = File.join(base_dir, filename)
-      if File.exists?(filepath)
+      result = {}
+      if File.exist?(filepath)
         if File.extname(filename) == ".yaml"
           result = YAML.load_file(filepath)
         else
           result = File.read(filepath)
         end
       end
-      result ||= {}
+      result
     end
 
     def self.hyperv_cluster_hostgroup(cert_name, cluster_name)
       conf = ASM::DeviceManagement.parse_device_config(cert_name)
-      domain, user = conf['user'].split('\\')
-      cmd = File.join(File.dirname(__FILE__),'scvmm_cluster_information.rb')
-      args = [cmd, '-u', user, '-d', domain, '-p', conf['password'], '-s', conf['host'], '-c', cluster_name]
+      domain, user = conf["user"].split('\\')
+      cmd = File.join(File.dirname(__FILE__), "scvmm_cluster_information.rb")
+      args = [cmd, "-u", user, "-d", domain, "-p", conf["password"], "-s", conf["host"], "-c", cluster_name]
       result = ASM::Util.run_with_clean_env("/opt/puppet/bin/ruby", false, *args)
-      host_group = 'All Hosts'
-      result.stdout.split("\n").reject{|l|l.empty? || l == "\r"}.drop(2).each do |line|
+      host_group = "All Hosts"
+      result.stdout.split("\n").reject {|l| l.empty? || l == "\r"}.drop(2).each do |line|
         host_group = $1 if line.strip.match(/hostgroup\s*:\s+(.*)?$/i)
       end
       host_group

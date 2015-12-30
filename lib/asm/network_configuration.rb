@@ -50,7 +50,7 @@ module ASM
     attr_accessor(:cards)
     attr_accessor(:teams)
 
-    def initialize(network_config_hash, logger = nil)
+    def initialize(network_config_hash, logger=nil)
       @mash = Hashie::Mash.new(network_config_hash)
       @logger = logger
       @cards = self.munge!
@@ -106,7 +106,7 @@ module ASM
       end.flatten
     end
 
-    def get_all_partitions
+    def get_all_partitions # rubocop:disable Style/AccessorMethodName
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
           port.partitions.find_all do |partition|
@@ -116,12 +116,10 @@ module ASM
       end.flatten
     end
 
-    def get_all_fqdds
+    def get_all_fqdds # rubocop:disable Style/AccessorMethodName
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
-          port.partitions.collect do |partition|
-            partition.fqdd
-          end
+          port.partitions.collect(&:fqdd)
         end
       end.flatten
     end
@@ -148,7 +146,7 @@ module ASM
       if ret.size == 1
         ret[0]
       else
-        raise("There should be only one #{network_type} network but found #{ret.size}: #{ret.collect { |n| n.name }}")
+        raise("There should be only one #{network_type} network but found #{ret.size}: #{ret.collect(&:name)}")
       end
     end
 
@@ -162,7 +160,7 @@ module ASM
 
     # TODO:  This function needs to be removed once the switch/blade code in asm-deployer is refactored
     def is_blade?
-      @mash.servertype == 'blade'
+      @mash.servertype == "blade"
     end
 
     def munge!
@@ -175,57 +173,55 @@ module ASM
       unless source.nil?
         source.each do |orig_card|
           # For now we are discarding FC interfaces!
-          if ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != 'fc'
-            card = Hashie::Mash.new(orig_card)
-            card.interfaces = []
-            card.nictype = NicType.new(card.nictype)
-            orig_card.interfaces.each do |orig_interface|
-              interface = Hashie::Mash.new(orig_interface)
-              interface.partitions = []
-              port_no = name_to_port(orig_interface.name).to_i
-              # Assuming all 10Gb ports enumerate first, which is currently the
-              # case but may not always be...
-              n_ports = card.nictype.n_10gb_ports
-              max_partitions = card.nictype.n_partitions
-              if n_ports >= port_no
-                orig_interface.interface_index = interface_i
-                interface_i += 1
-                orig_interface.partitions.each do |partition|
-                  partition_no = name_to_partition(partition.name)
-                  # at some point the partitioned flag moved from the interface
-                  # to the card (which is the correct place, all ports must be
-                  # either partitioned or not)
-                  partitioned = card.partitioned || interface.partitioned
-                  if partition_no == 1 || (partitioned && partition_no <= max_partitions)
-                    if is_blade?
-                      partition.fabric_letter = name_to_fabric(card.name)
-                    end
-                    partition.port_no = port_no
-                    partition.partition_no = partition_no
-                    partition.partition_index = partition_i
-                    partition_i += 1
+          next unless ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != "fc"
 
-                    # Strip networkObject ipRange which can vary for the same network,
-                    # making it difficult to determine network uniqueness
-                    partition.networkObjects = (partition.networkObjects || []).map do |network|
-                      network = network.dup
-                      if network.staticNetworkConfiguration
-                        network.staticNetworkConfiguration = network.staticNetworkConfiguration.dup
-                        network.staticNetworkConfiguration.delete('ipRange')
-                      end
-                      network
-                    end
+          card = Hashie::Mash.new(orig_card)
+          card.interfaces = []
+          card.nictype = NicType.new(card.nictype)
+          orig_card.interfaces.each do |orig_interface|
+            interface = Hashie::Mash.new(orig_interface)
+            interface.partitions = []
+            port_no = name_to_port(orig_interface.name).to_i
+            # Assuming all 10Gb ports enumerate first, which is currently the
+            # case but may not always be...
+            n_ports = card.nictype.n_10gb_ports
+            max_partitions = card.nictype.n_partitions
+            next unless n_ports >= port_no
 
-                    interface.partitions.push(partition)
-                  end
+            orig_interface.interface_index = interface_i
+            interface_i += 1
+            orig_interface.partitions.each do |partition|
+              partition_no = name_to_partition(partition.name)
+              # at some point the partitioned flag moved from the interface
+              # to the card (which is the correct place, all ports must be
+              # either partitioned or not)
+              partitioned = card.partitioned || interface.partitioned
+              next unless partition_no == 1 || (partitioned && partition_no <= max_partitions)
+
+              partition.fabric_letter = name_to_fabric(card.name) if is_blade?
+              partition.port_no = port_no
+              partition.partition_no = partition_no
+              partition.partition_index = partition_i
+              partition_i += 1
+
+              # Strip networkObject ipRange which can vary for the same network,
+              # making it difficult to determine network uniqueness
+              partition.networkObjects = (partition.networkObjects || []).map do |network|
+                network = network.dup
+                if network.staticNetworkConfiguration
+                  network.staticNetworkConfiguration = network.staticNetworkConfiguration.dup
+                  network.staticNetworkConfiguration.delete("ipRange")
                 end
-                card.interfaces.push(interface)
+                network
               end
+
+              interface.partitions.push(partition)
             end
-            card.card_index = card_i
-            card_i += 1
-            cards.push(card)
+            card.interfaces.push(interface)
           end
+          card.card_index = card_i
+          card_i += 1
+          cards.push(card)
         end
       end
       cards
@@ -260,7 +256,7 @@ module ASM
     # based off of the partition 1 fqdd. This allows the partitions to be used
     # directly for generating partitioned config.xml data even when the server
     # nics are not currently partitioned.
-    def add_nics!(endpoint, options = {})
+    def add_nics!(endpoint, options={})
       options = {:add_partitions => false}.merge(options)
       nics = NicInfo.fetch(endpoint, logger)
 
@@ -277,12 +273,12 @@ module ASM
           card.interfaces.each do |interface|
             interface.partitions.each do |partition|
               partition_no = name_to_partition(partition.name)
-              nic_partition = nic.find_partition(name_to_port(interface.name).to_s , partition_no.to_s)
+              nic_partition = nic.find_partition(name_to_port(interface.name).to_s, partition_no.to_s)
               if nic_partition
                 partition.fqdd = nic_partition.nic_view["FQDD"]
                 partition.mac_address = nic_partition.nic_view["CurrentMACAddress"]
               elsif partition_no > 1 && options[:add_partitions]
-                first_partition = nic.find_partition(name_to_port(interface.name).to_s , "1")
+                first_partition = nic.find_partition(name_to_port(interface.name).to_s, "1")
                 partition.fqdd = first_partition.create_with_partition(partition_no).fqdd
               end
             end
@@ -292,26 +288,27 @@ module ASM
 
       unless missing.empty?
         card_list = missing.map { |card| "%s (%s)" % [card.name, card.nictype.nictype] }.join(", ")
-        available_list = "available: %s" % nics.map { |nic| "%s (%s%s)" %
-            [nic.card_prefix, nic.nic_type, !nic.disabled? ? "" : ", disabled"] }.join(", ")
+        available_list = "available: %s" % nics.map do |nic|
+          "%s (%s%s)" % [nic.card_prefix, nic.nic_type, !nic.disabled? ? "" : ", disabled"]
+        end.join(", ")
         raise("Missing NICs for %s; %s" % [card_list, nics.empty? ? "none found" : available_list])
       end
     end
 
-    #resets virtual mac addresses of partitions to their permanent mac address
+    # resets virtual mac addresses of partitions to their permanent mac address
     def reset_virt_mac_addr(endpoint)
       permanent_macs = ASM::WsMan.get_permanent_mac_addresses(endpoint, logger)
       get_all_partitions.each do |partition|
-        partition['lanMacAddress'] = permanent_macs[partition.fqdd]
-        partition['iscsiMacAddress'] = permanent_macs[partition.fqdd]
-        partition['iscsiIQN'] = ''
+        partition["lanMacAddress"] = permanent_macs[partition.fqdd]
+        partition["iscsiMacAddress"] = permanent_macs[partition.fqdd]
+        partition["iscsiIQN"] = ""
         partition.networkObjects.each do |net|
-          if net.static
-            static_net = net.staticNetworkConfiguration
-            static_net.gateway = '0.0.0.0'
-            static_net.subnet = '0.0.0.0'
-            static_net.ipAddress = '0.0.0.0'
-          end
+          next unless net.static
+
+          static_net = net.staticNetworkConfiguration
+          static_net.gateway = "0.0.0.0"
+          static_net.subnet = "0.0.0.0"
+          static_net.ipAddress = "0.0.0.0"
         end
       end
     end
@@ -324,34 +321,33 @@ module ASM
     #   { [ :TeamInfo => { :networks => [...], :mac_addresses => [ ... ] ] }
     def teams
       @teams ||= begin
-        err_msg = 'NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!'
+        err_msg = "NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!"
         raise(err_msg) unless @network_config_add_nic
         network_info = {}
         partitions = get_all_partitions
         unless partitions.empty?
           partitions.each do |partition|
             networks = begin
-              (partition.networkObjects || []).collect {
-                  |network| network.staticNetworkConfiguration.delete('ipRange') if !network.staticNetworkConfiguration.nil?
-              }
-              partition.networkObjects.reject { |network| network.type == 'PXE' }
+              (partition.networkObjects || []).collect do |network|
+                network.staticNetworkConfiguration.delete("ipRange") unless network.staticNetworkConfiguration.nil?
+              end
+              partition.networkObjects.reject { |network| network.type == "PXE" }
             end.flatten.uniq.compact
 
             # Need to find partitions which has same set of networks, for team
-            if networks && !networks.empty?
-              network_info[networks] ||= []
-              networks = networks.sort_by { |k| k["id"] }
-              network_info[networks].push(partition.mac_address)
-            end
+            next unless networks && !networks.empty?
+
+            network_info[networks] ||= []
+            networks = networks.sort_by { |k| k["id"] }
+            network_info[networks].push(partition.mac_address)
           end
         end
         @teams = []
-        network_info.each do |network,macs|
-          @teams.push({:networks => network , :mac_addresses => macs})
+        network_info.each do |network, macs|
+          @teams.push(:networks => network, :mac_addresses => macs)
         end
         @teams
       end
     end
-
   end
 end

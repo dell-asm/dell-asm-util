@@ -3,9 +3,8 @@ module ASM
     # NicPort encapsulates information about a server NIC port such as link speed
     # and the number of NPAR partitions available on that port.
     class NicPort
-
       # The iDrac NICView LinkSpeed values
-      LINK_SPEEDS = [ "Unknown", "10 Mbps", "100 Mbps", "1000 Mbps", "2.5 Gbps", "10 Gbps", "20 Gbps", "40 Gbps", "100 Gbps" ]
+      LINK_SPEEDS = ["Unknown", "10 Mbps", "100 Mbps", "1000 Mbps", "2.5 Gbps", "10 Gbps", "20 Gbps", "40 Gbps", "100 Gbps"]
 
       attr_reader :link_speed, :n_ports, :nic_info
 
@@ -15,7 +14,7 @@ module ASM
       # @param n_ports [FixNum] the number of ports on the physical NIC
       # @param logger [Logger] logger to use for log messages
       # @return [NicPort]
-      def initialize(nic_view, n_ports, logger = nil)
+      def initialize(nic_view, n_ports, logger=nil)
         @nic_info = nic_view
         @n_ports = n_ports
         nic_view = nic_view.nic_view
@@ -120,7 +119,7 @@ module ASM
       end
 
       def <=>(other)
-        self.nic_info <=> other.nic_info
+        nic_info <=> other.nic_info
       end
     end
   end

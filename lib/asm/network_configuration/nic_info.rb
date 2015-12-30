@@ -14,7 +14,7 @@ module ASM
       # @param logger [Logger] logger to use for log messages
       # @return [Array<NicInfo>] the NICs on the specified server
       # @raise [StandardError] when an error occurs retrieving the NIC information
-      def self.fetch(endpoint, logger = nil)
+      def self.fetch(endpoint, logger=nil)
         nic_views = ASM::WsMan.get_nic_view(endpoint, logger)
         bios_info = ASM::WsMan.get_bios_enumeration(endpoint, logger)
         NicInfo.create(nic_views, bios_info, logger)
@@ -28,7 +28,7 @@ module ASM
       # @return [Array<NicInfo>] the NIC info
       # @raise [StandardError] when the nic_views are inconsistent
       # @api private
-      def self.create(nic_views, bios_info, logger = nil)
+      def self.create(nic_views, bios_info, logger=nil)
         prefix_to_views = {}
         nic_views.each do |nic_view|
           i = NicView.new(nic_view)
@@ -52,7 +52,7 @@ module ASM
       # @return [NicInfo] the NicInfo
       # @raise [StandardError] when the nic_views are inconsistent
       # @api private
-      def initialize(nic_views, bios_info, logger = nil)
+      def initialize(nic_views, bios_info, logger=nil)
         @nic_views = nic_views.sort
         NicInfo.validate_nic_views(nic_views)
 
@@ -149,7 +149,7 @@ module ASM
       def n_partitions
         ports_10gb = ports.find_all { |port| port.link_speed == "10 Gbps" }
         return 1 if ports_10gb.empty? # Only 10Gb NICs support NPAR
-        ns = ports_10gb.map { |port| port.n_partitions }.uniq
+        ns = ports_10gb.map(&:n_partitions).uniq
         return ns.first if ns.size == 1
         raise("Different 10Gb NIC ports on %s reported different number of partitions: %s" %
                   [card_prefix, ports_10gb.map { |p| "NIC: %s # partitions: %s" % [p.model, p.n_partitions] }.join(", ")])
@@ -171,7 +171,7 @@ module ASM
       end
 
       def <=>(other)
-        self.ports.first <=> other.ports.first
+        ports.first <=> other.ports.first
       end
     end
   end

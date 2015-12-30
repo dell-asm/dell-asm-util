@@ -1,6 +1,5 @@
-require 'spec_helper'
-require 'asm/network_configuration'
-
+require "spec_helper"
+require "asm/network_configuration"
 
 describe ASM::NetworkConfiguration::NicInfo do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
@@ -9,7 +8,7 @@ describe ASM::NetworkConfiguration::NicInfo do
     1.upto(4).map do |i|
       {"FQDD" => "NIC.Integrated.1-%d-1" % i,
        "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-       "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+       "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
        "VendorName" => "Broadcom",
        "ProductName" => "57840"}
     end
@@ -19,7 +18,7 @@ describe ASM::NetworkConfiguration::NicInfo do
       1.upto(4).map do |partition|
         {"FQDD" => "NIC.Integrated.1-%d-%d" % [port, partition],
          "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % port,
-         "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %port,
+         "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % port,
          "VendorName" => "Broadcom",
          "ProductName" => "57810"}
       end
@@ -29,7 +28,7 @@ describe ASM::NetworkConfiguration::NicInfo do
     1.upto(2).map do |i|
       {"FQDD" => "NIC.Mezzanine.2B-%d-1" % i,
        "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-       "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+       "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
        "VendorName" => "Broadcom",
        "ProductName" => "57810"}
     end
@@ -141,10 +140,10 @@ describe ASM::NetworkConfiguration::NicInfo do
       end
 
       it "should recognize 2x1Gb" do
-        nic_views = 1.upto(2).map do |i|
+        1.upto(2).map do |i|
           {"FQDD" => "NIC.Embedded.1-%d-1" % i,
            "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
            "LinkSpeed" => "3"}
         end
         nic_info = build_nic_info(integrated_2x10gb_partitioned_nic_views)
@@ -160,7 +159,7 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_views = 1.upto(4).map do |i|
           {"FQDD" => "NIC.Integrated.1-%d-1" % i,
            "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
            "LinkSpeed" => i < 3 ? "5" : "3"}
         end
         nic_info = build_nic_info(nic_views)
@@ -171,7 +170,7 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_views = 1.upto(2).map do |i|
           {"FQDD" => "NIC.Integrated.1-%d-1" % i,
            "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i}
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i}
         end
         nic_info = build_nic_info(nic_views)
         # unknown because no LinkSpeed or known vendor/model
@@ -184,7 +183,7 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_views = 1.upto(2).map do |i|
           {"FQDD" => "NIC.Slot.1-%d-1" % i,
            "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
            "LinkSpeed" => "3"}
         end
         nic_info = build_nic_info(nic_views)
@@ -200,7 +199,7 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_views = 1.upto(4).map do |i|
           {"FQDD" => "NIC.Integrated.1-%d-1" % i,
            "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
-           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" %i,
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
            "VendorName" => "Broadcom",
            "ProductName" => "57800"}
         end
@@ -215,7 +214,7 @@ describe ASM::NetworkConfiguration::NicInfo do
         mezz2 = build_nic_info(mezz_2x10gb_nic_views)
         expect(integrated1 <=> mezz2).to eq(-1)
         expect(mezz2 <=> integrated1).to eq(1)
-        expect(mezz2 <=> mezz2).to eq(0)
+        expect(mezz2 <=> mezz2.dup).to eq(0)
       end
     end
   end
