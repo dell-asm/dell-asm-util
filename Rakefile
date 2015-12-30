@@ -7,10 +7,10 @@ Dir.glob("tasks/*.rake").each { |r| load r}
 
 RSpec::Core::RakeTask.new(:spec)
 
-# Run unit tests by default
-task :default => "spec:suite:unit"
+# Run unit tests and rubocopy checks by default
+task :default => ["spec:suite:unit", "rubocop"]
 
-# To run unit tests:                 bundle exec rake spec:suite:unit
+# To run unit tests: bundle exec rake spec:suite:unit
 
 namespace :spec do
   namespace :suite do
