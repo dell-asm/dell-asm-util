@@ -7,7 +7,7 @@ module ASM
 
       attr_accessor :nic_view
 
-      def initialize(fqdd, logger = nil)
+      def initialize(fqdd, logger=nil)
         if fqdd.is_a?(Hash)
           @nic_view = fqdd
           fqdd = fqdd["FQDD"]
@@ -26,16 +26,16 @@ module ASM
       end
 
       def card_to_fabric(card)
-        ['A', 'B', 'C'][card.to_i - 1]
+        ["A", "B", "C"][card.to_i - 1]
       end
 
       def parse_fqdd(fqdd, logger)
         ret = Hashie::Mash.new
         # Expected format: NIC.Mezzanine.2B-1-1
         ret.fqdd = fqdd
-        (_, ret.type, port_info) = ret.fqdd.split('.')
-        (ret.card, ret.port, ret.partition_no) = port_info.split('-')
-        ret.partition_no = '1' if ret.partition_no.nil?
+        (_, ret.type, port_info) = ret.fqdd.split(".")
+        (ret.card, ret.port, ret.partition_no) = port_info.split("-")
+        ret.partition_no = "1" if ret.partition_no.nil?
         if ret.card =~ /([0-9])([A-Z])/
           orig_card = ret.card
           ret.card = $1
@@ -45,9 +45,9 @@ module ASM
             logger.warn("Mismatched fabric information for #{orig_card}: #{ret.fabric} versus #{expected_fabric}") if logger
           end
         else
-          if ret.type == 'Embedded'
+          if ret.type == "Embedded"
             ret.port = ret.card
-            ret.card = '1'
+            ret.card = "1"
           end
           ret.fabric = card_to_fabric(ret.card)
         end
@@ -63,13 +63,13 @@ module ASM
       end
 
       def <=>(other)
-        ret = self.type <=> other.type
+        ret = type <=> other.type
         if ret == 0
-          ret = Integer(self.card) <=> Integer(other.card)
+          ret = Integer(card) <=> Integer(other.card)
           if ret == 0
-            ret = Integer(self.port) <=> Integer(other.port)
+            ret = Integer(port) <=> Integer(other.port)
             if ret == 0
-              ret = Integer(self.partition_no) <=> Integer(other.partition_no)
+              ret = Integer(partition_no) <=> Integer(other.partition_no)
             end
           end
         end
