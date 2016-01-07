@@ -1,5 +1,6 @@
 # coding: utf-8
 require "pathname"
+require "asm/network_configuration/nic_info"
 require "asm/util"
 require "rexml/document"
 require "hashie"
@@ -275,24 +276,6 @@ module ASM
       end.compact
     end
 
-    # Returns true if the NIC can be used in an ASM deployment, false otherwise.
-    #
-    # Criteria are:
-    #
-    # 1. NICs are excluded it their PermanentMACAddress is nil. Recent NIC / iDrac
-    #    firmwares have started returning disabled NICs in the nic_view data, but
-    #    their PermanentMACAddress will be nil.
-    # 2. FQDD includes Embedded. Embedded NICs are not supported unless they are 57810
-    # 3. Product is Broadcom 57800. These are 2x10Gb, 2x1Gb NICs
-    # 4. NIC is not disabled in the BIOS.
-    def self.is_usable_nic?(nic_info, bios_info)
-      unsupported_embedded = nic_info["FQDD"].include?("Embedded") && !nic_info["ProductName"].include?("57810")
-      !nic_info["PermanentMACAddress"].nil? &&
-        !unsupported_embedded &&
-        !nic_info["ProductName"].match(/(Broadcom|QLogic).*5720/) &&
-        !nic_status(nic_info["FQDD"], bios_info).match(/disabled/i)
-    end
-
     def self.nic_status(fqdd, bios_info)
       fqdd_display = bios_display_name(fqdd)
       nic_enabled = "Enabled"
@@ -319,33 +302,39 @@ module ASM
       display_name
     end
 
-    # Return all the server MAC Address along with the interface location
-    # in a hash format
+    # Return all 10Gb, enabled current server MAC Address along with the interface
+    # location in a hash format.
+    #
+    # @deprecated Use {ASM::NetworkConfiguration::NicInfo} instead to find NIC capabilities
     def self.get_mac_addresses(endpoint, logger=nil)
-      bios_info = get_bios_enumeration(endpoint, logger)
-      ret = get_nic_view(endpoint, logger).inject({}) do |result, element|
-        result[element["FQDD"]] = select_mac_address(element) if is_usable_nic?(element, bios_info)
-        result
+      nics = NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+      ret = {}
+      nics.reject(&:disabled?).each do |nic|
+        nic.ports.each do |port|
+          next unless port.link_speed == "10 Gbps"
+          port.partitions.each do |partition|
+            ret[partition.fqdd] = partition.mac_address
+          end
+        end
       end
       logger.debug("********* MAC Address List is #{ret.inspect} **************") if logger
       ret
     end
 
-    def self.select_mac_address(element)
-      if element["CurrentMACAddress"] != "00:00:00:00:00:00"
-        element["CurrentMACAddress"]
-      elsif element["PermanentMACAddress"]
-        element["PermanentMACAddress"]
-      end
-    end
-
+    # Return all 10Gb, enabled permanent server MAC Address along with the interface
+    # location in a hash format.
+    #
+    # @deprecated Use {ASM::NetworkConfiguration::NicInfo} instead to find NIC capabilities
     def self.get_permanent_mac_addresses(endpoint, logger=nil)
-      bios_info = get_bios_enumeration(endpoint, logger)
-      ret = get_nic_view(endpoint, logger).inject({}) do |result, element|
-        unless element["FQDD"].include?("Embedded")
-          result[element["FQDD"]] = element["PermanentMACAddress"] if is_usable_nic?(element, bios_info)
+      nics = NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+      ret = {}
+      nics.reject(&:disabled?).each do |nic|
+        nic.ports.each do |port|
+          next unless port.link_speed == "10 Gbps"
+          port.partitions.each do |partition|
+            ret[partition.fqdd] = partition["PermanentMACAddress"]
+          end
         end
-        result
       end
       logger.debug("********* MAC Address List is #{ret.inspect} **************") if logger
       ret

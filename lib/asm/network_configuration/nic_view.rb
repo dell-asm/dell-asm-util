@@ -5,24 +5,26 @@ module ASM
     class NicView
       include Comparable
 
-      attr_accessor :nic_view
+      attr_reader :fqdd, :type, :card, :port, :partition_no, :fabric
 
       def initialize(fqdd, logger=nil)
         if fqdd.is_a?(Hash)
-          @nic_view = fqdd
+          @raw_nic_view = fqdd
           fqdd = fqdd["FQDD"]
         end
-        @mash = parse_fqdd(fqdd, logger)
+        @raw_nic_view ||= {"FQDD" => fqdd}
+        parse_fqdd(fqdd, logger)
       end
 
       # Create a new NicInfo based off self but with a different partition
       def create_with_partition(partition)
-        NicView.new(@mash.fqdd.gsub(/[-]\d+$/, "-#{partition}"))
+        NicView.new(fqdd.gsub(/[-]\d+$/, "-#{partition}"))
       end
 
-      # Forward methods we don't define directly to the mash
+      # Forward [] method directly to raw NICView hash data
       def method_missing(sym, *args, &block)
-        @mash.send(sym, *args, &block)
+        return @raw_nic_view.send(sym, *args, &block) if sym == :[]
+        super
       end
 
       def card_to_fabric(card)
@@ -30,32 +32,45 @@ module ASM
       end
 
       def parse_fqdd(fqdd, logger)
-        ret = Hashie::Mash.new
         # Expected format: NIC.Mezzanine.2B-1-1
-        ret.fqdd = fqdd
-        (_, ret.type, port_info) = ret.fqdd.split(".")
-        (ret.card, ret.port, ret.partition_no) = port_info.split("-")
-        ret.partition_no = "1" if ret.partition_no.nil?
-        if ret.card =~ /([0-9])([A-Z])/
-          orig_card = ret.card
-          ret.card = $1
-          ret.fabric = $2
+        @fqdd = fqdd
+        (_, @type, port_info) = @fqdd.split(".")
+        (@card, @port, @partition_no) = port_info.split("-")
+        @partition_no = "1" if @partition_no.nil?
+        if @card =~ /([0-9])([A-Z])/
+          orig_card = @card
+          @card = $1
+          @fabric = $2
           expected_fabric = card_to_fabric(orig_card)
-          if ret.fabric != expected_fabric
-            logger.warn("Mismatched fabric information for #{orig_card}: #{ret.fabric} versus #{expected_fabric}") if logger
+          if @fabric != expected_fabric
+            logger.warn("Mismatched fabric information for #{orig_card}: #{@fabric} versus #{expected_fabric}") if logger
           end
         else
-          if ret.type == "Embedded"
-            ret.port = ret.card
-            ret.card = "1"
+          if @type == "Embedded"
+            @port = @card
+            @card = "1"
           end
-          ret.fabric = card_to_fabric(ret.card)
+          @fabric = card_to_fabric(@card)
         end
-        ret
+      end
+
+      def self.empty_mac?(mac)
+        mac.nil? || mac.empty? || mac == "00:00:00:00:00:00"
+      end
+
+      # The current mac address
+      #
+      # @return [String]
+      def mac_address
+        if NicView.empty_mac?(self["CurrentMACAddress"])
+          self["PermanentMACAddress"]
+        elsif self["PermanentMACAddress"]
+          self["CurrentMACAddress"]
+        end
       end
 
       def card_prefix
-        "NIC.#{@mash.type}.#{@mash.card}"
+        "NIC.%s.%s" % [type, card]
       end
 
       def to_s

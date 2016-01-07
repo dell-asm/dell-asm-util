@@ -50,8 +50,8 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_views.reverse
         ret = ASM::NetworkConfiguration::NicInfo.create(nic_views, [], logger)
         expect(ret.size).to eq(2)
-        expect(ret[0].model).to eq("57840")
-        expect(ret[1].model).to eq("57810")
+        expect(ret[0].product).to eq("57840")
+        expect(ret[1].product).to eq("57810")
       end
     end
 
@@ -127,6 +127,15 @@ describe ASM::NetworkConfiguration::NicInfo do
         expect(nic_info.disabled?).to eq(true)
       end
 
+      it "should return true if all the PermanentMACAddress fields are nil" do
+        raw_nic_views = integrated_2x10gb_partitioned_nic_views.map do |v|
+          v["PermanentMACAddress"] = nil
+          v
+        end
+        nic_info = build_nic_info(raw_nic_views)
+        expect(nic_info.disabled?).to eq(true)
+      end
+
       it "should return false otherwise" do
         nic_info.expects(:nic_status).returns("Enabled")
         expect(nic_info.disabled?).to eq(false)
@@ -175,6 +184,20 @@ describe ASM::NetworkConfiguration::NicInfo do
         nic_info = build_nic_info(nic_views)
         # unknown because no LinkSpeed or known vendor/model
         expect(nic_info.nic_type).to eq("unknown")
+      end
+    end
+
+    describe "#split" do
+      it "should split where the block returns true" do
+        ASM::NetworkConfiguration::NicInfo.split([2, 3, 4, 5, 6], &:odd?).should eq([[2], [3, 4], [5, 6]])
+      end
+
+      it "should not start with an empty list when block returns true for 1st element" do
+        ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4], &:odd?).should eq([[1, 2], [3, 4]])
+      end
+
+      it "should not end with list of last element when block returns true for last element" do
+        ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4, 5], &:odd?).should eq([[1, 2], [3, 4], [5]])
       end
     end
 

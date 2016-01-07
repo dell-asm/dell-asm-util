@@ -1,4 +1,5 @@
 require "asm/network_configuration/nic_port"
+require "asm/network_configuration/nic_view"
 
 module ASM
   class NetworkConfiguration
@@ -41,7 +42,7 @@ module ASM
         end.sort
       end
 
-      attr_accessor :card_prefix, :vendor, :model, :ports, :nic_views, :nic_status
+      attr_accessor :card_prefix, :ports, :nic_views, :nic_status
 
       # Creates a NicInfo
       #
@@ -58,15 +59,42 @@ module ASM
 
         port1 = nic_views.first
         @card_prefix ||= port1.card_prefix
-        @vendor ||= port1.nic_view["VendorName"] # WARNING: sometimes this is missing! use PCIVendorID?
-        @model ||= port1.nic_view["ProductName"]
 
-        port_nic_views = nic_views.find_all { |i| i.partition_no == "1"}
-        @ports = port_nic_views.map do |nic_view|
-          NicPort.new(nic_view, port_nic_views.size, logger)
+        port_nic_views = NicInfo.split(nic_views) { |i| i.partition_no == "1"}
+        @ports = port_nic_views.map do |partition_nic_views|
+          NicPort.new(partition_nic_views, port_nic_views.size, logger)
         end
 
         @nic_status = ASM::WsMan.nic_status(port1.fqdd, bios_info)
+      end
+
+      # The NIC card model
+      #
+      # @return [String]
+      def product
+        ports.first.product
+      end
+
+      # Split a list where the passed block returns true
+      #
+      # @example
+      #     list = [1, 2, 4, 5, 3, 8]
+      #     split(list) { |e| e.odd? } # => [[1, 2, 4], [5], [3, 8]]
+      #
+      # @param list [Enumerable]
+      # @return [Array]
+      def self.split(list)
+        ret = []
+        curr = []
+        list.each_with_index do |val, index|
+          if yield(val)
+            ret << curr unless index == 0
+            curr = []
+          end
+          curr << val
+        end
+        ret << curr
+        ret
       end
 
       # Validates that the NIC NicView information is consistent
@@ -115,7 +143,7 @@ module ASM
       #
       # @return [Boolean]
       def disabled?
-        !!(nic_status =~ /disabled/i)
+        !!(nic_status =~ /disabled/i) || nic_views.all? { |e| NicView.empty_mac?(e["PermanentMACAddress"]) }
       end
 
       # If all ports have the same link speed
@@ -152,7 +180,7 @@ module ASM
         ns = ports_10gb.map(&:n_partitions).uniq
         return ns.first if ns.size == 1
         raise("Different 10Gb NIC ports on %s reported different number of partitions: %s" %
-                  [card_prefix, ports_10gb.map { |p| "NIC: %s # partitions: %s" % [p.model, p.n_partitions] }.join(", ")])
+                  [card_prefix, ports_10gb.map { |p| "NIC: %s # partitions: %s" % [p.product, p.n_partitions] }.join(", ")])
       end
 
       # Returns the {NicView} for a specified port and partition
@@ -167,7 +195,7 @@ module ASM
       end
 
       def to_s
-        "#<ASM::NetworkConfiguration::NicInfo %s type: %s model: %s>" % [card_prefix, nic_type, model]
+        "#<ASM::NetworkConfiguration::NicInfo %s type: %s product: %s>" % [card_prefix, nic_type, product]
       end
 
       def <=>(other)

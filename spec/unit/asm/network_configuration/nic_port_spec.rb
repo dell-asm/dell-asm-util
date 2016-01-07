@@ -14,7 +14,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "PermanentMACAddress" => "04:0A:F7:06:88:50",
                   "LinkSpeed" => "5"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 1, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 1, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -24,7 +24,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "PermanentMACAddress" => "04:0A:F7:06:88:50",
                   "LinkSpeed" => "3"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 1, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 1, logger)
       expect(port.link_speed).to eq("1000 Mbps")
     end
 
@@ -35,7 +35,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57800"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 4, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -46,7 +46,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57800"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 4, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
       expect(port.link_speed).to eq("1000 Mbps")
     end
 
@@ -57,7 +57,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57810"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -68,7 +68,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57810"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 4, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
       expect(port.link_speed).to eq("Unknown")
     end
 
@@ -79,7 +79,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57840"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 4, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -90,7 +90,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57840"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger)
       expect(port.link_speed).to eq("Unknown")
     end
 
@@ -101,7 +101,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Intel",
                   "ProductName" => "X520"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -112,7 +112,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "PCIVendorID" => "8086",
                   "ProductName" => "X520"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
 
@@ -123,7 +123,7 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Intel",
                   "ProductName" => "X520"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 4, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
       expect(port.link_speed).to eq("Unknown")
     end
 
@@ -135,14 +135,14 @@ describe ASM::NetworkConfiguration::NicPort do
                   "VendorName" => "Broadcom",
                   "ProductName" => "57810"}
       nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
-      port = ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger)
       expect(port.link_speed).to eq("10 Gbps")
     end
   end
 
   describe "#n_partitions" do
     let(:nic_info) { ASM::NetworkConfiguration::NicView.new("FQDD" => "NIC.Integrated.1-1-1") }
-    let(:nic_port) { ASM::NetworkConfiguration::NicPort.new(nic_info, 2, logger) }
+    let(:nic_port) { ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger) }
 
     it "should return 2 for QLogic 57800" do
       nic_port.expects(:is_qlogic_57800?).returns(true)
