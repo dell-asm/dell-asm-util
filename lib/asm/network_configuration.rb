@@ -265,7 +265,18 @@ module ASM
 
       missing = []
       cards.each do |card|
-        index = nics.find_index { |n| !n.disabled? && n.nic_type == card.nictype.nictype && n.n_partitions >= n_partitions(card) }
+        fqdd = card.interfaces.first.fqdd
+        if fqdd
+          # If FQDD passed through in config data, use that
+          fqdd_nic_view = NicView.new(fqdd)
+          index = nics.find_index do |nic|
+            fqdd_nic_view.card_prefix == nic.ports.first.nic_view.card_prefix
+          end
+        else
+          # otherwise match by type and number partitions
+          index = nics.find_index { |n| !n.disabled? && n.nic_type == card.nictype.nictype && n.n_partitions >= n_partitions(card) }
+        end
+
         if index.nil?
           missing << card
         else
@@ -282,6 +293,7 @@ module ASM
                 partition.fqdd = first_partition.create_with_partition(partition_no).fqdd
               end
             end
+            interface.fqdd = interface.partitions.first.fqdd
           end
         end
       end

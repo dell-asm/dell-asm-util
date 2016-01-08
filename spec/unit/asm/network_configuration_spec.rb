@@ -527,6 +527,55 @@ describe ASM::NetworkConfiguration do
         end
       end
     end
+
+    it "should use nics specified in network configuration if available" do
+      fqdd_to_mac = {"NIC.Slot.5-1-1" => "00:0A:F7:06:88:50",
+                     "NIC.Slot.5-2-1" => "00:0A:F7:06:88:52",
+                     "NIC.Slot.3-1-1" => "01:0A:F7:06:88:50",
+                     "NIC.Slot.3-2-1" => "01:0A:F7:06:88:52",
+                     "NIC.Slot.1-1-1" => "02:0A:F7:06:88:50",
+                     "NIC.Slot.1-2-1" => "02:0A:F7:06:88:52",
+                     "NIC.Slot.7-1-1" => "03:0A:F7:06:88:50",
+                     "NIC.Slot.7-2-1" => "03:0A:F7:06:88:52",
+                     "NIC.Integrated.1-1-1" => "04:0A:F7:06:88:50",
+                     "NIC.Integrated.1-2-1" => "04:0A:F7:06:88:52"}
+
+      nic_view_data = JSON.parse(json)
+      card = nic_view_data["interfaces"].first
+      port1 = card["interfaces"][0]
+      port1["fqdd"] = "NIC.Slot.3-1"
+      port2 = card["interfaces"][1]
+      port2["fqdd"] = "NIC.Slot.3-2"
+      net_config = ASM::NetworkConfiguration.new(nic_view_data)
+
+      ASM::WsMan.stubs(:get_nic_view).returns(build_nic_views(fqdd_to_mac))
+      net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"))
+
+      # Verify 3 cards, unpartitioned
+      to_fqdd = ["NIC.Slot.3", "NIC.Integrated.1", "NIC.Slot.1"]
+      found_macs = []
+      (0..2).each do |card_index|
+        card = net_config.cards.find { |c| c.card_index == card_index }
+        fqdd_prefix = to_fqdd[card_index]
+        (1..2).each do |port_no|
+          port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+          expect(port.fqdd).to eq("%s-%d-1" % [fqdd_prefix, port_no])
+          (1..4).each do |partition_no|
+            fqdd = "#{fqdd_prefix}-#{port_no}-#{partition_no}"
+            partition = port.partitions.find { |p| p.name == partition_no.to_s }
+            if partition_no > 1
+              partition.should be_nil
+            else
+              expect(partition.fqdd).to eq(fqdd)
+              mac = fqdd_to_mac[fqdd]
+              expect(partition.mac_address).to eq(mac)
+              found_macs.include?(mac).should be(false)
+              found_macs.push(mac)
+            end
+          end
+        end
+      end
+    end
   end
 
   describe "when parsing an unpartitioned 2x10Gb,2x1Gb rack network config" do
