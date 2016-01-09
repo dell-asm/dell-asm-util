@@ -5,6 +5,8 @@ require "asm/wsman/client"
 describe ASM::WsMan::Client do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
   let(:endpoint) { {:host => "rspec-host", :user => "rspec-user", :password => "rspec-password"} }
+  let(:client) {ASM::WsMan::Client.new(endpoint)}
+  let(:parser) {ASM::WsMan::Parser}
 
   describe "#initialize" do
     it "should fail if missing endpoint keys" do
@@ -25,7 +27,6 @@ describe ASM::WsMan::Client do
   end
 
   describe "#exec" do
-    let(:client) {ASM::WsMan::Client.new(endpoint)}
     let(:args) do
       ["-h", endpoint[:host], "-V", "-v", "-c", "dummy.cert", "-P", "443",
        "-u", endpoint[:user], "-j", "utf-8", "-m", "256", "-y", "basic", "--transport-timeout=300"]
@@ -105,6 +106,53 @@ describe ASM::WsMan::Client do
       client.expects(:sleep).with(10).twice
       message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
+    end
+  end
+
+  describe "#invoke" do
+    let(:url) {"http://rspec/path"}
+
+    it "should fail if missing a required param" do
+      message = "Missing required parameter(s) for RspecMethod: foo"
+      expect {client.invoke("RspecMethod", url, :params => {}, :required_params => [:foo])}
+        .to raise_error(message)
+    end
+
+    it "should fail if missing an url param" do
+      message = "Missing required parameter(s) for RspecMethod: foo"
+      expect {client.invoke("RspecMethod", url, :params => {}, :url_params => [:foo])}
+        .to raise_error(message)
+    end
+
+    it "should call exec with params and parse the result" do
+      client.expects(:exec).with("RspecMethod", url, :props => {"Foo" => "My foo"}).returns("<response />")
+      parser.expects(:parse).with("<response />").returns(:return_value => "0")
+      expect(client.invoke("RspecMethod", url, :params => {:foo => "My foo"}, :required_params => [:foo]))
+        .to eq(:return_value => "0")
+    end
+
+    it "should call exec with url params and parse the result" do
+      client.expects(:exec).with("RspecMethod", "%s?Foo=My%%20foo" % url, :props => {}).returns("<response />")
+      parser.expects(:parse).with("<response />").returns(:return_value => "0")
+      expect(client.invoke("RspecMethod", url, :params => {:foo => "My foo"}, :url_params => [:foo]))
+        .to eq(:return_value => "0")
+    end
+
+    it "should fail if return value does not match" do
+      client.expects(:exec).with("RspecMethod", url, :props => {"Foo" => "My foo"}).returns("<response />")
+      parser.expects(:parse).with("<response />").returns(:return_value => "2")
+      expect {client.invoke("RspecMethod", url, :params => {:foo => "My foo"}, :required_params => [:foo], :return_value => "0") }
+        .to raise_error("RspecMethod failed: return_value: 2")
+    end
+  end
+
+  describe "#get" do
+    it "should call invoke" do
+      client.expects(:invoke).with("get", "http://rspec",
+                                   :params => {:instance_id => "rspec-instance-id"},
+                                   :url_params => :instance_id)
+        .returns(:foo => "foo")
+      expect(client.get("http://rspec", "rspec-instance-id")).to eq(:foo => "foo")
     end
   end
 end

@@ -135,6 +135,8 @@ module ASM
       # @param sym [Symbol]
       # @return [String]
       def self.param_key(sym)
+        return sym unless sym.is_a?(Symbol)
+
         case sym
         when :ip_address
           "IPAddress"
