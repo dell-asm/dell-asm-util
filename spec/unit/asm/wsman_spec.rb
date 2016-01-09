@@ -73,21 +73,21 @@ describe ASM::WsMan do
 
   describe "#detach_iso_image" do
     it "should invoke DetachISOImage" do
-      client.expects(:invoke).with("DetachISOImage", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      client.expects(:invoke).with("DetachISOImage", ASM::WsMan::DEPLOYMENT_SERVICE, :return_value => "0")
       wsman.detach_iso_image
     end
   end
 
   describe "#disconnect_network_iso_image" do
     it "should invoke DisconnectNetworkISOImage" do
-      client.expects(:invoke).with("DisconnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      client.expects(:invoke).with("DisconnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE, :return_value => "0")
       wsman.disconnect_network_iso_image
     end
   end
 
   describe "#get_attach_status" do
     it "should invoke GetAttachStatus" do
-      client.expects(:invoke).with("GetAttachStatus", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA)
+      client.expects(:invoke).with("GetAttachStatus", ASM::WsMan::DEPLOYMENT_SERVICE)
       wsman.get_attach_status
     end
   end

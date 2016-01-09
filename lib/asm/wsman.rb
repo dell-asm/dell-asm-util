@@ -10,10 +10,10 @@ require "rexml/document"
 module ASM
   class WsMan
     # rubocop:disable Metrics/LineLength
-    DEPLOYMENT_SERVICE_SCHEMA = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_OSDeploymentService,SystemName=DCIM:ComputerSystem,Name=DCIM:OSDeploymentService"
-    JOB_SERVICE_SCHEMA = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_JobService?CreationClassName=DCIM_JobService,Name=JobService,SystemName=Idrac,SystemCreationClassName=DCIM_ComputerSystem"
-    LC_SERVICE_SCHEMA = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_LCService,SystemName=DCIM:ComputerSystem,Name=DCIM:LCService"
-    SOFTWARE_INSTALLATION_SERVICE_SCHEMA = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate"
+    DEPLOYMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_OSDeploymentService,SystemName=DCIM:ComputerSystem,Name=DCIM:OSDeploymentService"
+    JOB_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_JobService?CreationClassName=DCIM_JobService,Name=JobService,SystemName=Idrac,SystemCreationClassName=DCIM_ComputerSystem"
+    LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_LCService,SystemName=DCIM:ComputerSystem,Name=DCIM:LCService"
+    SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate"
     # rubocop:enable Metrics/LineLength
 
     attr_reader :client
@@ -40,7 +40,7 @@ module ASM
       logger.debug("Rebooting server #{endpoint[:host]}") if logger
       instanceid = invoke(endpoint,
                           "CreateRebootJob",
-                          SOFTWARE_INSTALLATION_SERVICE_SCHEMA,
+                          SOFTWARE_INSTALLATION_SERVICE,
                           :selector => '//wsman:Selector Name="InstanceID"',
                           :props => {"RebootJobType" => "1"},
                           :logger => logger)
@@ -48,7 +48,7 @@ module ASM
       # Execute job
       jobmessage = invoke(endpoint,
                           "SetupJobQueue",
-                          JOB_SERVICE_SCHEMA,
+                          JOB_SERVICE,
                           :selector => "//n1:Message",
                           :props => {
                             "JobArray" => instanceid,
@@ -290,7 +290,7 @@ module ASM
 
     # Gets LC status
     def self.lcstatus(endpoint, logger=nil)
-      invoke(endpoint, "GetRemoteServicesAPIStatus", LC_SERVICE_SCHEMA, :selector => "//n1:LCStatus", :logger => logger)
+      invoke(endpoint, "GetRemoteServicesAPIStatus", LC_SERVICE, :selector => "//n1:LCStatus", :logger => logger)
     end
 
     # Get the lifecycle controller (LC) status
@@ -330,7 +330,7 @@ module ASM
     # @return [Hash]
     # @raise [ResponseError] if the command fails
     def boot_to_network_iso_command(params={})
-      client.invoke("BootToNetworkISO", DEPLOYMENT_SERVICE_SCHEMA,
+      client.invoke("BootToNetworkISO", DEPLOYMENT_SERVICE,
                     :params => params,
                     :required_params => [:ip_address, :share_name, :share_type, :image_name],
                     :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
@@ -347,7 +347,7 @@ module ASM
     # @param (see #boot_to_network_iso_command)
     # @raise [ResponseError] if the command fails
     def connect_network_iso_image_command(params={})
-      client.invoke("ConnectNetworkISOImage", DEPLOYMENT_SERVICE_SCHEMA,
+      client.invoke("ConnectNetworkISOImage", DEPLOYMENT_SERVICE,
                     :params => params,
                     :required_params => [:ip_address, :share_name, :share_type, :image_name],
                     :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
@@ -359,7 +359,7 @@ module ASM
     # @return [Hash]
     # @raise [ResponseError] if the command does not succeed
     def detach_iso_image
-      client.invoke("DetachISOImage", DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      client.invoke("DetachISOImage", DEPLOYMENT_SERVICE, :return_value => "0")
     end
 
     # @deprecated Use {detach_iso_image} instead.
@@ -372,7 +372,7 @@ module ASM
     # @return [Hash]
     # @raise [ResponseError] if the command does not succeed
     def disconnect_network_iso_image
-      client.invoke("DisconnectNetworkISOImage", DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      client.invoke("DisconnectNetworkISOImage", DEPLOYMENT_SERVICE, :return_value => "0")
     end
 
     # Get current drivers and ISO connection status
@@ -389,7 +389,7 @@ module ASM
     #
     # @return [Hash]
     def get_attach_status # rubocop:disable Style/AccessorMethodName
-      client.invoke("GetAttachStatus", DEPLOYMENT_SERVICE_SCHEMA)
+      client.invoke("GetAttachStatus", DEPLOYMENT_SERVICE)
     end
 
     # Get ISO image connection info
@@ -407,7 +407,7 @@ module ASM
     # @return [Hash]
     # @raise [ResponseError] if the command does not succeed
     def get_network_iso_image_connection_info # rubocop:disable Style/AccessorMethodName
-      client.invoke("GetNetworkISOConnectionInfo", DEPLOYMENT_SERVICE_SCHEMA)
+      client.invoke("GetNetworkISOConnectionInfo", DEPLOYMENT_SERVICE)
     end
 
     # Get deployment job status
