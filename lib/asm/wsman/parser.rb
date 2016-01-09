@@ -23,11 +23,10 @@ module ASM
         end
       end
 
-      # Parse wsman response into a Hash
+      # Parse WS-Man invoke or get response into a Hash
       #
-      # @note currently does not work with enumerate responses
       # @api private
-      # @param content [String] the response from calling {#invoke}
+      # @param content [String] the WS-Man CLI response to invoke or get commands
       # @return [Hash]
       def self.parse(content, require_body=true)
         doc = Nokogiri::XML.parse(content, &:noblanks)
@@ -43,6 +42,35 @@ module ASM
           ret[key] = parse_element(e)
         end
         ret
+      end
+
+      # Parse WS-Man enumeration response into list of hashes
+      #
+      # @api private
+      # @param content [String] the WS-Man CLI response to an enumerate command
+      # @return [Array<Hash>]
+      def self.parse_enumeration(content)
+        responses = content.split("</s:Envelope>").map(&:strip).reject(&:empty?)
+
+        # Check and return fault if found
+        if responses.size == 1
+          ret = parse(responses.first, false)
+          return ret if ret
+        end
+
+        # Create an array of hashes containing each wsen:Item
+        responses.flat_map do |xml|
+          doc = Nokogiri::XML.parse(xml, &:noblanks)
+          body = doc.search("//wsen:Items")
+          next if body.children.empty?
+          body.children.map do |elem|
+            elem.children.inject({}) do |acc, e|
+              key = snake_case(e.name).to_sym
+              acc[key] = parse_element(e)
+              acc
+            end
+          end
+        end.compact
       end
 
       # Converts a ws-man parameter key into snake case

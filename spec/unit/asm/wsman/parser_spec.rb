@@ -52,6 +52,27 @@ describe ASM::WsMan::Parser do
     end
   end
 
+  describe "#parse_enumeration" do
+    it "should parse the enumeration content" do
+      content = SpecHelper.load_fixture("wsman/boot_config_setting.txt")
+      ret = parser.parse_enumeration(content)
+      expect(ret.size).to eq(5)
+      expect(ret[0]).to eq(:element_name => "BootSeq",
+                           :instance_id => "IPL",
+                           :is_current => "1",
+                           :is_default => "0",
+                           :is_next => "1")
+    end
+
+    it "should parse a fault response" do
+      content = SpecHelper.load_fixture("wsman/fault.xml")
+      expected = {:code => "wsman:InvalidParameter",
+                  :reason => "CMPI_RC_ERR_INVALID_PARAMETER",
+                  :detail => "http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MissingValues"}
+      expect(parser.parse_enumeration(content)).to eq(expected)
+    end
+  end
+
   describe "#camel_case" do
     it "should not change single word" do
       expect(parser.camel_case("foo")).to eq("foo")

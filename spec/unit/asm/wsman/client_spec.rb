@@ -155,4 +155,21 @@ describe ASM::WsMan::Client do
       expect(client.get("http://rspec", "rspec-instance-id")).to eq(:foo => "foo")
     end
   end
+
+  describe "#enumerate" do
+    let(:url) { "http://rspec/FooCollection" }
+
+    it "should call exec" do
+      expected = [{:foo => "foo1"}, {:foo => "foo2"}]
+      client.expects(:exec).with("enumerate", url).returns("<response />")
+      parser.expects(:parse_enumeration).returns(expected)
+      expect(client.enumerate(url)).to eq(expected)
+    end
+
+    it "should fail when parse_enumeration returns a hash" do
+      client.expects(:exec).with("enumerate", url).returns("<response />")
+      parser.expects(:parse_enumeration).returns(:response => "ERROR")
+      expect {client.enumerate(url)}.to raise_error("FooCollection enumeration failed: response: ERROR")
+    end
+  end
 end

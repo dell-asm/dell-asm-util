@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration">
+  <s:Header>
+    <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse</wsa:Action>
+    <wsa:RelatesTo>uuid:69bc2dbc-2782-1782-8002-34e5aa565000</wsa:RelatesTo>
+    <wsa:MessageID>uuid:7195119b-2787-1787-aeb8-34de1c55dbe0</wsa:MessageID>
+  </s:Header>
+  <s:Body>
+    <wsen:EnumerateResponse>
+      <wsen:EnumerationContext>719458e4-2787-1787-aeb7-34de1c55dbe0</wsen:EnumerationContext>
+    </wsen:EnumerateResponse>
+  </s:Body>
+</s:Envelope>
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:n1="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting">
+  <s:Header>
+    <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
+    <wsa:RelatesTo>uuid:69c3eafb-2782-1782-8003-34e5aa565000</wsa:RelatesTo>
+    <wsa:MessageID>uuid:71987d5c-2787-1787-aeb9-34de1c55dbe0</wsa:MessageID>
+  </s:Header>
+  <s:Body>
+    <wsen:PullResponse>
+      <wsen:EnumerationContext>719458e4-2787-1787-aeb7-34de1c55dbe0</wsen:EnumerationContext>
+      <wsen:Items>
+        <n1:DCIM_BootConfigSetting>
+          <n1:ElementName>BootSeq</n1:ElementName>
+          <n1:InstanceID>IPL</n1:InstanceID>
+          <n1:IsCurrent>1</n1:IsCurrent>
+          <n1:IsDefault>0</n1:IsDefault>
+          <n1:IsNext>1</n1:IsNext>
+        </n1:DCIM_BootConfigSetting>
+        <n1:DCIM_BootConfigSetting>
+          <n1:ElementName>HddSeq</n1:ElementName>
+          <n1:InstanceID>BCV</n1:InstanceID>
+          <n1:IsCurrent>2</n1:IsCurrent>
+          <n1:IsDefault>0</n1:IsDefault>
+          <n1:IsNext>2</n1:IsNext>
+        </n1:DCIM_BootConfigSetting>
+        <n1:DCIM_BootConfigSetting>
+          <n1:ElementName>UefiBootSeq</n1:ElementName>
+          <n1:InstanceID>UEFI</n1:InstanceID>
+          <n1:IsCurrent>2</n1:IsCurrent>
+          <n1:IsDefault>0</n1:IsDefault>
+          <n1:IsNext>2</n1:IsNext>
+        </n1:DCIM_BootConfigSetting>
+      </wsen:Items>
+    </wsen:PullResponse>
+  </s:Body>
+</s:Envelope>
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:n1="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting">
+  <s:Header>
+    <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
+    <wsa:RelatesTo>uuid:69c759da-2782-1782-8004-34e5aa565000</wsa:RelatesTo>
+    <wsa:MessageID>uuid:719bdd1e-2787-1787-aeba-34de1c55dbe0</wsa:MessageID>
+  </s:Header>
+  <s:Body>
+    <wsen:PullResponse>
+      <wsen:Items>
+        <n1:DCIM_BootConfigSetting>
+          <n1:ElementName>OneTimeBootMode</n1:ElementName>
+          <n1:InstanceID>OneTime</n1:InstanceID>
+          <n1:IsCurrent>2</n1:IsCurrent>
+          <n1:IsDefault>0</n1:IsDefault>
+          <n1:IsNext>2</n1:IsNext>
+        </n1:DCIM_BootConfigSetting>
+        <n1:DCIM_BootConfigSetting>
+          <n1:ElementName>vFlash Boot Configuration</n1:ElementName>
+          <n1:InstanceID>vFlash</n1:InstanceID>
+          <n1:IsCurrent>2</n1:IsCurrent>
+          <n1:IsDefault>0</n1:IsDefault>
+          <n1:IsNext>2</n1:IsNext>
+        </n1:DCIM_BootConfigSetting>
+      </wsen:Items>
+      <wsen:EndOfSequence/>
+    </wsen:PullResponse>
+  </s:Body>
+</s:Envelope>

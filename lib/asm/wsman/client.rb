@@ -170,6 +170,19 @@ module ASM
       def get(url, instance_id)
         invoke("get", url, :params => {:instance_id => instance_id}, :url_params => :instance_id)
       end
+
+      # Execute a WS-Man Enumerate
+      #
+      # @param url [String] The base URL to fetch
+      def enumerate(url)
+        content = exec("enumerate", url)
+        resp = Parser.parse_enumeration(content)
+        if resp.is_a?(Hash)
+          klazz = URI.parse(url).path.split("/").last
+          raise(ResponseError.new("%s enumeration failed" % klazz, resp))
+        end
+        resp
+      end
     end
   end
 end
