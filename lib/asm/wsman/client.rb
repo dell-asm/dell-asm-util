@@ -29,7 +29,7 @@ module ASM
         endpoint[:host]
       end
 
-      # Invoke the wsman CLI cient
+      # Execute the wsman CLI cient
       #
       # Will automatically retry in the case of authentication errors.
       #
@@ -46,7 +46,7 @@ module ASM
       # @option options Logger] :logger logger for debug messages
       # @option options [FixNum] :nth_attempt used internally to allow recursive retry
       # rubocop:disable Metrics/MethodLength
-      def invoke(method, schema, options={})
+      def exec(method, schema, options={})
         options = {
           :selector => nil,
           :props => {},
@@ -83,7 +83,7 @@ module ASM
               options[:nth_attempt] += 1
               logger.info("Authentication failed, retrying #{host}...")
               sleep 10
-              return invoke(method, schema, options)
+              return exec(method, schema, options)
             end
             msg = "Authentication failed, please retry with correct credentials after resetting the iDrac at #{host}."
           elsif result["stdout"] =~ /Connection failed./ || result["stderr"] =~ /Connection failed./
@@ -92,7 +92,7 @@ module ASM
               options[:nth_attempt] += 1
               logger.info("Connection failed, retrying #{host}...")
               sleep 10
-              return invoke(method, schema, options)
+              return exec(method, schema, options)
             end
             msg = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at #{host}."
           else

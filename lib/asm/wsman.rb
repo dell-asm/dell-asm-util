@@ -32,7 +32,7 @@ module ASM
 
     # @deprecated use {Client#invoke} instead.
     def self.invoke(endpoint, method, schema, options={})
-      WsMan.new(endpoint, options).client.invoke(method, schema, options)
+      WsMan.new(endpoint, options).client.exec(method, schema, options)
     end
 
     def self.reboot(endpoint, logger=nil)

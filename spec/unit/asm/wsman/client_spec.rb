@@ -24,7 +24,7 @@ describe ASM::WsMan::Client do
     end
   end
 
-  describe "#invoke" do
+  describe "#exec" do
     let(:client) {ASM::WsMan::Client.new(endpoint)}
     let(:args) do
       ["-h", endpoint[:host], "-V", "-v", "-c", "dummy.cert", "-P", "443",
@@ -38,21 +38,21 @@ describe ASM::WsMan::Client do
       ASM::Util.expects(:run_command_with_args)
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(response)
-      expect(client.invoke("enumerate", "rspec-schmea")).to eq(response.stdout)
+      expect(client.exec("enumerate", "rspec-schmea")).to eq(response.stdout)
     end
 
     it "should execute get" do
       ASM::Util.expects(:run_command_with_args)
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "get", "rspec-schmea", *args)
         .returns(response)
-      expect(client.invoke("get", "rspec-schmea")).to eq(response.stdout)
+      expect(client.exec("get", "rspec-schmea")).to eq(response.stdout)
     end
 
     it "should execute invoke methods" do
       ASM::Util.expects(:run_command_with_args)
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "invoke", "-a", "MyMethod", "rspec-schmea", *args)
         .returns(response)
-      expect(client.invoke("MyMethod", "rspec-schmea")).to eq(response.stdout)
+      expect(client.exec("MyMethod", "rspec-schmea")).to eq(response.stdout)
     end
 
     it "should fail if exit status is non-zero" do
@@ -61,7 +61,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(response)
       message = "Failed to execute wsman command against server rspec-host: %s" % response
-      expect {client.invoke("enumerate", "rspec-schmea")}.to raise_error(message)
+      expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
     it "should fail if stderr not empty" do
@@ -70,7 +70,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(response)
       message = "Failed to execute wsman command against server rspec-host: %s" % response
-      expect {client.invoke("enumerate", "rspec-schmea")}.to raise_error(message)
+      expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
     it "should retry if authentication failed" do
@@ -78,7 +78,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(auth_failed_response, response)
       client.expects(:sleep).with(10)
-      expect(client.invoke("enumerate", "rspec-schmea")).to eq(response.stdout)
+      expect(client.exec("enumerate", "rspec-schmea")).to eq(response.stdout)
     end
 
     it "should fail if authentication fails three times" do
@@ -87,7 +87,7 @@ describe ASM::WsMan::Client do
         .returns(auth_failed_response).times(3)
       client.expects(:sleep).with(10).twice
       message = "Authentication failed, please retry with correct credentials after resetting the iDrac at rspec-host.: %s" % auth_failed_response
-      expect {client.invoke("enumerate", "rspec-schmea")}.to raise_error(message)
+      expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
     it "should retry if connection failed" do
@@ -95,7 +95,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(conn_failed_response, response)
       client.expects(:sleep).with(10)
-      expect(client.invoke("enumerate", "rspec-schmea")).to eq(response.stdout)
+      expect(client.exec("enumerate", "rspec-schmea")).to eq(response.stdout)
     end
 
     it "should fail if connection fails three times" do
@@ -104,7 +104,7 @@ describe ASM::WsMan::Client do
         .returns(conn_failed_response).times(3)
       client.expects(:sleep).with(10).twice
       message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response
-      expect {client.invoke("enumerate", "rspec-schmea")}.to raise_error(message)
+      expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
   end
 end
