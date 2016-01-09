@@ -308,20 +308,13 @@ module ASM
     # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
     # @option options [Hash] :logger
     # @return [Hash]
-    def self.get_lc_status(endpoint, options={})
-      logger = options[:logger] || Logger.new(nil)
-      resp = invoke(endpoint, "GetRemoteServicesAPIStatus", LC_SERVICE_SCHEMA, :logger => logger)
-      parse(resp)
+    def remote_services_api_status
+      client.invoke("GetRemoteServicesAPIStatus", LC_SERVICE)
     end
 
-    # Invoke a deployment ISO command
+    # Reboot server to a network ISO
     #
-    # DCIM_OSDeploymentService includes several commands that operate on ISO
-    # images hosted on network shares that take the same parameters.
-    #
-    # @api private
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param command [String] the deployment command
+    # @note {detach_iso_image} should be called once the ISO is no longer needed.
     # @param options [Hash]
     # @option options [Logger] :logger a logger to use
     # @option options [String] :ip_address CIFS or NFS share IPv4 address. For example, 192.168.10.100. Required.
@@ -336,34 +329,12 @@ module ASM
     # @option options [String] :auto_connect auto-connect to ISO image up on iDRAC reset
     # @return [Hash]
     # @raise [ResponseError] if the command fails
-    def self.osd_deployment_invoke_iso(endpoint, command, options={})
-      options = options.dup
-      required_api_params = [:ip_address, :share_name, :share_type, :image_name]
-      optional_api_params = [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect]
-      missing_params = required_api_params.reject { |k| options.include?(k) }
-      raise("Missing required parameter(s): %s" % missing_params.join(", ")) unless missing_params.empty?
-
-      logger = options.delete(:logger)
-      options.reject! { |k| !(required_api_params + optional_api_params).include?(k) }
-
-      props = options.keys.inject({}) do |acc, key|
-        acc[param_key(key)] = wsman_value(key, options[key])
-        acc
-      end
-      resp = invoke(endpoint, command, DEPLOYMENT_SERVICE_SCHEMA, :logger => logger, :props => props)
-      ret = parse(resp)
-      raise(ResponseError.new("%s failed" % command, ret)) unless ret[:return_value] == "4096"
-      ret
-    end
-
-    # Reboot server to a network ISO
-    #
-    # @note {detach_iso_image} should be called once the ISO is no longer needed.
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash] the ISO parameters. See {osd_deployment_invoke_iso} options hash.
-    # @raise [ResponseError] if the command fails
-    def self.boot_to_network_iso_command(endpoint, options={})
-      osd_deployment_invoke_iso(endpoint, "BootToNetworkISO", options)
+    def boot_to_network_iso_command(params={})
+      client.invoke("BootToNetworkISO", DEPLOYMENT_SERVICE_SCHEMA,
+                    :params => params,
+                    :required_params => [:ip_address, :share_name, :share_type, :image_name],
+                    :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                    :return_value => "4096")
     end
 
     # Connect a network ISO as a virtual CD-ROM
@@ -373,55 +344,35 @@ module ASM
     # is called. The LC controller will be locked while the server is in this
     # state and no other LC jobs can be run.
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash] the ISO parameters. See {osd_deployment_invoke_iso} options hash.
+    # @param (see #boot_to_network_iso_command)
     # @raise [ResponseError] if the command fails
-    def self.connect_network_iso_image_command(endpoint, options={})
-      osd_deployment_invoke_iso(endpoint, "ConnectNetworkISOImage", options)
+    def connect_network_iso_image_command(params={})
+      client.invoke("ConnectNetworkISOImage", DEPLOYMENT_SERVICE_SCHEMA,
+                    :params => params,
+                    :required_params => [:ip_address, :share_name, :share_type, :image_name],
+                    :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                    :return_value => "4096")
     end
 
-    # Invoke a DCIM_DeploymentService command
+    # Detach an ISO that was mounted with {#boot_to_network_iso_command}
     #
-    # @api private
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param command [String]
-    # @param options [Hash]
-    # @option options [String] :return_value Expected ws-man return_value. An exception will be raised if this is not returned.
     # @return [Hash]
-    def self.deployment_invoke(endpoint, command, options={})
-      resp = invoke(endpoint, command, DEPLOYMENT_SERVICE_SCHEMA, :logger => options[:logger])
-      ret = parse(resp)
-      if options[:return_value] && ret[:return_value] != options[:return_value]
-        raise(ResponseError.new("%s failed" % command, ret))
-      end
-      ret
-    end
-
-    # Detach an ISO that was mounted with {boot_to_network_iso_command}
-    #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash]
-    # @option options [Logger] :logger
-    # @return [Hash]
-    def self.detach_iso_image(endpoint, options={})
-      options = options.merge(:return_value => "0")
-      deployment_invoke(endpoint, "DetachISOImage", options)
+    # @raise [ResponseError] if the command does not succeed
+    def detach_iso_image
+      client.invoke("DetachISOImage", DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
     end
 
     # @deprecated Use {detach_iso_image} instead.
     def self.detach_network_iso(endpoint, logger=nil)
-      detach_iso_image(endpoint, :logger => logger)
+      WsMan.new(endpoint, :logger => logger).detach_iso_image
     end
 
-    # Disconnect an ISO that was mounted with {connect_network_iso_image_command}
+    # Disconnect an ISO that was mounted with {#connect_network_iso_image_command}
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash]
-    # @option options [Logger] :logger
     # @return [Hash]
-    def self.disconnect_network_iso_image(endpoint, options={})
-      options = options.merge(:return_value => "0")
-      deployment_invoke(endpoint, "DisconnectNetworkISOImage", options)
+    # @raise [ResponseError] if the command does not succeed
+    def disconnect_network_iso_image
+      client.invoke("DisconnectNetworkISOImage", DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
     end
 
     # Get current drivers and ISO connection status
@@ -436,12 +387,9 @@ module ASM
     # The ISO will show as attached if either {boot_to_network_iso_command} or
     # {connect_network_iso_image_command} have been executed.
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash]
-    # @option options [Logger] :logger
     # @return [Hash]
-    def self.get_attach_status(endpoint, options={})
-      deployment_invoke(endpoint, "GetAttachStatus", options)
+    def get_attach_status # rubocop:disable Style/AccessorMethodName
+      client.invoke("GetAttachStatus", DEPLOYMENT_SERVICE_SCHEMA)
     end
 
     # Get ISO image connection info
@@ -455,12 +403,11 @@ module ASM
     #
     # The ISO will show as attached only if the {connect_network_iso_image_command}
     # has been executed.
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param options [Hash]
-    # @option options [Logger] :logger
+    #
     # @return [Hash]
-    def self.get_network_iso_image_connection_info(endpoint, options={})
-      deployment_invoke(endpoint, "GetNetworkISOConnectionInfo", options)
+    # @raise [ResponseError] if the command does not succeed
+    def get_network_iso_image_connection_info # rubocop:disable Style/AccessorMethodName
+      client.invoke("GetNetworkISOConnectionInfo", DEPLOYMENT_SERVICE_SCHEMA)
     end
 
     # Get deployment job status
@@ -471,32 +418,25 @@ module ASM
     #    :message => "The command was successful", :message_id => "OSD1",
     #    :name => "ConnectNetworkISOImage"}
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
     # @param job [String] the job instance id
-    # @param options [Hash]
-    # @option options [Logger] :logger
     # @return [Hash]
-    def self.get_deployment_job(endpoint, job, options={})
-      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=%s" % job
-      parse(invoke(endpoint, "get", url, :logger => options[:logger]))
+    def get_deployment_job(job)
+      client.get("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob", job)
     end
 
     class RetryException < StandardError; end
 
     # Check the deployment job status until it is complete or times out
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
     # @param job [String] the job instance id
-    # @param options [Hash]
-    # @option options [Logger] :logger
     # @return [Hash]
-    def self.poll_deployment_job(endpoint, job, options={})
+    def poll_deployment_job(job, options={})
       options = {:logger => Logger.new(nil), :timeout => 600}.merge(options)
       max_sleep_secs = 60
       resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep_secs) do
-        resp = get_deployment_job(endpoint, job, :logger => options[:logger])
+        resp = get_deployment_job(job)
         unless %w(Success Failed).include?(resp[:job_status])
-          options[:logger].info("%s status on %s: %s" % [job, endpoint[:host], Parser.response_string(resp)])
+          options[:logger].info("%s status on %s: %s" % [job, host, Parser.response_string(resp)])
           raise(RetryException)
         end
         resp
@@ -508,51 +448,49 @@ module ASM
 
     # Execute a deployment ISO mount command and await job completion.
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @param command [String] the ISO command, e.g. BootToNetworkISO or ConnectNetworkISOImage
-    # @param job [String] the job instance id
-    # @param options [Hash]
-    # @option options [Logger] :logger
+    # @param options [Hash] Options not specifically referenced below are passed to the :method command
     # @option options [FixNum] :timeout (5 minutes)
-    # @return [Hash]
-    def self.run_deployment_job(endpoint, command, options={})
-      options = {:timeout => 5 * 60}.merge(options)
-      logger = options[:logger] || Logger.new(nil)
+    # @option options [Symbol] :method The WsMan deployment method to execute
+    # @return [void]
+    def run_deployment_job(options={})
+      timeout = options.delete(:timeout) || 5 * 60
+      method = options.delete(:method) || raise(ArgumentError, "Missing required method option")
+      raise(ArgumentError, "Invalid method option") unless respond_to?(method)
 
       # LC must be ready for deployment jobs to succeed
-      poll_for_lc_ready(endpoint, :logger => logger)
+      poll_for_lc_ready
 
-      logger.info("Invoking %s with ISO %s on %s" % [command, options[:image_name], endpoint[:host]])
-      resp = osd_deployment_invoke_iso(endpoint, command, options)
-      logger.info("Initiated %s job %s on %s" % [command, resp[:job], endpoint[:host]])
-      resp = poll_deployment_job(endpoint, resp[:job], options)
-      raise(ResponseError.new("%s job %s failed" % [command, resp[:job]], resp)) unless resp[:job_status] == "Success"
-      logger.info("%s succeeded with ISO %s on %s: %s" % [command, options[:image_name], endpoint[:host], Parser.response_string(resp)])
+      logger.info("Creating %s deployment job with ISO %s on %s" % [method, options[:image_name], host])
+      resp = send(method, options)
+      logger.info("Initiated %s job %s on %s" % [method, resp[:job], host])
+      resp = poll_deployment_job(resp[:job], :timeout => timeout)
+      raise(ResponseError.new("%s job %s failed" % [method, resp[:job]], resp)) unless resp[:job_status] == "Success"
+      logger.info("%s succeeded with ISO %s on %s: %s" % [method, options[:image_name], host, Parser.response_string(resp)])
+      nil
     end
 
     # Connect network ISO image and await job completion
     #
-    # @see {connect_network_iso_image_command}
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
+    # @see {#connect_network_iso_image_command}
     # @param options [Hash]
-    # @option options [Logger] :logger
-    # @option options [FixNum] :timeout (5 minutes)
-    # @return [Hash]
-    def self.connect_network_iso_image(endpoint, options={})
+    # @option options [FixNum] :timeout (90 seconds) default timeout
+    # @return [void]
+    def connect_network_iso_image(options={})
       options = {:timeout => 90}.merge(options)
-      run_deployment_job(endpoint, "ConnectNetworkISOImage", options)
+      options[:method] = :connect_network_iso_image_command
+      run_deployment_job(options)
     end
 
     # Boot to network ISO image and await job completion
     #
-    # @see boot_to_network_iso_command
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
-    # @option options [Logger] :logger
-    # @option options [FixNum] :timeout (5 minutes)
-    # @return [Hash]
-    def self.boot_to_network_iso_image(endpoint, options={})
+    # @see {#boot_to_network_iso_command}
+    # @param options [Hash]
+    # @option options [FixNum] :timeout (90 seconds) default timeout
+    # @return [Void]
+    def boot_to_network_iso_image(options={})
       options = {:timeout => 15 * 60}.merge(options)
-      run_deployment_job(endpoint, "BootToNetworkISO", options)
+      options[:method] = :boot_to_network_iso_command
+      run_deployment_job(options)
     end
 
     # @deprecated Use {boot_to_network_iso_image} instead.
@@ -562,7 +500,7 @@ module ASM
                  :share_name => share_name,
                  :share_type => :nfs,
                  :logger => logger}
-      boot_to_network_iso_image(endpoint, options)
+      WsMan.new(endpoint, :logger => logger).boot_to_network_iso_image(options)
     end
 
     # Wait for LC to be ready to accept new jobs
@@ -571,37 +509,36 @@ module ASM
     # as that will block LC from becoming ready. Then poll the LC until it
     # reports a ready status.
     #
-    # @param endpoint [Hash] the server connection details. See {invoke} endpoint hash.
     # @param options [Hash]
-    # @option options [Logger] :logger
-    # @option options [FixNum] :timeout (5 minutes)
+    # @option options [FixNum] :timeout (5 minutes) default timeout
     # @return [Hash]
-    def self.poll_for_lc_ready(endpoint, options={})
-      resp = get_lc_status(endpoint, :logger => options[:logger])
+    def poll_for_lc_ready(options={})
+      options = {:timeout => 5 * 60}.merge(options)
+
+      resp = remote_services_api_status
       return if resp[:lcstatus] == "0"
 
       # If ConnectNetworkISOImage has been executed, LC will be locked until the image is disconnected.
-      resp = get_network_iso_image_connection_info(endpoint, :logger => logger)
-      disconnect_network_iso_image(endpoint, options) if resp["image_name"]
+      resp = get_network_iso_image_connection_info
+      disconnect_network_iso_image if resp["image_name"]
 
       # Similarly, if BootToNetworkISO has been executed, LC will be locked until
       # the image is attached. Note that GetAttachStatus will return 1 both for
       # BootToNetworkISO and ConnectNetworkISOImage so it is important to check
       # ConnectNetworkISOImage first.
-      resp = get_attach_status(endpoint, options)
-      detach_iso_image(endpoint, options) if resp["iso_attach_status"] == "1"
+      resp = get_attach_status
+      detach_iso_image if resp["iso_attach_status"] == "1"
 
-      options = {:logger => Logger.new(nil), :timeout => 5 * 60}.merge(options)
       max_sleep_secs = 60
       resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep_secs) do
-        resp = get_lc_status(endpoint, :logger => options[:logger])
+        resp = remote_services_api_status
         unless resp[:lcstatus] == "0"
-          options[:logger].info("LC status on %s: %s" % [endpoint[:host], Parser.response_string(resp)])
+          logger.info("LC status on %s: %s" % [host, Parser.response_string(resp)])
           raise(RetryException)
         end
         resp
       end
-      options[:logger].info("LC services are ready on %s" % endpoint[:host])
+      logger.info("LC services are ready on %s" % host)
       resp
     rescue Timeout::Error
       raise(Error, "Timed out waiting for LC. Final status: %s" % Parser.response_string(resp))

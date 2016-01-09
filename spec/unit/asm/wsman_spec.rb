@@ -4,6 +4,8 @@ require "asm/wsman"
 describe ASM::WsMan do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
   let(:endpoint) { {:host => "rspec-host", :user => "rspec-user", :password => "rspec-password"} }
+  let(:wsman) { ASM::WsMan.new(endpoint, :logger => logger) }
+  let(:client) { wsman.client }
 
   describe "when parsing nicview with disabled 57800 and dual-port slot nic" do
     before do
@@ -69,56 +71,38 @@ describe ASM::WsMan do
     end
   end
 
-  describe "#deployment_invoke" do
-    it "should invoke invoke and parse the command" do
-      expected = {:return_value => "0", :foo => "foo"}
-      ASM::WsMan.expects(:invoke).with(endpoint, "RspecCommand", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :logger => logger).returns("<rspec />")
-      ASM::WsMan.expects(:parse).with("<rspec />").returns(expected)
-      expect(ASM::WsMan.deployment_invoke(endpoint, "RspecCommand", :logger => logger)).to eq(expected)
-    end
-
-    it "should fail if the ReturnValue does not match" do
-      expected = {:return_value => "2", :message => "Stuff broke"}
-      ASM::WsMan.expects(:invoke).with(endpoint, "RspecCommand", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :logger => logger).returns("<rspec />")
-      ASM::WsMan.expects(:parse).with("<rspec />").returns(expected)
-      expect do
-        ASM::WsMan.deployment_invoke(endpoint, "RspecCommand", :return_value => "0", :logger => logger)
-      end.to raise_error("RspecCommand failed: Stuff broke [return_value: 2]")
-    end
-  end
-
   describe "#detach_iso_image" do
     it "should invoke DetachISOImage" do
-      ASM::WsMan.expects(:deployment_invoke).with(endpoint, "DetachISOImage", :return_value => "0", :logger => logger)
-      ASM::WsMan.detach_iso_image(endpoint, :logger => logger)
+      client.expects(:invoke).with("DetachISOImage", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      wsman.detach_iso_image
     end
   end
 
   describe "#disconnect_network_iso_image" do
     it "should invoke DisconnectNetworkISOImage" do
-      ASM::WsMan.expects(:deployment_invoke).with(endpoint, "DisconnectNetworkISOImage", :return_value => "0", :logger => logger)
-      ASM::WsMan.disconnect_network_iso_image(endpoint, :logger => logger)
+      client.expects(:invoke).with("DisconnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA, :return_value => "0")
+      wsman.disconnect_network_iso_image
     end
   end
 
   describe "#get_attach_status" do
     it "should invoke GetAttachStatus" do
-      ASM::WsMan.expects(:deployment_invoke).with(endpoint, "GetAttachStatus", :logger => logger)
-      ASM::WsMan.get_attach_status(endpoint, :logger => logger)
+      client.expects(:invoke).with("GetAttachStatus", ASM::WsMan::DEPLOYMENT_SERVICE_SCHEMA)
+      wsman.get_attach_status
     end
   end
 
   describe "#get_deployment_job" do
     it "should get the job id" do
       job_id = "RspecJob:1"
-      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob?InstanceID=%s" % job_id
-      ASM::WsMan.expects(:invoke).with(endpoint, "get", url, :logger => logger).returns("<rspec>")
-      ASM::WsMan.expects(:parse).with("<rspec>").returns(:job_status => "Success")
-      expect(ASM::WsMan.get_deployment_job(endpoint, job_id, :logger => logger)).to eq(:job_status => "Success")
+      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob"
+      client.expects(:get).with(url, job_id).returns(:job_status => "Success")
+      expect(wsman.get_deployment_job(job_id)).to eq(:job_status => "Success")
     end
   end
 
   describe "#run_deployment_job" do
+    let(:iso_method) {:boot_to_network_iso_command}
     let(:options) do
       {:ip_address => "rspec-ip",
        :image_name => "rspec-microkernel.iso",
@@ -129,39 +113,40 @@ describe ASM::WsMan do
     end
 
     before(:each) do
-      ASM::WsMan.expects(:poll_for_lc_ready).with(endpoint, :logger => logger)
-      ASM::WsMan.expects(:osd_deployment_invoke_iso)
-        .with(endpoint, "BootToNetworkISO", options)
-        .returns(:job => "rspec-job", :job_status => "Started")
     end
 
     it "should poll for LC ready, invoke command and poll job" do
-      ASM::WsMan.expects(:poll_deployment_job).with(endpoint, "rspec-job", options)
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:poll_deployment_job).with("rspec-job", :timeout => 300)
         .returns(:job_status => "Success")
-      ASM::WsMan.run_deployment_job(endpoint, "BootToNetworkISO", options)
+      wsman.expects(iso_method).with(:arg1 => "foo").returns(:job => "rspec-job", :job_status => "Started")
+      wsman.run_deployment_job(:method => :boot_to_network_iso_command, :timeout => 300, :arg1 => "foo")
     end
 
     it "should fail when job fails" do
-      ASM::WsMan.expects(:poll_deployment_job).with(endpoint, "rspec-job", options)
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:poll_deployment_job).with("rspec-job", :timeout => 300)
         .returns(:job => "rspec-job", :job_status => "Failed")
-
+      wsman.expects(iso_method).returns(:job => "rspec-job", :job_status => "Started")
       expect do
-        ASM::WsMan.run_deployment_job(endpoint, "BootToNetworkISO", options)
-      end.to raise_error(ASM::WsMan::ResponseError, "BootToNetworkISO job rspec-job failed: Failed [job: rspec-job]")
+        wsman.run_deployment_job(:method => :boot_to_network_iso_command, :timeout => 300)
+      end.to raise_error(ASM::WsMan::ResponseError, "boot_to_network_iso_command job rspec-job failed: Failed [job: rspec-job]")
     end
   end
 
   describe "#connect_network_iso_image" do
     it "should call run_deployment_job with default timeout of 90 seconds" do
-      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "ConnectNetworkISOImage", :timeout => 90)
-      ASM::WsMan.connect_network_iso_image(endpoint, {})
+      wsman.expects(:run_deployment_job).with(:method => :connect_network_iso_image_command,
+                                              :timeout => 90)
+      wsman.connect_network_iso_image
     end
   end
 
   describe "#boot to_network_iso_image" do
     it "should call run_deployment_job with default timeout of 15 minutes" do
-      ASM::WsMan.expects(:run_deployment_job).with(endpoint, "BootToNetworkISO", :timeout => 15 * 60)
-      ASM::WsMan.boot_to_network_iso_image(endpoint, {})
+      wsman.expects(:run_deployment_job).with(:method => :boot_to_network_iso_command,
+                                              :timeout => 15 * 60)
+      wsman.boot_to_network_iso_image
     end
   end
 end
