@@ -85,10 +85,227 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#disconnect_rfs_iso_image" do
+    it "should invoke DisconnectRFSISOImage" do
+      client.expects(:invoke).with("DisconnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE, :return_value => "0")
+      wsman.disconnect_rfs_iso_image
+    end
+  end
+
+  describe "#rfs_iso_image_connection_info" do
+    it "should invoke GetRFSISOImageConnectionInfo" do
+      client.expects(:invoke).with("GetRFSISOImageConnectionInfo", ASM::WsMan::DEPLOYMENT_SERVICE)
+      wsman.rfs_iso_image_connection_info
+    end
+  end
+
   describe "#get_attach_status" do
     it "should invoke GetAttachStatus" do
-      client.expects(:invoke).with("GetAttachStatus", ASM::WsMan::DEPLOYMENT_SERVICE)
-      wsman.get_attach_status
+      client.expects(:invoke).with("GetAttachStatus", ASM::WsMan::DEPLOYMENT_SERVICE).returns("rspec-result")
+      expect(wsman.get_attach_status).to eq("rspec-result")
+    end
+  end
+
+  describe "#fc_views" do
+    it "should enumerate DCIM_FCView" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_FCView").returns("rspec-result")
+      expect(wsman.fc_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#nic_views" do
+    it "should enumerate DCIM_NICView" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_NICView").returns("rspec-result")
+      expect(wsman.nic_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#bios_enumerations" do
+    it "should enumerate DCIM_BIOSEnumeration" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSEnumeration").returns("rspec-result")
+      expect(wsman.bios_enumerations).to eq("rspec-result")
+    end
+  end
+
+  describe "#boot_config_settings" do
+    it "should enumerate DCIM_BootConfigSetting" do
+      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting?__cimnamespace=root/dcim"
+      client.expects(:enumerate).with(url).returns("rspec-result")
+      expect(wsman.boot_config_settings).to eq("rspec-result")
+    end
+  end
+
+  describe "#boot_source_settings" do
+    it "should enumerate DCIM_BootSourceSetting" do
+      url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim"
+      client.expects(:enumerate).with(url).returns("rspec-result")
+      expect(wsman.boot_source_settings).to eq("rspec-result")
+    end
+  end
+
+  describe "#get_network_iso_image_connection_info" do
+    it "should invoke GetNetworkISOConnectionInfo" do
+      client.expects(:invoke).with("GetNetworkISOConnectionInfo", ASM::WsMan::DEPLOYMENT_SERVICE).returns("rspec-result")
+      expect(wsman.get_network_iso_image_connection_info).to eq("rspec-result")
+    end
+  end
+
+  describe "#set_attributes" do
+    it "should invoke SetAttributes" do
+      client.expects(:invoke).with("SetAttributes", ASM::WsMan::BIOS_SERVICE,
+                                   :params => {},
+                                   :required_params => [:target, :attribute_name, :attribute_value],
+                                   :return_value => "0")
+      wsman.set_attributes
+    end
+  end
+
+  describe "#create_targeted_config_job" do
+    it "should invoke CreateTargetedConfigJob" do
+      client.expects(:invoke).with("ChangeBootSourceState",
+                                   "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting",
+                                   :params => {},
+                                   :required_params => [:enabled_state, :source],
+                                   :url_params => :instance_id,
+                                   :return_value => "0")
+      wsman.change_boot_source_state
+    end
+  end
+
+  describe "#change_boot_order_by_instance_id" do
+    it "should invoke ChangeBootOrderByInstanceID" do
+      client.expects(:invoke).with("ChangeBootOrderByInstanceID",
+                                   "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting",
+                                   :params => {}, :required_params => :source,
+                                   :url_params => :instance_id,
+                                   :return_value => ["0", "4096"])
+      wsman.change_boot_order_by_instance_id
+    end
+  end
+
+  describe "#import_system_configuration_command" do
+    it "should invoke ImportSystemConfiguration" do
+      client.expects(:invoke).with("ImportSystemConfiguration", ASM::WsMan::LC_SERVICE,
+                                   :params => {},
+                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
+                                   :optional_params => [:target, :shutdown_type, :end_host_power_state, :username, :password],
+                                   :return_value => "4096")
+      wsman.import_system_configuration_command
+    end
+  end
+
+  describe "#export_system_configuration_command" do
+    it "should invoke ExportSystemConfiguration" do
+      client.expects(:invoke).with("ExportSystemConfiguration", ASM::WsMan::LC_SERVICE,
+                                   :params => {},
+                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
+                                   :optional_params => [:username, :password, :workgroup, :target, :export_use, :include_in_export],
+                                   :return_value => "4096")
+      wsman.export_system_configuration_command
+    end
+  end
+
+  describe "#export_complete_lc_log" do
+    it "should invoke ExportCompleteLCLog" do
+      client.expects(:invoke).with("ExportCompleteLCLog", ASM::WsMan::LC_SERVICE,
+                                   :params => {},
+                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
+                                   :optional_params => [:username, :password, :workgroup],
+                                   :return_value => "4096")
+      wsman.export_complete_lc_log
+    end
+  end
+
+  describe "#get_config_results" do
+    it "should invoke GetConfigResults" do
+      client.expects(:invoke).with("GetConfigResults", ASM::WsMan::LC_RECORD_LOG_SERVICE,
+                                   :params => {},
+                                   :optional_params => [:instance_id, :job_id],
+                                   :return_value => "0").returns("rspec-result")
+      expect(wsman.get_config_results).to eq("rspec-result")
+    end
+  end
+
+  describe "#create_reboot_job" do
+    it "should invoke CreateRebootJob" do
+      client.expects(:invoke).with("CreateRebootJob", ASM::WsMan::SOFTWARE_INSTALLATION_SERVICE,
+                                   :params => {},
+                                   :optional_params => [:reboot_start_time, :reboot_job_type],
+                                   :return_value => "4096").returns("rspec-result")
+      expect(wsman.create_reboot_job).to eq("rspec-result")
+    end
+  end
+
+  describe "#setup_job_queue" do
+    it "should invoke SetupJobQueue" do
+      client.expects(:invoke).with("SetupJobQueue", ASM::WsMan::JOB_SERVICE,
+                                   :params => {},
+                                   :optional_params => [:job_array, :start_time_interval, :until_time],
+                                   :return_value => "0").returns("rspec-result")
+      expect(wsman.setup_job_queue).to eq("rspec-result")
+    end
+  end
+
+  describe "#delete_job_queue" do
+    it "should invoke DeleteJobQueue" do
+      client.expects(:invoke).with("DeleteJobQueue", ASM::WsMan::JOB_SERVICE,
+                                   :params => {},
+                                   :optional_params => [:job_id],
+                                   :return_value => "0").returns("rspec-result")
+      expect(wsman.delete_job_queue).to eq("rspec-result")
+    end
+  end
+
+  describe "#remote_services_api_status" do
+    it "should invoke DeleteJobQueue" do
+      client.expects(:invoke).with("GetRemoteServicesAPIStatus", ASM::WsMan::LC_SERVICE).returns("rspec-result")
+      expect(wsman.remote_services_api_status).to eq("rspec-result")
+    end
+  end
+
+  describe "#boot_to_network_iso_command" do
+    it "should invoke BootToNetworkISO" do
+      client.expects(:invoke)
+        .with("BootToNetworkISO", ASM::WsMan::DEPLOYMENT_SERVICE,
+              :params => {},
+              :required_params => [:ip_address, :share_name, :share_type, :image_name],
+              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+              :return_value => "4096")
+        .returns("rspec-result")
+      expect(wsman.boot_to_network_iso_command).to eq("rspec-result")
+    end
+  end
+
+  describe "#connect_network_iso_image_command" do
+    it "should invoke ConnectNetworkISOImage" do
+      client.expects(:invoke)
+        .with("ConnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
+              :params => {},
+              :required_params => [:ip_address, :share_name, :share_type, :image_name],
+              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+              :return_value => "4096")
+        .returns("rspec-result")
+      expect(wsman.connect_network_iso_image_command).to eq("rspec-result")
+    end
+  end
+
+  describe "#connect_rfs_iso_image_command" do
+    it "should invoke ConnectNetworkISOImage" do
+      client.expects(:invoke)
+        .with("ConnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
+              :params => {},
+              :required_params => [:ip_address, :share_name, :share_type, :image_name],
+              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+              :return_value => "4096")
+        .returns("rspec-result")
+      expect(wsman.connect_rfs_iso_image_command).to eq("rspec-result")
+    end
+  end
+
+  describe "#detach_iso_image" do
+    it "should invoke ConnectNetworkISOImage" do
+      client.expects(:invoke).with("DetachISOImage", ASM::WsMan::DEPLOYMENT_SERVICE, :return_value => "0").returns("rspec-result")
+      expect(wsman.detach_iso_image).to eq("rspec-result")
     end
   end
 
@@ -98,6 +315,19 @@ describe ASM::WsMan do
       url = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob"
       client.expects(:get).with(url, job_id).returns(:job_status => "Success")
       expect(wsman.get_deployment_job(job_id)).to eq(:job_status => "Success")
+    end
+  end
+
+  describe "#reboot" do
+    it "should create reboot job, set up job queue and await completion" do
+      opts = {:reboot_job_type => :power_cycle,
+              :reboot_start_time => "20170101123100",
+              :timeout => 900}
+      wsman.expects(:create_reboot_job).with(opts).returns(:reboot_job_id => "rspec-job")
+      wsman.expects(:setup_job_queue).with(:job_array => "rspec-job", :start_time_interval => "TIME_NOW")
+      wsman.expects(:poll_lc_job).with("rspec-job", :timeout => 15 * 60)
+      wsman.expects(:poll_for_lc_ready).with(opts).twice
+      wsman.reboot(opts)
     end
   end
 
@@ -193,11 +423,154 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#run_bios_config" do
+    it "should create bios job and await commpletion" do
+      opts = {:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}
+      wsman.expects(:poll_for_lc_ready).twice
+      wsman.expects(:create_targeted_config_job).with(opts).returns(:job => "rspec-job")
+      wsman.expects(:poll_lc_job).with("rspec-job").returns(:job => "rspec-job", :job_status => "Success")
+      wsman.run_bios_config_job(opts)
+    end
+  end
+
+  describe "#set_bios_attributes" do
+    it "should set the attributes and run the bios config job" do
+      wsman.expects(:set_attributes).with("rspec-attrs")
+      wsman.expects(:run_bios_config_job).with("rspec-attrs")
+      wsman.set_bios_attributes("rspec-attrs")
+    end
+  end
+
+  describe "#find_boot_device" do
+    it "should find boot device by element name" do
+      boot_devices = [{:element_name => "Foo"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device("Foo")).to eq(boot_devices.first)
+    end
+
+    it "should find boot device by first part of element_name" do
+      boot_devices = [{:element_name => "Food"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device("Foo")).to eq(boot_devices.first)
+    end
+
+    it "should find boot device by :hdd alias" do
+      boot_devices = [{:element_name => "Hard drive C: Boot Device"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device(:hdd)).to eq(boot_devices.first)
+    end
+
+    it "should not find boot device if it doesn't exist" do
+      wsman.expects(:boot_source_settings).returns([])
+      expect(wsman.find_boot_device(:hdd)).to be_nil
+    end
+  end
+
+  describe "#set_boot_order" do
+    let(:opts) {{:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}}
+
+    it "should fail if BootMode not found" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([])
+      expect {wsman.set_boot_order(:virtual_cd, opts)}.to raise_error("BootMode not found")
+    end
+
+    it "should set bios boot mode if uefi set" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Uefi"}])
+      wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
+      wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
+      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
+      wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.set_boot_order(:virtual_cd, opts)
+    end
+
+    it "should fail if boot target cannot be found" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Uefi"}])
+      wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
+      wsman.expects(:boot_source_settings).returns(%w(Hdd VirtualCd Nic).map { |e| {:element_name => e}})
+      message = "Could not find virtual_cd boot device in current list: Hdd, VirtualCd, Nic"
+      expect {wsman.set_boot_order(:virtual_cd, opts)}.to raise_error(message)
+    end
+
+    it "should exit early if boot order already set correctly" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:find_boot_device).with(:virtual_cd)
+        .returns(:instance_id => "rspec-id",
+                 :current_assigned_sequence => "0",
+                 :current_enabled_status => "1")
+      wsman.expects(:change_boot_order_by_instance_id).never
+      wsman.expects(:change_boot_source_state).never
+      wsman.expects(:run_bios_config_job).never
+      wsman.set_boot_order(:virtual_cd, opts)
+    end
+
+    it "should set boot order and run bios config job otherwise" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
+      wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
+      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
+      wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.set_boot_order(:virtual_cd, opts)
+    end
+  end
+
+  describe "#boot_rfs_iso_image" do
+    let(:opts) {{:reboot_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle, :timeout => 600}}
+
+    it "should connect iso, reboot, wait and set boot order" do
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:reboot).with(opts)
+      ASM::Util.expects(:block_and_retry_until_ready).with(600, ASM::WsMan::RetryException, 60)
+      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.boot_rfs_iso_image(opts)
+    end
+
+    it "should connect iso, reboot, set boot order when target device found" do
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:reboot).with(opts)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
+      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.boot_rfs_iso_image(opts)
+    end
+
+    it "should connect iso, reboot, set boot order and fail if target device not found" do
+      opts.merge!(:timeout => 0.05)
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:reboot).with(opts)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
+      message = "Timed out waiting for virtual CD to become available on rspec-host"
+      expect {wsman.boot_rfs_iso_image(opts)}.to raise_error(message)
+    end
+  end
+
   describe "#connect_network_iso_image" do
     it "should call run_deployment_job with default timeout of 90 seconds" do
       wsman.expects(:run_deployment_job).with(:method => :connect_network_iso_image_command,
                                               :timeout => 90)
       wsman.connect_network_iso_image
+    end
+  end
+
+  describe "#connect_rfs_iso_image" do
+    it "should call run_deployment_job with default timeout of 90 seconds" do
+      wsman.expects(:rfs_iso_image_connection_info).returns(:return_value => "2")
+      wsman.expects(:run_deployment_job).with(:method => :connect_rfs_iso_image_command,
+                                              :timeout => 90)
+      wsman.connect_rfs_iso_image
+    end
+
+    it "should disconnect old images first" do
+      wsman.expects(:rfs_iso_image_connection_info).returns(:return_value => "0")
+      wsman.expects(:disconnect_rfs_iso_image)
+      wsman.expects(:run_deployment_job).with(:method => :connect_rfs_iso_image_command,
+                                              :timeout => 90)
+      wsman.connect_rfs_iso_image
     end
   end
 

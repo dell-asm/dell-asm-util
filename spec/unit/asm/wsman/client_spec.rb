@@ -144,6 +144,11 @@ describe ASM::WsMan::Client do
       expect {client.invoke("RspecMethod", url, :params => {:foo => "My foo"}, :required_params => [:foo], :return_value => "0") }
         .to raise_error("RspecMethod failed: return_value: 2")
     end
+
+    it "should fail if given a non-nil params that is not a Hash" do
+      expect {client.invoke("RspecMethod", url, :params => :bad_value, :required_params => [:foo], :return_value => "0") }
+        .to raise_error("Invalid parameters: bad_value")
+    end
   end
 
   describe "#get" do

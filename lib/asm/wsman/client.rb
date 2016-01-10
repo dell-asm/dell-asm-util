@@ -132,6 +132,7 @@ module ASM
       # @return [Hash]
       def invoke(method, url, options={})
         params = options.delete(:params) || {}
+        raise(ArgumentError, "Invalid parameters: %s" % params) unless params.is_a?(Hash)
         url_params = Array(options.delete(:url_params))
         required_params = Array(options.delete(:required_params))
         optional_params = Array(options.delete(:optional_params))

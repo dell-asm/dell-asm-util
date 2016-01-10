@@ -129,11 +129,13 @@ module ASM
           enum_value(key, {:nfs => "0", :cifs => "2"}, value)
         when :hash_type
           enum_value(key, {:md5 => "1", :sha1 => "2"}, value)
-        when :reboot_job_type, :shutdown_type
+        when :reboot_job_type
           enum_value(key, {:power_cycle => "1", :graceful => "2", :graceful_with_forced_shutdown => "3"}, value)
+        when :shutdown_type
+          enum_value(key, {:graceful => "0", :forced => "1"}, value)
         when :end_host_power_state
           enum_value(key, {:on => "0", :off => "1"}, value)
-        when :export_user
+        when :export_use
           enum_value(key, {:default => "0", :clone => "1", :replace => "2"}, value)
         when :include_in_export
           enum_value(key, {:default => "0", :read_only => "1", :password_hash => "2",
