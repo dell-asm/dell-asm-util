@@ -35,6 +35,36 @@ module ASM
       WsMan.new(endpoint, options).client.exec(method, schema, options)
     end
 
+    # Retrieve FC NIC information
+    #
+    # @return [Array<Hash>]
+    def fc_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_FCView")
+    end
+
+    # Retrieve ethernet NIC information
+    #
+    # @return [Array<Hash>]
+    def nic_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_NICView")
+    end
+
+    # Retrieve list of BIOS settings
+    #
+    # @return [Array<Hash>]
+    def bios_enumerations
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSEnumeration")
+    end
+
+    # Get power state information
+    #
+    # @return [String] The value will be "2" if the server is on and "13" if it is off.
+    def power_state
+      ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
+      raise(Error, "No power management enumerations found") if ret.empty?
+      ret.first[:power_state]
+    end
+
     def self.reboot(endpoint, logger=nil)
       # Create the reboot job
       logger.debug("Rebooting server #{endpoint[:host]}") if logger
@@ -94,18 +124,7 @@ module ASM
     end
 
     def self.get_power_state(endpoint, logger=nil)
-      # Create the reboot job
-      logger.debug("Getting the power state of the server with iDRAC IP: #{endpoint[:host]}") if logger
-      response = invoke(endpoint,
-                        "enumerate",
-                        "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService",
-                        :logger => logger)
-      updated_xml = response.scan(%r{(<\?xml.*?</s:Envelope>?)}m)
-      xmldoc = REXML::Document.new(updated_xml[1][0])
-      powerstate_node = REXML::XPath.first(xmldoc, "//n1:PowerState")
-      powerstate = powerstate_node.text
-      logger.debug("Power State: #{powerstate}") if logger
-      powerstate
+      WsMan.new(endpoint, :logger => logger).power_state
     end
 
     def self.get_wwpns(endpoint, logger=nil)
