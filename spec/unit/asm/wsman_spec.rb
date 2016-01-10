@@ -101,6 +101,75 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#poll_deployment_job" do
+    let(:job) { "rspec-job" }
+
+    it "should return result of ASM::Util.block_and_retry_until_ready" do
+      resp = {:job_id => job, :job_status => "Success"}
+      ASM::Util.expects(:block_and_retry_until_ready).with(1, ASM::WsMan::RetryException, 60).returns(resp)
+      expect(wsman.poll_deployment_job(job, :timeout => 1)).to eq(resp)
+    end
+
+    it "should return final job status on success" do
+      resp = {:job_id => job, :job_status => "Success"}
+      wsman.expects(:get_deployment_job).returns(resp)
+      expect(wsman.poll_deployment_job(job, :timeout => 1)).to eq(resp)
+    end
+
+    it "should raise ResponseError if final status Failed" do
+      resp = {:job_id => job, :job_status => "Failed"}
+      wsman.expects(:get_deployment_job).returns(resp)
+      message = "Deployment job rspec-job failed: Failed [job_id: rspec-job]"
+      expect {wsman.poll_deployment_job(job, :timeout => 1)}.to raise_error(message)
+    end
+
+    it "should time out otherwise" do
+      resp = {:job_id => job, :job_status => "Running"}
+      wsman.expects(:get_deployment_job).returns(resp).at_least_once
+      message = "Timed out waiting for job rspec-job to complete. Final status: Running [job_id: rspec-job]"
+      expect {wsman.poll_deployment_job(job, :timeout => 0.05)}.to raise_error(message)
+    end
+  end
+
+  describe "#get_lc_job" do
+    it "should get the job id" do
+      job_id = "RspecJob:1"
+      url = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LifecycleJob"
+      client.expects(:get).with(url, job_id).returns(:job_status => "Success")
+      expect(wsman.get_lc_job(job_id)).to eq(:job_status => "Success")
+    end
+  end
+
+  describe "#poll_lc_job" do
+    let(:job) { "rspec-job" }
+
+    it "should return result of ASM::Util.block_and_retry_until_ready" do
+      resp = {:job_id => job, :job_status => "Complete"}
+      ASM::Util.expects(:block_and_retry_until_ready).with(1, ASM::WsMan::RetryException, 60).returns(resp)
+      expect(wsman.poll_lc_job(job, :timeout => 1)).to eq(resp)
+    end
+
+    it "should return final job status on success" do
+      resp = {:job_id => job, :job_status => "Complete"}
+      wsman.expects(:get_lc_job).returns(resp)
+      expect(wsman.poll_lc_job(job, :timeout => 1)).to eq(resp)
+    end
+
+    it "should raise ResponseError if final status not complete" do
+      resp = {:job_id => job, :job_status => "Failed", :percent_complete => "100"}
+      wsman.expects(:get_lc_job).returns(resp)
+      message = "LC job rspec-job failed: Failed [job_id: rspec-job, percent_complete: 100]"
+      expect {wsman.poll_lc_job(job, :timeout => 1)}.to raise_error(message)
+    end
+
+    it "should time out otherwise" do
+      resp = {:job_id => job, :job_status => "Running"}
+      wsman.expects(:get_lc_job).returns(resp).at_least_once
+      message = "Timed out waiting for job rspec-job to complete. Final status: Running [job_id: rspec-job]"
+      expect {wsman.poll_lc_job(job, :timeout => 0.05)}.to raise_error(message)
+    end
+  end
+
   describe "#run_deployment_job" do
     let(:iso_method) {:boot_to_network_iso_command}
     let(:options) do
@@ -121,16 +190,6 @@ describe ASM::WsMan do
         .returns(:job_status => "Success")
       wsman.expects(iso_method).with(:arg1 => "foo").returns(:job => "rspec-job", :job_status => "Started")
       wsman.run_deployment_job(:method => :boot_to_network_iso_command, :timeout => 300, :arg1 => "foo")
-    end
-
-    it "should fail when job fails" do
-      wsman.expects(:poll_for_lc_ready)
-      wsman.expects(:poll_deployment_job).with("rspec-job", :timeout => 300)
-        .returns(:job => "rspec-job", :job_status => "Failed")
-      wsman.expects(iso_method).returns(:job => "rspec-job", :job_status => "Started")
-      expect do
-        wsman.run_deployment_job(:method => :boot_to_network_iso_command, :timeout => 300)
-      end.to raise_error(ASM::WsMan::ResponseError, "boot_to_network_iso_command job rspec-job failed: Failed [job: rspec-job]")
     end
   end
 

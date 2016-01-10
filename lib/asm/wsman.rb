@@ -431,14 +431,14 @@ module ASM
 
     # Get deployment job status
     #
+    # @param job [String] the job instance id
+    # @return [Hash]
+    #
     # @example response
     #   {:delete_on_completion => false, :instance_id => "DCIM_OSDConcreteJob:1",
     #    :job_name => "ConnectNetworkISOImage", :job_status => "Success",
     #    :message => "The command was successful", :message_id => "OSD1",
     #    :name => "ConnectNetworkISOImage"}
-    #
-    # @param job [String] the job instance id
-    # @return [Hash]
     def get_deployment_job(job)
       client.get("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_OSDConcreteJob", job)
     end
@@ -448,18 +448,55 @@ module ASM
     # Check the deployment job status until it is complete or times out
     #
     # @param job [String] the job instance id
-    # @return [Hash]
+    # @return [Hash] the final deployment job status
     def poll_deployment_job(job, options={})
-      options = {:logger => Logger.new(nil), :timeout => 600}.merge(options)
+      options = {:timeout => 600}.merge(options)
       max_sleep_secs = 60
       resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep_secs) do
         resp = get_deployment_job(job)
         unless %w(Success Failed).include?(resp[:job_status])
-          options[:logger].info("%s status on %s: %s" % [job, host, Parser.response_string(resp)])
+          logger.info("%s status on %s: %s" % [job, host, Parser.response_string(resp)])
           raise(RetryException)
         end
         resp
       end
+      raise(ResponseError.new("Deployment job %s failed" % job, resp)) unless resp[:job_status] == "Success"
+      resp
+    rescue Timeout::Error
+      raise(Error, "Timed out waiting for job %s to complete. Final status: %s" % [job, Parser.response_string(resp)])
+    end
+
+    # Get LC job status
+    #
+    # @param job [String] the job instance id
+    # @return [Hash]
+    #
+    # @example response
+    #   {:elapsed_time_since_completion=>"132", :instance_id=>"JID_524095646294",
+    #    :job_start_time=>"NA", :job_status=>"Completed",
+    #    :job_until_time=>"NA", :message=>"Successfully exported system configuration XML file.",
+    #    :message_arguments=>"NA", :message_id=>"SYS043",
+    #    :name=>"Export Configuration", :percent_complete=>"100"}
+    def get_lc_job(job)
+      client.get("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LifecycleJob", job)
+    end
+
+    # Check the LC job status until it is complete or times out
+    #
+    # @param job [String] the job instance id
+    # @return [Hash] the final LC job status
+    def poll_lc_job(job, options={})
+      options = {:timeout => 900}.merge(options)
+      max_sleep_secs = 60
+      resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep_secs) do
+        resp = get_lc_job(job)
+        unless resp[:percent_complete] == "100" || resp[:job_status] =~ /complete/i
+          logger.info("%s status on %s: %s" % [job, host, Parser.response_string(resp)])
+          raise(RetryException)
+        end
+        resp
+      end
+      raise(ResponseError.new("LC job %s failed" % job, resp)) unless resp[:job_status] =~ /complete/i
       resp
     rescue Timeout::Error
       raise(Error, "Timed out waiting for job %s to complete. Final status: %s" % [job, Parser.response_string(resp)])
@@ -483,7 +520,6 @@ module ASM
       resp = send(method, options)
       logger.info("Initiated %s job %s on %s" % [method, resp[:job], host])
       resp = poll_deployment_job(resp[:job], :timeout => timeout)
-      raise(ResponseError.new("%s job %s failed" % [method, resp[:job]], resp)) unless resp[:job_status] == "Success"
       logger.info("%s succeeded with ISO %s on %s: %s" % [method, options[:image_name], host, Parser.response_string(resp)])
       nil
     end
