@@ -61,7 +61,7 @@ describe ASM::WsMan::Client do
       ASM::Util.expects(:run_command_with_args)
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(response)
-      message = "Failed to execute wsman command against server rspec-host: %s" % response
+      message = "Failed to execute wsman command against server rspec-host: %s" % response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
@@ -70,7 +70,7 @@ describe ASM::WsMan::Client do
       ASM::Util.expects(:run_command_with_args)
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(response)
-      message = "Failed to execute wsman command against server rspec-host: %s" % response
+      message = "Failed to execute wsman command against server rspec-host: %s" % response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
@@ -87,7 +87,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(auth_failed_response).times(3)
       client.expects(:sleep).with(10).twice
-      message = "Authentication failed, please retry with correct credentials after resetting the iDrac at rspec-host.: %s" % auth_failed_response
+      message = "Authentication failed, please retry with correct credentials after resetting the iDrac at rspec-host.: %s" % auth_failed_response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
 
@@ -104,7 +104,7 @@ describe ASM::WsMan::Client do
         .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
         .returns(conn_failed_response).times(3)
       client.expects(:sleep).with(10).twice
-      message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response
+      message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
   end
