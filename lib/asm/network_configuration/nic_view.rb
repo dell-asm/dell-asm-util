@@ -35,9 +35,12 @@ module ASM
 
       def parse_fqdd(fqdd, logger)
         # Expected format: NIC.Mezzanine.2B-1-1
+        raise(ArgumentError, "Invalid NIC FQDD: %s" % fqdd) unless fqdd =~ /^NIC[.]([^.]*)[.](\d+[A-Z]?)-(\d+)(-([\d+]))?$/
         @fqdd = fqdd
-        (_, @type, port_info) = @fqdd.split(".")
-        (@card, @port, @partition_no) = port_info.split("-")
+        @type = $1
+        @card = $2
+        @port = $3
+        @partition_no = $5
         @partition_no = "1" if @partition_no.nil?
         if @card =~ /([0-9])([A-Z])/
           orig_card = @card
