@@ -21,10 +21,12 @@ module ASM
         NicView.new(fqdd.gsub(/[-]\d+$/, "-#{partition}"))
       end
 
-      # Forward [] method directly to raw NICView hash data
-      def method_missing(sym, *args, &block)
-        return @raw_nic_view.send(sym, *args, &block) if sym == :[]
-        super
+      # Return raw NIC view values
+      #
+      # @param key [String] NIC view key
+      # @return [String] NIC view value
+      def [](key)
+        @raw_nic_view[key]
       end
 
       def card_to_fabric(card)
