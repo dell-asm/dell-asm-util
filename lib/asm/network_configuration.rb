@@ -275,8 +275,8 @@ module ASM
               partition_no = name_to_partition(partition.name)
               nic_partition = nic.find_partition(name_to_port(interface.name).to_s, partition_no.to_s)
               if nic_partition
-                partition.fqdd = nic_partition.nic_view["FQDD"]
-                partition.mac_address = nic_partition.nic_view["CurrentMACAddress"]
+                partition.fqdd = nic_partition.fqdd
+                partition.mac_address = nic_partition.mac_address
               elsif partition_no > 1 && options[:add_partitions]
                 first_partition = nic.find_partition(name_to_port(interface.name).to_s, "1")
                 partition.fqdd = first_partition.create_with_partition(partition_no).fqdd

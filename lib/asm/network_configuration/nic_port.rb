@@ -1,3 +1,5 @@
+require "logger"
+
 module ASM
   class NetworkConfiguration
     # NicPort encapsulates information about a server NIC port such as link speed
@@ -6,23 +8,27 @@ module ASM
       # The iDrac NICView LinkSpeed values
       LINK_SPEEDS = ["Unknown", "10 Mbps", "100 Mbps", "1000 Mbps", "2.5 Gbps", "10 Gbps", "20 Gbps", "40 Gbps", "100 Gbps"]
 
-      attr_reader :link_speed, :n_ports, :nic_info
+      attr_reader :link_speed, :n_ports, :partitions, :logger
 
       # Create a NicPort
       #
-      # @param nic_view [NicView]
-      # @param n_ports [FixNum] the number of ports on the physical NIC
+      # @param nic_view [Array[NicView]] The NIC views for each partition
       # @param logger [Logger] logger to use for log messages
       # @return [NicPort]
-      def initialize(nic_view, n_ports, logger=nil)
-        @nic_info = nic_view
+      def initialize(partitions, n_ports, logger=nil)
+        raise(ArgumentError, "At least one NicView required to create a NicPort") unless partitions.size > 0
+        @partitions = partitions
         @n_ports = n_ports
-        nic_view = nic_view.nic_view
-        @vendor ||= nic_view["VendorName"] # WARNING: sometimes this is missing! use PCIVendorID?
+        @logger = logger || Logger.new(nil)
+
         @model ||= nic_view["ProductName"]
         @link_speed = model_speed
         @link_speed ||= LINK_SPEEDS[Integer(nic_view["LinkSpeed"])] if nic_view["LinkSpeed"]
         @link_speed ||= LINK_SPEEDS[0]
+      end
+
+      def nic_view
+        partitions.first
       end
 
       # The vendor for the NIC port
@@ -31,7 +37,6 @@ module ASM
       #
       # @return [Symbol|Void] the vendor or nil if none recognized
       def vendor
-        nic_view = nic_info.nic_view
         return :qlogic if nic_view["VendorName"] =~ /qlogic|broadcom/i
         return :qlogic if nic_view["PCIVendorID"] == "14e4"
         return :intel if nic_view["VendorName"] =~ /intel/i
@@ -42,14 +47,14 @@ module ASM
       #
       # @return [String|Void] the product name or nil if none recognized
       def product
-        nic_info.nic_view["ProductName"]
+        nic_view["ProductName"]
       end
 
       # The port number
       #
       # @return [FixNum] the port number
       def port
-        Integer(nic_info.port)
+        Integer(nic_view.port)
       end
 
       # Whether the NIC port belongs to a Broadcom / QLogic 57800 NIC
@@ -115,11 +120,11 @@ module ASM
       end
 
       def to_s
-        "#<ASM::NetworkConfiguration::NicPort %s product: %s port: %d>" % [nic_info.fqdd, product, port]
+        "#<ASM::NetworkConfiguration::NicPort %s product: %s port: %d>" % [nic_view.fqdd, product, port]
       end
 
       def <=>(other)
-        nic_info <=> other.nic_info
+        nic_view <=> other.nic_view
       end
     end
   end
