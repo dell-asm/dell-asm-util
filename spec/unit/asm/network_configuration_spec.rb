@@ -223,6 +223,38 @@ describe ASM::NetworkConfiguration do
     end
   end
 
+  describe "add_nics! should populate physical NIC data" do
+    let(:json) { SpecHelper.load_fixture("network_configuration/blade_unpartitioned.json") }
+    let(:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }
+
+    before(:each) do
+      fqdd_to_mac = {"NIC.Integrated.1-1-1" => "00:0E:1E:0D:8C:30",
+                     "NIC.Integrated.1-2-1" => "00:0E:1E:0D:8C:31",
+                     "NIC.Mezzanine.2B-1-1" => "00:0F:1E:0D:8C:30",
+                     "NIC.Mezzanine.2B-2-1" => "00:0F:1E:0D:8C:31",
+                     "NIC.Mezzanine.3C-1-1" => "00:0D:1E:0D:8C:30",
+                     "NIC.Mezzanine.3C-2-1" => "00:0D:1E:0D:8C:31"}
+      ASM::WsMan.stubs(:get_nic_view).returns(build_nic_views(fqdd_to_mac, "Broadcom", "57810"))
+      net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"))
+    end
+
+    it "should populate card.nic_info" do
+      expect(net_config.cards[0].nic_info).to be_a(ASM::NetworkConfiguration::NicInfo)
+      expect(net_config.cards[0].nic_info.nic_type).to eq("2x10Gb")
+    end
+
+    it "should populate interface.nic_port" do
+      expect(net_config.cards[0].interfaces[0].nic_port).to be_a(ASM::NetworkConfiguration::NicPort)
+      expect(net_config.cards[0].interfaces[0].nic_port.link_speed).to eq("10 Gbps")
+    end
+
+    it "should populate partition.nic_view" do
+      nic_view = net_config.cards[0].interfaces[0].partitions[0].nic_view
+      expect(nic_view).to be_a(ASM::NetworkConfiguration::NicView)
+      expect(nic_view.vendor).to eq(:qlogic)
+    end
+  end
+
   describe "when parsing an un-partitioned network config" do
     let(:json) { SpecHelper.load_fixture("network_configuration/blade_unpartitioned.json") }
     let(:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }

@@ -37,17 +37,14 @@ module ASM
       #
       # @return [Symbol|Void] the vendor or nil if none recognized
       def vendor
-        return :qlogic if nic_view["VendorName"] =~ /qlogic|broadcom/i
-        return :qlogic if nic_view["PCIVendorID"] == "14e4"
-        return :intel if nic_view["VendorName"] =~ /intel/i
-        :intel if nic_view["PCIVendorID"] == "8086" # have seen cases where VendorName not populated
+        nic_view.vendor
       end
 
       # The product name of the NIC port
       #
       # @return [String|Void] the product name or nil if none recognized
       def product
-        nic_view["ProductName"]
+        nic_view.product
       end
 
       # The port number

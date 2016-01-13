@@ -281,8 +281,11 @@ module ASM
           missing << card
         else
           nic = nics.delete_at(index)
-          card.interfaces.each do |interface|
-            interface.partitions.each do |partition|
+          card.nic_info = nic
+          card.interfaces.each_with_index do |interface, interface_i|
+            interface.nic_port = nic.ports[interface_i]
+            interface.partitions.each_with_index do |partition, partition_i|
+              partition.nic_view = nic.ports[interface_i].partitions[partition_i]
               partition_no = name_to_partition(partition.name)
               nic_partition = nic.find_partition(name_to_port(interface.name).to_s, partition_no.to_s)
               if nic_partition
