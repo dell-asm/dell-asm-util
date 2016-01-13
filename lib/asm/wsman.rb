@@ -1078,15 +1078,16 @@ module ASM
 
     # Find the specified boot device in {#boot_source_settings}
     #
-    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device name itself
+    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device FQDD such as
+    #                        HardDisk.List.1-1, Optical.iDRACVirtual.1-1 or NIC.Slot.2-2-1
     # @return [Hash] the boot device, or nil if not found
     # @raise [ResponseError] if a command fails
     def find_boot_device(boot_device)
       boot_settings = boot_source_settings
-      boot_order_map = {:hdd => "Hard drive C", :virtual_cd => "Virtual Optical Drive"}
+      boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1"}
       boot_device = Parser.enum_value("BootDevice", boot_order_map,
                                       boot_device, :strict => false)
-      boot_settings.find { |e| e[:element_name].include?(boot_device) }
+      boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
     end
 
     # Set the boot device first in boot order and await completion.
