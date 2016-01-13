@@ -39,7 +39,6 @@ describe ASM::NetworkConfiguration do
     end
 
     it "should set interface, partition info on partitions" do
-      net_config.add_partition_info!
       partition_index = 0
       card = net_config.cards.first
       # Verify first interface partitions set correctly
@@ -341,7 +340,7 @@ describe ASM::NetworkConfiguration do
       net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"))
 
       # Verify
-      slot1 = net_config.interfaces[0]
+      slot1 = net_config.cards[0]
       (1..2).each do |port_no|
         port = slot1.interfaces.find { |p| p.name == "Port #{port_no}" }
         (1..4).each do |partition_no|

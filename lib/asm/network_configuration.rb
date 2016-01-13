@@ -46,19 +46,15 @@ module ASM
   class NetworkConfiguration
     include Translatable
 
-    attr_accessor(:logger)
-    attr_accessor(:cards)
-    attr_accessor(:teams)
+    attr_reader(:logger)
+    attr_reader(:cards)
+    attr_reader(:teams)
 
     def initialize(network_config_hash, logger=nil)
-      @mash = Hashie::Mash.new(network_config_hash)
       @logger = logger
-      @cards = self.munge!
-    end
-
-    # Forward methods we don't define directly to the mash
-    def method_missing(sym, *args, &block)
-      @mash.send(sym, *args, &block)
+      mash = Hashie::Mash.new(network_config_hash)
+      @hash = mash.to_hash
+      @cards = build_cards(mash.interfaces)
     end
 
     def get_wsman_nic_info(endpoint)
@@ -160,69 +156,67 @@ module ASM
 
     # TODO:  This function needs to be removed once the switch/blade code in asm-deployer is refactored
     def is_blade?
-      @mash.servertype == "blade"
+      false
     end
 
-    def munge!
-      # Augment partitions with additional info
-      source = @mash.interfaces
+    def build_cards(interfaces)
+      return [] unless interfaces
+
       partition_i = 0
       interface_i = 0
       card_i = 0
       cards = []
-      unless source.nil?
-        source.each do |orig_card|
-          # For now we are discarding FC interfaces!
-          next unless ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != "fc"
 
-          card = Hashie::Mash.new(orig_card)
-          card.interfaces = []
-          card.nictype = NicType.new(card.nictype)
-          orig_card.interfaces.each do |orig_interface|
-            interface = Hashie::Mash.new(orig_interface)
-            interface.partitions = []
-            port_no = name_to_port(orig_interface.name).to_i
-            # Assuming all 10Gb ports enumerate first, which is currently the
-            # case but may not always be...
-            n_ports = card.nictype.n_10gb_ports
-            max_partitions = card.nictype.n_partitions
-            next unless n_ports >= port_no
+      interfaces.each do |orig_card|
+        # For now we are discarding FC interfaces!
+        next unless ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != "fc"
 
-            orig_interface.interface_index = interface_i
-            interface_i += 1
-            orig_interface.partitions.each do |partition|
-              partition_no = name_to_partition(partition.name)
-              # at some point the partitioned flag moved from the interface
-              # to the card (which is the correct place, all ports must be
-              # either partitioned or not)
-              partitioned = card.partitioned || interface.partitioned
-              next unless partition_no == 1 || (partitioned && partition_no <= max_partitions)
+        card = Hashie::Mash.new(orig_card)
+        card.interfaces = []
+        card.nictype = NicType.new(card.nictype)
+        orig_card.interfaces.each do |orig_interface|
+          interface = Hashie::Mash.new(orig_interface)
+          interface.partitions = []
+          port_no = name_to_port(orig_interface.name).to_i
+          # Assuming all 10Gb ports enumerate first, which is currently the
+          # case but may not always be...
+          n_ports = card.nictype.n_10gb_ports
+          max_partitions = card.nictype.n_partitions
+          next unless n_ports >= port_no
 
-              partition.fabric_letter = name_to_fabric(card.name) if is_blade?
-              partition.port_no = port_no
-              partition.partition_no = partition_no
-              partition.partition_index = partition_i
-              partition_i += 1
+          orig_interface.interface_index = interface_i
+          interface_i += 1
+          orig_interface.partitions.each do |partition|
+            partition_no = name_to_partition(partition.name)
+            # at some point the partitioned flag moved from the interface
+            # to the card (which is the correct place, all ports must be
+            # either partitioned or not)
+            partitioned = card.partitioned || interface.partitioned
+            next unless partition_no == 1 || (partitioned && partition_no <= max_partitions)
 
-              # Strip networkObject ipRange which can vary for the same network,
-              # making it difficult to determine network uniqueness
-              partition.networkObjects = (partition.networkObjects || []).map do |network|
-                network = network.dup
-                if network.staticNetworkConfiguration
-                  network.staticNetworkConfiguration = network.staticNetworkConfiguration.dup
-                  network.staticNetworkConfiguration.delete("ipRange")
-                end
-                network
+            partition.port_no = port_no
+            partition.partition_no = partition_no
+            partition.partition_index = partition_i
+            partition_i += 1
+
+            # Strip networkObject ipRange which can vary for the same network,
+            # making it difficult to determine network uniqueness
+            partition.networkObjects = (partition.networkObjects || []).map do |network|
+              network = network.dup
+              if network.staticNetworkConfiguration
+                network.staticNetworkConfiguration = network.staticNetworkConfiguration.dup
+                network.staticNetworkConfiguration.delete("ipRange")
               end
-
-              interface.partitions.push(partition)
+              network
             end
-            card.interfaces.push(interface)
+
+            interface.partitions.push(partition)
           end
-          card.card_index = card_i
-          card_i += 1
-          cards.push(card)
+          card.interfaces.push(interface)
         end
+        card.card_index = card_i
+        card_i += 1
+        cards.push(card)
       end
       cards
     end
@@ -363,6 +357,10 @@ module ASM
         end
         @teams
       end
+    end
+
+    def to_hash
+      @hash
     end
   end
 end
