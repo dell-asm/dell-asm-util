@@ -428,7 +428,7 @@ describe ASM::WsMan do
       opts = {:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}
       wsman.expects(:poll_for_lc_ready).twice
       wsman.expects(:create_targeted_config_job).with(opts).returns(:job => "rspec-job")
-      wsman.expects(:poll_lc_job).with("rspec-job").returns(:job => "rspec-job", :job_status => "Success")
+      wsman.expects(:poll_lc_job).with("rspec-job", :timeout => 1800).returns(:job => "rspec-job", :job_status => "Success")
       wsman.run_bios_config_job(opts)
     end
   end

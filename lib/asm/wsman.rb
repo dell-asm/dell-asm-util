@@ -1059,7 +1059,7 @@ module ASM
                  :reboot_job_type => :graceful_with_forced_shutdown}.merge(options)
       resp = create_targeted_config_job(options)
       logger.info("Initiated BIOS config job %s on %s" % [resp[:job], host])
-      resp = poll_lc_job(resp[:job])
+      resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
       logger.info("Successfully executed BIOS config job %s on %s: %s" % [resp[:job], host, Parser.response_string(resp)])
       logger.info("Waiting for LC ready on %s" % host)
       poll_for_lc_ready
