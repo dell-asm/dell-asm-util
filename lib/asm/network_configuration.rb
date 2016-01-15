@@ -154,11 +154,6 @@ module ASM
       end.compact.uniq
     end
 
-    # TODO:  This function needs to be removed once the switch/blade code in asm-deployer is refactored
-    def is_blade?
-      false
-    end
-
     def build_cards(interfaces)
       return [] unless interfaces
 
