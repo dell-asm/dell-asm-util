@@ -1179,7 +1179,7 @@ module ASM
         find_boot_device(:virtual_cd) || raise(RetryException)
       end
 
-      set_boot_order(:virtual_cd)
+      set_boot_order(:virtual_cd, options)
 
     rescue Timeout::Error
       raise(Error, "Timed out waiting for virtual CD to become available on %s" % host)

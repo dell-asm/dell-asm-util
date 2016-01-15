@@ -521,7 +521,7 @@ describe ASM::WsMan do
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:reboot).with(opts)
       ASM::Util.expects(:block_and_retry_until_ready).with(600, ASM::WsMan::RetryException, 60)
-      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 
@@ -529,7 +529,7 @@ describe ASM::WsMan do
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:reboot).with(opts)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
-      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 
