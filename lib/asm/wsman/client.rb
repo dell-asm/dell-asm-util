@@ -13,6 +13,15 @@ module ASM
         raise("Missing required endpoint parameter(s): %s" % [missing_params.join(", ")]) unless missing_params.empty?
         @endpoint = endpoint
         @logger = augment_logger(options.delete(:logger) || Logger.new(nil))
+
+        proxy_warn
+      end
+
+      # @api private
+      def proxy_warn
+        if ENV.include?("http_proxy") || ENV.include?("https_proxy")
+          logger.warn("wsman invocations will use the proxy set in http_proxy or https_proxy")
+        end
       end
 
       # @api private
