@@ -1059,7 +1059,7 @@ module ASM
                  :reboot_job_type => :graceful_with_forced_shutdown}.merge(options)
       resp = create_targeted_config_job(options)
       logger.info("Initiated BIOS config job %s on %s" % [resp[:job], host])
-      resp = poll_lc_job(resp[:job])
+      resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
       logger.info("Successfully executed BIOS config job %s on %s: %s" % [resp[:job], host, Parser.response_string(resp)])
       logger.info("Waiting for LC ready on %s" % host)
       poll_for_lc_ready
@@ -1078,15 +1078,16 @@ module ASM
 
     # Find the specified boot device in {#boot_source_settings}
     #
-    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device name itself
+    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device FQDD such as
+    #                        HardDisk.List.1-1, Optical.iDRACVirtual.1-1 or NIC.Slot.2-2-1
     # @return [Hash] the boot device, or nil if not found
     # @raise [ResponseError] if a command fails
     def find_boot_device(boot_device)
       boot_settings = boot_source_settings
-      boot_order_map = {:hdd => "Hard drive C", :virtual_cd => "Virtual Optical Drive"}
+      boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1"}
       boot_device = Parser.enum_value("BootDevice", boot_order_map,
                                       boot_device, :strict => false)
-      boot_settings.find { |e| e[:element_name].include?(boot_device) }
+      boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
     end
 
     # Set the boot device first in boot order and await completion.

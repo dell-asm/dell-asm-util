@@ -74,6 +74,25 @@ module ASM
         end
       end
 
+      # The vendor for the NIC port
+      #
+      # Currently only :qlogic and :intel vendors are recognized
+      #
+      # @return [Symbol|Void] the vendor or nil if none recognized
+      def vendor
+        return :qlogic if self["VendorName"] =~ /qlogic|broadcom/i
+        return :qlogic if self["PCIVendorID"] == "14e4"
+        return :intel if self["VendorName"] =~ /intel/i
+        :intel if self["PCIVendorID"] == "8086" # have seen cases where VendorName not populated
+      end
+
+      # The product name of the NIC port
+      #
+      # @return [String|Void] the product name or nil if none recognized
+      def product
+        self["ProductName"]
+      end
+
       def card_prefix
         "NIC.%s.%s" % [type, card]
       end

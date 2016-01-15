@@ -428,7 +428,7 @@ describe ASM::WsMan do
       opts = {:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}
       wsman.expects(:poll_for_lc_ready).twice
       wsman.expects(:create_targeted_config_job).with(opts).returns(:job => "rspec-job")
-      wsman.expects(:poll_lc_job).with("rspec-job").returns(:job => "rspec-job", :job_status => "Success")
+      wsman.expects(:poll_lc_job).with("rspec-job", :timeout => 1800).returns(:job => "rspec-job", :job_status => "Success")
       wsman.run_bios_config_job(opts)
     end
   end
@@ -442,20 +442,14 @@ describe ASM::WsMan do
   end
 
   describe "#find_boot_device" do
-    it "should find boot device by element name" do
-      boot_devices = [{:element_name => "Foo"}]
-      wsman.expects(:boot_source_settings).returns(boot_devices)
-      expect(wsman.find_boot_device("Foo")).to eq(boot_devices.first)
-    end
-
-    it "should find boot device by first part of element_name" do
-      boot_devices = [{:element_name => "Food"}]
+    it "should find boot device by instance_id" do
+      boot_devices = [{:instance_id => "#Foo#"}]
       wsman.expects(:boot_source_settings).returns(boot_devices)
       expect(wsman.find_boot_device("Foo")).to eq(boot_devices.first)
     end
 
     it "should find boot device by :hdd alias" do
-      boot_devices = [{:element_name => "Hard drive C: Boot Device"}]
+      boot_devices = [{:instance_id => "#HardDisk.List.1-1#"}]
       wsman.expects(:boot_source_settings).returns(boot_devices)
       expect(wsman.find_boot_device(:hdd)).to eq(boot_devices.first)
     end
