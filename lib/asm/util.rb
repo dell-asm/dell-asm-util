@@ -24,14 +24,14 @@ module ASM
 
   module Util
     # TODO: give razor user access to this directory
-    PUPPET_CONF_DIR = "/etc/puppetlabs/puppet"
-    DEVICE_CONF_DIR = "#{PUPPET_CONF_DIR}/devices"
-    NODE_DATA_DIR = "#{PUPPET_CONF_DIR}/node_data"
-    DEVICE_SSL_DIR = "/var/opt/lib/pe-puppet/devices"
-    DATABASE_CONF = "#{PUPPET_CONF_DIR}/database.yaml"
-    DEVICE_MODULE_PATH = "/etc/puppetlabs/puppet/modules"
-    INSTALLER_OPTS_DIR = "/opt/razor-server/tasks/"
-    DEVICE_LOG_PATH = "/opt/Dell/ASM/device"
+    PUPPET_CONF_DIR = "/etc/puppetlabs/puppet".freeze
+    DEVICE_CONF_DIR = "#{PUPPET_CONF_DIR}/devices".freeze
+    NODE_DATA_DIR = "#{PUPPET_CONF_DIR}/node_data".freeze
+    DEVICE_SSL_DIR = "/var/opt/lib/pe-puppet/devices".freeze
+    DATABASE_CONF = "#{PUPPET_CONF_DIR}/database.yaml".freeze
+    DEVICE_MODULE_PATH = "/etc/puppetlabs/puppet/modules".freeze
+    INSTALLER_OPTS_DIR = "/opt/razor-server/tasks/".freeze
+    DEVICE_LOG_PATH = "/opt/Dell/ASM/device".freeze
 
     # Extract a server serial number from the certname.
     # For Dell servers, the serial number will be the service tag
@@ -50,7 +50,7 @@ module ASM
     end
 
     def self.is_ip_address_accessible(ip_address)
-      system("ping -c 1 -w 1 " + "#{ip_address}")
+      system("ping -c 1 -w 1 %s" % ip_address)
     end
 
     # Hack to figure out cert name from uuid.
@@ -204,7 +204,7 @@ module ASM
     # +args[,env]: command line arguments.  can set env vars with last element as hash
 
     def self.run_with_clean_env(cmd, fail_on_error, *args)
-      args.last.is_a?(Hash) ? env_vars = args.pop : env_vars = {}
+      env_vars = args.last.is_a?(Hash) ? args.pop : {}
       new_args = []
       %w(BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT).each do |e|
         new_args.insert(0, "--unset=#{e}")
@@ -348,7 +348,7 @@ module ASM
       result = ASM::Util.run_with_clean_env("/opt/puppet/bin/ruby", false, *args)
       host_group = "All Hosts"
       result.stdout.split("\n").reject {|l| l.empty? || l == "\r"}.drop(2).each do |line|
-        host_group = $1 if line.strip.match(/hostgroup\s*:\s+(.*)?$/i)
+        host_group = $1 if line.strip =~ /hostgroup\s*:\s+(.*)?$/i
       end
       host_group
     end

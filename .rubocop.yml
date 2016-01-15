@@ -2,6 +2,9 @@ AllCops:
   DisplayCopNames: true
   DisplayStyleGuide: true
 
+Style/RegexpLiteral:
+  Enabled: false
+
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 
@@ -59,6 +62,12 @@ Style/PerlBackrefs:
 Style/Lambda:
   Enabled: false
 
+Style/ConditionalAssignment:
+  Enabled: false
+
+Style/Alias:
+  Enabled: false
+
 Lint/UnusedMethodArgument:
   Enabled: false
 
@@ -87,4 +96,7 @@ Metrics/ClassLength:
   Enabled: false
 
 Metrics/ModuleLength:
+  Enabled: false
+
+Performance/Casecmp:
   Enabled: false
