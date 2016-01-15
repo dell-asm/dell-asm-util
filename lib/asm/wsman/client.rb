@@ -27,9 +27,13 @@ module ASM
       # @api private
       def augment_logger(logger)
         if !logger.respond_to?(:error) && logger.respond_to?(:err)
-          # Puppet logger has most Logger methods, but uses err instead of error
+          # Puppet logger has most Logger methods, but uses err and warning
           def logger.error(msg)
             err(msg)
+          end
+
+          def logger.warn(msg)
+            warning(msg)
           end
         end
         logger
