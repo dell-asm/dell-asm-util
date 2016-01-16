@@ -60,7 +60,7 @@ describe ASM::Ipmi::Client do
 
     it "should fail if connection fails three times" do
       ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(failed_response).times(3)
-      message = "Unable to establish IPMI, please retry with correct credentials at rspec-host.: %s" % failed_response
+      message = "Unable to establish IPMI, please retry with correct credentials at rspec-host.: %s" % failed_response.to_s
       expect {client.exec("power on")}.to raise_error(message)
     end
   end
