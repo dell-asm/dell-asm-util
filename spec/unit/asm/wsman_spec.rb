@@ -331,6 +331,44 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#set_power_state" do
+    it "should invoke RequestStateChange" do
+      client.expects(:invoke).with("RequestStateChange", ASM::WsMan::POWER_SERVICE,
+                                   :params => {},
+                                   :required_params => :requested_state,
+                                   :return_value => "0").returns("rspec-result")
+      expect(wsman.set_power_state).to eq("rspec-result")
+    end
+  end
+
+  describe "#power_on" do
+    it "should power server on if it is off" do
+      wsman.expects(:get_power_state).returns("13")
+      wsman.expects(:set_power_state).with(:requested_state => :on)
+      wsman.power_on
+    end
+
+    it "should do nothing if it is already on" do
+      wsman.expects(:get_power_state).returns("2")
+      wsman.expects(:set_power_state).never
+      wsman.power_on
+    end
+  end
+
+  describe "#power_off" do
+    it "should power server off if it is on" do
+      wsman.expects(:get_power_state).returns("2")
+      wsman.expects(:set_power_state).with(:requested_state => :off)
+      wsman.power_off
+    end
+
+    it "should do nothing if it is already off" do
+      wsman.expects(:get_power_state).returns("13")
+      wsman.expects(:set_power_state).never
+      wsman.power_off
+    end
+  end
+
   describe "#poll_deployment_job" do
     let(:job) { "rspec-job" }
 
