@@ -169,13 +169,16 @@ module ASM
       client.enumerate("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim")
     end
 
-    # Get power state information
+    # Get server power state
     #
-    # @return [String] The value will be "2" if the server is on and "13" if it is off.
+    # @return [Symbol] :on or :off
     def power_state
       ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
       raise(Error, "No power management enumerations found") if ret.empty?
-      ret.first[:power_state]
+      power_state = ret.first[:power_state]
+      return :on if power_state == "2"
+      return :off if power_state == "13"
+      raise(Error, "Invalid power state returned: %s" % power_state)
     end
 
     def self.reboot(endpoint, logger=nil)
@@ -212,8 +215,9 @@ module ASM
       ASM::WsMan.new(endpoint, :logger => logger).power_on
     end
 
+    # @deprecated Use {#power_state} instead.
     def self.get_power_state(endpoint, logger=nil)
-      WsMan.new(endpoint, :logger => logger).power_state
+      WsMan.new(endpoint, :logger => logger).power_state.to_s
     end
 
     def self.get_wwpns(endpoint, logger=nil)
@@ -875,8 +879,7 @@ module ASM
       # Create the reboot job
       logger.debug("Power on server %s" % host)
 
-      power_state = get_power_state
-      if power_state != "2"
+      if power_state != :on
         set_power_state(:requested_state => :on)
       else
         logger.debug "Server is already powered on"
@@ -892,8 +895,7 @@ module ASM
       # Create the reboot job
       logger.debug("Power off server %s" % host)
 
-      power_state = get_power_state
-      if power_state != "13"
+      if power_state != :off
         set_power_state(:requested_state => :off)
       else
         logger.debug "Server is already powered off"

@@ -343,13 +343,13 @@ describe ASM::WsMan do
 
   describe "#power_on" do
     it "should power server on if it is off" do
-      wsman.expects(:get_power_state).returns("13")
+      wsman.expects(:power_state).returns(:off)
       wsman.expects(:set_power_state).with(:requested_state => :on)
       wsman.power_on
     end
 
     it "should do nothing if it is already on" do
-      wsman.expects(:get_power_state).returns("2")
+      wsman.expects(:power_state).returns(:on)
       wsman.expects(:set_power_state).never
       wsman.power_on
     end
@@ -357,13 +357,13 @@ describe ASM::WsMan do
 
   describe "#power_off" do
     it "should power server off if it is on" do
-      wsman.expects(:get_power_state).returns("2")
+      wsman.expects(:power_state).returns(:on)
       wsman.expects(:set_power_state).with(:requested_state => :off)
       wsman.power_off
     end
 
     it "should do nothing if it is already off" do
-      wsman.expects(:get_power_state).returns("13")
+      wsman.expects(:power_state).returns(:off)
       wsman.expects(:set_power_state).never
       wsman.power_off
     end
