@@ -266,12 +266,12 @@ describe ASM::WsMan do
   describe "#boot_to_network_iso_command" do
     it "should invoke BootToNetworkISO" do
       client.expects(:invoke)
-        .with("BootToNetworkISO", ASM::WsMan::DEPLOYMENT_SERVICE,
-              :params => {},
-              :required_params => [:ip_address, :share_name, :share_type, :image_name],
-              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
-              :return_value => "4096")
-        .returns("rspec-result")
+            .with("BootToNetworkISO", ASM::WsMan::DEPLOYMENT_SERVICE,
+                  :params => {},
+                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
+                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :return_value => "4096")
+            .returns("rspec-result")
       expect(wsman.boot_to_network_iso_command).to eq("rspec-result")
     end
   end
@@ -279,12 +279,12 @@ describe ASM::WsMan do
   describe "#connect_network_iso_image_command" do
     it "should invoke ConnectNetworkISOImage" do
       client.expects(:invoke)
-        .with("ConnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
-              :params => {},
-              :required_params => [:ip_address, :share_name, :share_type, :image_name],
-              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
-              :return_value => "4096")
-        .returns("rspec-result")
+            .with("ConnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
+                  :params => {},
+                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
+                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :return_value => "4096")
+            .returns("rspec-result")
       expect(wsman.connect_network_iso_image_command).to eq("rspec-result")
     end
   end
@@ -292,12 +292,12 @@ describe ASM::WsMan do
   describe "#connect_rfs_iso_image_command" do
     it "should invoke ConnectNetworkISOImage" do
       client.expects(:invoke)
-        .with("ConnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
-              :params => {},
-              :required_params => [:ip_address, :share_name, :share_type, :image_name],
-              :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
-              :return_value => "4096")
-        .returns("rspec-result")
+            .with("ConnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
+                  :params => {},
+                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
+                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :return_value => "4096")
+            .returns("rspec-result")
       expect(wsman.connect_rfs_iso_image_command).to eq("rspec-result")
     end
   end
@@ -417,7 +417,7 @@ describe ASM::WsMan do
     it "should poll for LC ready, invoke command and poll job" do
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:poll_deployment_job).with("rspec-job", :timeout => 300)
-        .returns(:job_status => "Success")
+           .returns(:job_status => "Success")
       wsman.expects(iso_method).with(:arg1 => "foo").returns(:job => "rspec-job", :job_status => "Started")
       wsman.run_deployment_job(:method => :boot_to_network_iso_command, :timeout => 300, :arg1 => "foo")
     end
@@ -494,9 +494,9 @@ describe ASM::WsMan do
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
       wsman.expects(:find_boot_device).with(:virtual_cd)
-        .returns(:instance_id => "rspec-id",
-                 :current_assigned_sequence => "0",
-                 :current_enabled_status => "1")
+           .returns(:instance_id => "rspec-id",
+                    :current_assigned_sequence => "0",
+                    :current_enabled_status => "1")
       wsman.expects(:change_boot_order_by_instance_id).never
       wsman.expects(:change_boot_source_state).never
       wsman.expects(:run_bios_config_job).never
@@ -534,7 +534,7 @@ describe ASM::WsMan do
     end
 
     it "should connect iso, reboot, set boot order and fail if target device not found" do
-      opts.merge!(:timeout => 0.05)
+      opts[:timeout] = 0.05
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:reboot).with(opts)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
