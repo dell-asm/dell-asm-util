@@ -26,37 +26,40 @@ describe ASM::Ipmi::Client do
   end
 
   describe "#exec" do
-    let(:args) { ["-I", "lanplus", "-H", endpoint[:host], "-U", endpoint[:user], "-P", endpoint[:password]] }
+    let(:args) do
+      ["env", "IPMI_PASSWORD=%s" % endpoint[:password], "ipmitool", "-E",
+       "-I", "lanplus", "-H", endpoint[:host], "-U", endpoint[:user]]
+    end
     let(:response) {Hashie::Mash.new(:exit_status => 0, :stdout => "rspec-response", :stderr => "")}
     let(:failed_response) {Hashie::Mash.new(:exit_status => 1, :stdout => "Unable to establish IPMI", :stderr => "")}
 
     it "should execute ipmitool and return stdout" do
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(response)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(response)
       expect(client.exec("power on")).to eq(response.stdout)
     end
 
     it "should fail if exit status is non-zero" do
       response.exit_status = 1
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(response)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(response)
       message = "Failed to execute IPMI command against server rspec-host: %s" % response.to_s
       expect {client.exec("power on")}.to raise_error(message)
     end
 
     it "should fail if stderr not empty" do
       response.stderr = "Bang!"
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(response)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(response)
       message = "Failed to execute IPMI command against server rspec-host: %s" % response.to_s
       expect {client.exec("power on")}.to raise_error(message)
     end
 
     it "should retry if connection failed" do
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(response)
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(failed_response)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(response)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(failed_response)
       expect(client.exec("power on")).to eq(response.stdout)
     end
 
     it "should fail if connection fails three times" do
-      ASM::Util.expects(:run_command_with_args).with("ipmitool", *args, "power", "on").returns(failed_response).times(3)
+      ASM::Util.expects(:run_command_with_args).with(*args, "power", "on").returns(failed_response).times(3)
       message = "Unable to establish IPMI, please retry with correct credentials at rspec-host.: %s" % failed_response
       expect {client.exec("power on")}.to raise_error(message)
     end

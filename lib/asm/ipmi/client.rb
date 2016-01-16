@@ -56,14 +56,10 @@ module ASM
       def exec(command, options={})
         options[:nth_attempt] ||= 0
 
-        base_cmd = "ipmitool"
-        args = ["-I", "lanplus", "-H", host,
-                "-U", endpoint[:user], "-P", endpoint[:password], *command.split]
-        masked_args = args.dup
-        masked_args[args.find_index("-P") + 1] = "******"
-        logger.debug("Executing ipmitool #{masked_args.join(' ')}")
-        # TODO: if ipmitool has a way to specify password not as an argument, should use that
-        result = ASM::Util.run_command_with_args(base_cmd, *args)
+        args = ["IPMI_PASSWORD=#{endpoint[:password]}", "ipmitool", "-E", "-I",
+                "lanplus", "-H", host, "-U", endpoint[:user], *command.split]
+        logger.debug("Executing env IPMI_PASSWORD=****** %s" % args[1..-1].join(" "))
+        result = ASM::Util.run_command_with_args("env", *args)
         logger.debug("Result = #{result}")
 
         unless result.exit_status == 0 && result.stderr.empty?
