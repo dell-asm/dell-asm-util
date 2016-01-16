@@ -33,7 +33,7 @@ module ASM
     #
     # @return [void]
     def reboot
-      if get_power_status == "off"
+      if power_state == :off
         logger.info("Server is powered-off. Need to power-on the server")
         client.exec("power on")
       else
@@ -49,17 +49,23 @@ module ASM
 
     # Get server power status
     #
-    # @return [String] "on" if the server is on or "off" if it is off.
-    def get_power_status # rubocop:disable Style/AccessorMethodName
-      power_status = client.exec("power status")
-      power_status = power_status.scan(/Chassis Power is\s+(\S+)$/m).flatten.first.strip
-      logger.debug("Current power status: #{power_status}") if logger
-      power_status
+    # @return [Symbol] :on or :off
+    def power_state
+      response = client.exec("power status")
+      unless response =~ /Chassis Power is\s+(\S+)/m
+        raise(ASM::Error, "Invalid IPMI power status response: %s" % response)
+      end
+      state = $1.downcase
+      unless %w(on off).include?(state)
+        raise(ASM::Error, "Invalid IPMI power state %s; full response: %s" % [state, response])
+      end
+      logger.debug("Current power status: #{response}")
+      state.to_sym
     end
 
-    # @deprecated Use {#get_power_status} instead
+    # @deprecated Use {#power_state} instead
     def self.get_power_status(endpoint, logger=nil)
-      ASM::Ipmi.new(endpoint, :logger => logger).get_power_status
+      ASM::Ipmi.new(endpoint, :logger => logger).power_state.to_s
     end
 
     # Power the server on
@@ -68,7 +74,7 @@ module ASM
     #
     # @return [void]
     def power_on
-      if get_power_status == "on"
+      if power_state == :on
         logger.info("Server is already powered-on.")
         return
       end
@@ -87,7 +93,7 @@ module ASM
     #
     # @return [void]
     def power_off
-      if get_power_status == "off"
+      if power_state == :off
         logger.info("Server is already powered-off.")
         return true
       end
