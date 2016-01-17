@@ -15,6 +15,7 @@ module ASM
     JOB_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_JobService?CreationClassName=DCIM_JobService,Name=JobService,SystemName=Idrac,SystemCreationClassName=DCIM_ComputerSystem".freeze
     LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_LCService,SystemName=DCIM:ComputerSystem,Name=DCIM:LCService".freeze
     LC_RECORD_LOG_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_LCRecordLog?__cimnamespace=root/dcim".freeze
+    POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system".freeze
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate".freeze
     # rubocop:enable Metrics/LineLength
 
@@ -168,13 +169,16 @@ module ASM
       client.enumerate("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim")
     end
 
-    # Get power state information
+    # Get server power state
     #
-    # @return [String] The value will be "2" if the server is on and "13" if it is off.
+    # @return [Symbol] :on or :off
     def power_state
       ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
       raise(Error, "No power management enumerations found") if ret.empty?
-      ret.first[:power_state]
+      power_state = ret.first[:power_state]
+      return :on if power_state == "2"
+      return :off if power_state == "13"
+      raise(Error, "Invalid power state returned: %s" % power_state)
     end
 
     def self.reboot(endpoint, logger=nil)
@@ -201,42 +205,19 @@ module ASM
       true
     end
 
+    # @deprecated Use {#power_off} instead.
     def self.poweroff(endpoint, logger=nil)
-      # Create the reboot job
-      logger.debug("Power off server #{endpoint[:host]}") if logger
-
-      power_state = get_power_state(endpoint, logger)
-      if power_state.to_i != 13
-        invoke(endpoint,
-               "RequestStateChange",
-               "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system",
-               :props => {"RequestedState" => "3"},
-               :logger => logger)
-      elsif logger
-        logger.debug "Server is already powered off"
-      end
-      true
+      ASM::WsMan.new(endpoint, :logger => logger).power_off
     end
 
+    # @deprecated Use {#power_on} instead.
     def self.poweron(endpoint, logger=nil)
-      # Create the reboot job
-      logger.debug("Power on server #{endpoint[:host]}") if logger
-
-      power_state = get_power_state(endpoint, logger)
-      if power_state.to_i != 2
-        invoke(endpoint,
-               "RequestStateChange",
-               "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system",
-               :props => {"RequestedState" => "2"},
-               :logger => logger)
-      elsif logger
-        logger.debug "Server is already powered on"
-      end
-      true
+      ASM::WsMan.new(endpoint, :logger => logger).power_on
     end
 
+    # @deprecated Use {#power_state} instead.
     def self.get_power_state(endpoint, logger=nil)
-      WsMan.new(endpoint, :logger => logger).power_state
+      WsMan.new(endpoint, :logger => logger).power_state.to_s
     end
 
     def self.get_wwpns(endpoint, logger=nil)
@@ -877,6 +858,50 @@ module ASM
       nil
     end
 
+    # Set the desired server power state.
+    #
+    # @param options [Hash]
+    # @option options [Symbol|String] :requested_state :on / "2" or :off / "13"
+    # @return [Hash]
+    # @raise [ResponseError] if the command fails
+    def set_power_state(params={}) # rubocop:disable Style/AccessorMethodName
+      client.invoke("RequestStateChange", POWER_SERVICE,
+                    :params => params,
+                    :required_params => :requested_state,
+                    :return_value => "0")
+    end
+
+    # Power the server on.
+    #
+    # @return [void]
+    # @raise [ResponseError] if the command fails
+    def power_on
+      # Create the reboot job
+      logger.debug("Power on server %s" % host)
+
+      if power_state != :on
+        set_power_state(:requested_state => :on)
+      else
+        logger.debug "Server is already powered on"
+      end
+      nil
+    end
+
+    # Power the server off.
+    #
+    # @return [void]
+    # @raise [ResponseError] if the command fails
+    def power_off
+      # Create the reboot job
+      logger.debug("Power off server %s" % host)
+
+      if power_state != :off
+        set_power_state(:requested_state => :off)
+      else
+        logger.debug "Server is already powered off"
+      end
+    end
+
     # Check the deployment job status until it is complete or times out
     #
     # @param job [String] the job instance id
@@ -1179,7 +1204,7 @@ module ASM
         find_boot_device(:virtual_cd) || raise(RetryException)
       end
 
-      set_boot_order(:virtual_cd)
+      set_boot_order(:virtual_cd, options)
 
     rescue Timeout::Error
       raise(Error, "Timed out waiting for virtual CD to become available on %s" % host)

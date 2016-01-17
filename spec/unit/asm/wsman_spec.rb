@@ -331,6 +331,44 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#set_power_state" do
+    it "should invoke RequestStateChange" do
+      client.expects(:invoke).with("RequestStateChange", ASM::WsMan::POWER_SERVICE,
+                                   :params => {},
+                                   :required_params => :requested_state,
+                                   :return_value => "0").returns("rspec-result")
+      expect(wsman.set_power_state).to eq("rspec-result")
+    end
+  end
+
+  describe "#power_on" do
+    it "should power server on if it is off" do
+      wsman.expects(:power_state).returns(:off)
+      wsman.expects(:set_power_state).with(:requested_state => :on)
+      wsman.power_on
+    end
+
+    it "should do nothing if it is already on" do
+      wsman.expects(:power_state).returns(:on)
+      wsman.expects(:set_power_state).never
+      wsman.power_on
+    end
+  end
+
+  describe "#power_off" do
+    it "should power server off if it is on" do
+      wsman.expects(:power_state).returns(:on)
+      wsman.expects(:set_power_state).with(:requested_state => :off)
+      wsman.power_off
+    end
+
+    it "should do nothing if it is already off" do
+      wsman.expects(:power_state).returns(:off)
+      wsman.expects(:set_power_state).never
+      wsman.power_off
+    end
+  end
+
   describe "#poll_deployment_job" do
     let(:job) { "rspec-job" }
 
@@ -521,7 +559,7 @@ describe ASM::WsMan do
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:reboot).with(opts)
       ASM::Util.expects(:block_and_retry_until_ready).with(600, ASM::WsMan::RetryException, 60)
-      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 
@@ -529,7 +567,7 @@ describe ASM::WsMan do
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:reboot).with(opts)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
-      wsman.expects(:set_boot_order).with(:virtual_cd)
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 

@@ -140,6 +140,8 @@ module ASM
         when :include_in_export
           enum_value(key, {:default => "0", :read_only => "1", :password_hash => "2",
                            :read_only_and_password_hash => "3"}, value)
+        when :requested_state
+          enum_value(key, {:on => "2", :off => "13"}, value)
         else
           value
         end
