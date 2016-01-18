@@ -141,7 +141,7 @@ module ASM
           enum_value(key, {:default => "0", :read_only => "1", :password_hash => "2",
                            :read_only_and_password_hash => "3"}, value)
         when :requested_state
-          enum_value(key, {:on => "2", :off => "13"}, value)
+          enum_value(key, {:on => "2", :off => "3", :reset => "11"}, value)
         else
           value
         end
