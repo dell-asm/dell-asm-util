@@ -52,7 +52,7 @@ module ASM
       end
 
       def to_s
-        "NicType<%s>" % @nictype
+        @nictype
       end
     end
   end

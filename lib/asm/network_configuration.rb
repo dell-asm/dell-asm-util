@@ -354,8 +354,43 @@ module ASM
       end
     end
 
+    # Returns the network configuration data in hash form
+    #
+    # The returned value is roughly analogous to the hash that the NetworkConfiguration
+    # instance was created from with the following modifications:
+    #
+    # - disabled / unused interfaces are not returned
+    # - the port and partition data is augmented with the chosen NIC FQDD and mac
+    #   address data for the matching physical NIC if {#add_nics!} was previously called.
+    # - order of the cards (called "interfaces" at the top level) is not preserved.
+    #   In particular all FC interfaces will be at the end of the "interfaces" list.
+    #
+    # @note The returned data will not have any complex types, so it can be safely
+    # used in yaml data.
+    #
+    # @return [Hash]
     def to_hash
-      @hash
+      ret = {"id" => @hash["id"], "interfaces" => []}
+
+      # Get the ethernet data sans complex types like NicView and NicPort
+      cards.each do |card|
+        card["nictype"] = card["nictype"].to_s # convert back to string like 2x10Gb
+        card_data = card.to_hash
+        card_data["interfaces"].each do |port|
+          port.delete("nic_port") # remove NicPort instance
+          port["partitions"].each do |partition|
+            partition.delete("nic_view") # remove NicView instance
+          end
+        end
+        ret["interfaces"] << card_data
+      end
+
+      # Add back in the FC interfaces which aren't captured in #cards
+      @hash["interfaces"].each do |interface|
+        ret["interfaces"] << interface.dup if interface["fabrictype"] != "ethernet"
+      end
+
+      ret
     end
   end
 end
