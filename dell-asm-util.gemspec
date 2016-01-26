@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.add_dependency "trollop", "~> 2.0"
   s.add_dependency "nokogiri", "~> 1.5.10"
   s.add_dependency "i18n", "~> 0.6.5"
+  s.add_dependency "pry", "~> 0.10"
 
   s.add_development_dependency "logger-colors", "~> 1.0.0"
   s.add_development_dependency "guard-shell"
@@ -23,6 +24,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "mocha"
   s.add_development_dependency "puppet"
   s.add_development_dependency "puppetlabs_spec_helper", "0.4.1"
+
+  s.executables << "wsman_shell.rb"
 
   s.files        = Dir.glob("lib/**/*")
   s.require_path = "lib"
