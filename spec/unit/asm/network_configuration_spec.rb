@@ -824,6 +824,8 @@ describe ASM::NetworkConfiguration do
     it "should populate fqdd and mac_address in the #to_hash output" do
       hash_data = net_config.to_hash
       card = hash_data["interfaces"].first
+      expect(card["nic_info"]).to be_nil
+      expect(card["nictype"]).to eq("2x10Gb")
 
       # Verify mac_address and fqdd info has been captured in to_hash output
       # and that the complex types NicPort and NicView have been stripped out
@@ -840,6 +842,8 @@ describe ASM::NetworkConfiguration do
       end
 
       card = net_config.cards.first
+      expect(card.nic_info).to be_a(ASM::NetworkConfiguration::NicInfo)
+      expect(card.nictype).to be_a(ASM::NetworkConfiguration::NicType)
 
       # Verify nic_view and nic_port still exist in #cards data
       (1..2).each do |port_no|

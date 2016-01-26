@@ -374,8 +374,9 @@ module ASM
 
       # Get the ethernet data sans complex types like NicView and NicPort
       cards.each do |card|
-        card["nictype"] = card["nictype"].to_s # convert back to string like 2x10Gb
         card_data = card.to_hash
+        card_data["nictype"] = card_data["nictype"].to_s # convert back to string like 2x10Gb
+        card_data.delete("nic_info") # remove NicInfo instance
         card_data["interfaces"].each do |port|
           port.delete("nic_port") # remove NicPort instance
           port["partitions"].each do |partition|
