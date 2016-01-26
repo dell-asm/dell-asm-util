@@ -801,4 +801,78 @@ describe ASM::NetworkConfiguration do
       expect(net_config.teams).to eq(output)
     end
   end
+
+  describe "#to_hash" do
+    let(:json) { SpecHelper.load_fixture("network_configuration/blade_partitioned.json") }
+    let(:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }
+    let(:fqdd_to_mac) do
+      {"NIC.Integrated.1-1-1" => "00:0E:1E:0D:8C:30",
+       "NIC.Integrated.1-1-2" => "00:0E:1E:0D:8C:32",
+       "NIC.Integrated.1-1-3" => "00:0E:1E:0D:8C:34",
+       "NIC.Integrated.1-1-4" => "00:0E:1E:0D:8C:36",
+       "NIC.Integrated.1-2-1" => "00:0E:1E:0D:8C:31",
+       "NIC.Integrated.1-2-2" => "00:0E:1E:0D:8C:33",
+       "NIC.Integrated.1-2-3" => "00:0E:1E:0D:8C:35",
+       "NIC.Integrated.1-2-4" => "00:0E:1E:0D:8C:37"}
+    end
+
+    before(:each) do
+      ASM::WsMan.stubs(:get_nic_view).returns(build_nic_views(fqdd_to_mac, "Broadcom", "57810"))
+      net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"))
+    end
+
+    it "should populate fqdd and mac_address in the #to_hash output" do
+      hash_data = net_config.to_hash
+      card = hash_data["interfaces"].first
+
+      # Verify mac_address and fqdd info has been captured in to_hash output
+      # and that the complex types NicPort and NicView have been stripped out
+      (1..2).each do |port_no|
+        port = card["interfaces"].find { |p| p["name"] == "Port #{port_no}" }
+        expect(port["nic_port"]).to be_nil
+        (1..4).each do |partition_no|
+          fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
+          partition = port["partitions"].find { |p| p["name"] == partition_no.to_s }
+          expect(partition["fqdd"]).to eq(fqdd)
+          expect(partition["mac_address"]).to eq(fqdd_to_mac[fqdd])
+          expect(port["nic_view"]).to be_nil
+        end
+      end
+
+      card = net_config.cards.first
+
+      # Verify nic_view and nic_port still exist in #cards data
+      (1..2).each do |port_no|
+        port = card.interfaces.find { |p| p.name == "Port #{port_no}" }
+        expect(port.nic_port).to be_an_instance_of(ASM::NetworkConfiguration::NicPort)
+        (1..4).each do |partition_no|
+          fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
+          partition = port.partitions.find { |p| p.name == partition_no.to_s }
+          expect(partition.fqdd).to eq(fqdd)
+          expect(partition.mac_address).to eq(fqdd_to_mac[fqdd])
+          expect(partition.nic_view).to be_an_instance_of(ASM::NetworkConfiguration::NicView)
+        end
+      end
+    end
+
+    it "should be able to round-trip the fqdd / mac address data" do
+      net_config2 = ASM::NetworkConfiguration.new(net_config.to_hash)
+      hash_data = net_config2.to_hash
+      card = hash_data["interfaces"].first
+
+      # Verify mac_address and fqdd info has been captured in to_hash output
+      # and that the complex types NicPort and NicView have been stripped out
+      (1..2).each do |port_no|
+        port = card["interfaces"].find { |p| p["name"] == "Port #{port_no}" }
+        expect(port["nic_port"]).to be_nil
+        (1..4).each do |partition_no|
+          fqdd = "NIC.Integrated.1-#{port_no}-#{partition_no}"
+          partition = port["partitions"].find { |p| p["name"] == partition_no.to_s }
+          expect(partition["fqdd"]).to eq(fqdd)
+          expect(partition["mac_address"]).to eq(fqdd_to_mac[fqdd])
+          expect(port["nic_view"]).to be_nil
+        end
+      end
+    end
+  end
 end
