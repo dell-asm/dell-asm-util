@@ -121,7 +121,7 @@ module ASM
     # Management Network      vSwitch0                     1        0
     # vMotion                 vSwitch1                     1       23
     def self.esxcli(cmd_array, endpoint, logger=nil, skip_parsing=false, time_out=600)
-      args = ["VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
+      args = [time_out, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
       args += ["-s", endpoint[:host],
                "-u", endpoint[:user]
               ]
@@ -133,9 +133,7 @@ module ASM
         logger.debug("Executing esxcli #{tmp.join(' ')}")
       end
 
-      result = Timeout.timeout(time_out) do
-        ASM::Util.run_command_with_args("env", *args)
-      end
+      result = ASM::Util.run_command_with_args("timeout", *args)
 
       unless result["exit_status"] == 0
         msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
