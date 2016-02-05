@@ -14,7 +14,7 @@ module ASM
       def self.parse_element(elem)
         if elem.namespaces.keys.include?("xmlns:wsman") && !(params = elem.xpath(".//wsman:Selector[@Name='InstanceID']")).empty?
           params.first.text
-        elsif !(params = elem.xpath(".//s:Subcode")).empty? && params.children.size > 0
+        elsif !(params = elem.xpath(".//s:Subcode")).empty? && !params.children.empty?
           params.children.map(&:text).join(", ")
         elsif elem.attributes["nil"] && elem.attributes["nil"].value == "true"
           nil

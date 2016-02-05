@@ -16,7 +16,7 @@ module ASM
       # @param logger [Logger] logger to use for log messages
       # @return [NicPort]
       def initialize(partitions, n_ports, logger=nil)
-        raise(ArgumentError, "At least one NicView required to create a NicPort") unless partitions.size > 0
+        raise(ArgumentError, "At least one NicView required to create a NicPort") if partitions.empty?
         @partitions = partitions
         @n_ports = n_ports
         @logger = logger || Logger.new(nil)

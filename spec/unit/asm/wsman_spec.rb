@@ -120,6 +120,41 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#controller_views" do
+    it "should enumerate DCIM_ControllerView" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wsscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView").returns("rspec-result")
+      expect(wsman.controller_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#enclosure_views" do
+    it "should enumerate DCIM_EnclosureView" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_EnclosureView").returns("rspec-result")
+      expect(wsman.enclosure_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#virtual_disk_views" do
+    it "should enumerate DCIM_VirtualDisk" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_VirtualDiskView").returns("rspec-result")
+      expect(wsman.virtual_disk_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#physical_disk_views" do
+    it "should enumerate DCIM_PhysicalDisk" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_PhysicalDiskView").returns("rspec-result")
+      expect(wsman.physical_disk_views).to eq("rspec-result")
+    end
+  end
+
+  describe "#software_identities" do
+    it "should enumerate DCIM_SoftwareIdentity" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_SoftwareIdentity").returns("rspec-result")
+      expect(wsman.software_identities).to eq("rspec-result")
+    end
+  end
+
   describe "#bios_enumerations" do
     it "should enumerate DCIM_BIOSEnumeration" do
       client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSEnumeration").returns("rspec-result")

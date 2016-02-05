@@ -96,6 +96,61 @@ module ASM
       client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_NICView")
     end
 
+    # Retrieve the list of RAID controllers
+    #
+    # See the DCIM Simple RAID Profile available at
+    # http://en.community.dell.com/techcenter/systems-management/w/wiki/1906.dcim-library-profile
+    # for a detailed explanation of the returned fields.
+    #
+    # @return [Array<Hash>] list of RAID controllers
+    def controller_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wsscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView")
+    end
+
+    # Retrieve the list of server enclosures
+    #
+    # See the DCIM Simple RAID Profile available at
+    # http://en.community.dell.com/techcenter/systems-management/w/wiki/1906.dcim-library-profile
+    # for a detailed explanation of the returned fields.
+    #
+    # @return [Array<Hash>] list of enclosures
+    def enclosure_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_EnclosureView")
+    end
+
+    # Retrieve the list of virtual disks, aka RAID volumes
+    #
+    # See the DCIM Simple RAID Profile available at
+    # http://en.community.dell.com/techcenter/systems-management/w/wiki/1906.dcim-library-profile
+    # for a detailed explanation of the returned fields.
+    #
+    # @return [Array<Hash>] list of virtual disks
+    def virtual_disk_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_VirtualDiskView")
+    end
+
+    # Retrieve the list of physical disks
+    #
+    # See the DCIM Simple RAID Profile available at
+    # http://en.community.dell.com/techcenter/systems-management/w/wiki/1906.dcim-library-profile
+    # for a detailed explanation of the returned fields.
+    #
+    # @return [Array<Hash>] list of physical disks
+    def physical_disk_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_PhysicalDiskView")
+    end
+
+    # Retrieve the list of firmware and driver versions installed on the server
+    #
+    # See the DCIM Software Inventory Profile available at
+    # http://en.community.dell.com/techcenter/systems-management/w/wiki/1906.dcim-library-profile
+    # for a detailed explanation of the returned fields.
+    #
+    # @return [Array<Hash>] list of firmware and driver versions
+    def software_identities
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_SoftwareIdentity")
+    end
+
     # Retrieve list of BIOS settings
     #
     # @return [Array<Hash>]
