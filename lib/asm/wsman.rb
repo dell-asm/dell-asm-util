@@ -672,7 +672,7 @@ module ASM
     #    :ipaddr=>"172.25.3.100", :iso_connection_status=>"1",
     #    :image_name=>"ipxe.iso", :return_value=>"0", :share_name=>"/var/nfs"}
     def get_network_iso_image_connection_info # rubocop:disable Style/AccessorMethodName
-      client.invoke("GetNetworkISOConnectionInfo", DEPLOYMENT_SERVICE)
+      client.invoke("GetNetworkISOImageConnectionInfo", DEPLOYMENT_SERVICE)
     end
 
     # Set BIOS attribute values

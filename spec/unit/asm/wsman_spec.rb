@@ -179,8 +179,8 @@ describe ASM::WsMan do
   end
 
   describe "#get_network_iso_image_connection_info" do
-    it "should invoke GetNetworkISOConnectionInfo" do
-      client.expects(:invoke).with("GetNetworkISOConnectionInfo", ASM::WsMan::DEPLOYMENT_SERVICE).returns("rspec-result")
+    it "should invoke GetNetworkISOImageConnectionInfo" do
+      client.expects(:invoke).with("GetNetworkISOImageConnectionInfo", ASM::WsMan::DEPLOYMENT_SERVICE).returns("rspec-result")
       expect(wsman.get_network_iso_image_connection_info).to eq("rspec-result")
     end
   end
