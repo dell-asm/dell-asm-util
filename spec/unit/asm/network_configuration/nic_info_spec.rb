@@ -42,6 +42,22 @@ describe ASM::NetworkConfiguration::NicInfo do
         ASM::NetworkConfiguration::NicInfo.expects(:create).with("rspec_nic_views", "rspec_bios_info", logger)
         ASM::NetworkConfiguration::NicInfo.fetch(endpoint, logger)
       end
+
+      it "should parse DCIM_NICView with both 1B and 1C Mezzanine NICs" do
+        nic_views_xml = SpecHelper.load_fixture("network_configuration/fab_b_fab_c_nic_view.xml")
+        ASM::WsMan.expects(:invoke)
+                  .with(endpoint, "enumerate", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_NICView", :logger => logger)
+                  .returns(nic_views_xml)
+        ASM::WsMan.expects(:get_bios_enumeration).with(endpoint, logger).returns([])
+        nic_infos = ASM::NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+        expect(nic_infos.size).to eq(3)
+        nic_infos.each do |nic_info|
+          expect(nic_info.nic_type).to eq("2x10Gb")
+        end
+        expect(nic_infos[0].card_prefix).to eq("NIC.Integrated.1")
+        expect(nic_infos[1].card_prefix).to eq("NIC.Mezzanine.1B")
+        expect(nic_infos[2].card_prefix).to eq("NIC.Mezzanine.1C")
+      end
     end
 
     describe ".create" do

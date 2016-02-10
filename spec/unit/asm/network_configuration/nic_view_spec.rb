@@ -2,8 +2,12 @@ require "spec_helper"
 require "asm/network_configuration/nic_view"
 require "asm/network_configuration/nic_port"
 
-describe ASM::NetworkConfiguration::NicPort do
+describe ASM::NetworkConfiguration::NicView do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
+
+  def nic_view(fqdd, logger=nil)
+    ASM::NetworkConfiguration::NicView.new(fqdd, logger)
+  end
 
   describe "#initialize" do
     # Blade examples:
@@ -46,43 +50,39 @@ describe ASM::NetworkConfiguration::NicPort do
     # NIC.Slot.2-2-4: 00:0A:F7:06:88:5E
 
     it "should parse NIC.Embedded.1-1-1" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Embedded.1-1-1")
+      fqdd = nic_view("NIC.Embedded.1-1-1")
       expect(fqdd.type).to eq("Embedded")
       expect(fqdd.card).to eq("1")
-      expect(fqdd.fabric).to eq("A")
       expect(fqdd.port).to eq("1")
       expect(fqdd.partition_no).to eq("1")
     end
 
     it "should parse NIC.Embedded.2-1-1" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Embedded.2-1-1")
+      fqdd = nic_view("NIC.Embedded.2-1-1")
       expect(fqdd.type).to eq("Embedded")
       expect(fqdd.card).to eq("1")
-      expect(fqdd.fabric).to eq("A")
       expect(fqdd.port).to eq("2")
       expect(fqdd.partition_no).to eq("1")
     end
 
     it "should parse NIC.Integrated.1-1-1" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Integrated.1-1-1")
+      fqdd = nic_view("NIC.Integrated.1-1-1")
       expect(fqdd.type).to eq("Integrated")
       expect(fqdd.card).to eq("1")
-      expect(fqdd.fabric).to eq("A")
       expect(fqdd.port).to eq("1")
       expect(fqdd.partition_no).to eq("1")
     end
 
     it "should parse NIC.Integrated.1-2-3" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Integrated.1-2-3")
+      fqdd = nic_view("NIC.Integrated.1-2-3")
       expect(fqdd.type).to eq("Integrated")
       expect(fqdd.card).to eq("1")
-      expect(fqdd.fabric).to eq("A")
       expect(fqdd.port).to eq("2")
       expect(fqdd.partition_no).to eq("3")
     end
 
     it "should parse NIC.Mezzanine.2B-2-4" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Mezzanine.2B-2-4")
+      fqdd = nic_view("NIC.Mezzanine.2B-2-4")
       expect(fqdd.type).to eq("Mezzanine")
       expect(fqdd.card).to eq("2")
       expect(fqdd.fabric).to eq("B")
@@ -93,7 +93,7 @@ describe ASM::NetworkConfiguration::NicPort do
     it "should be confused by NIC.Mezzanine.2C-2-4" do
       logger = mock("NIC.Mezzanine.2C-2-4")
       logger.expects(:warn)
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Mezzanine.2C-2-4", logger)
+      fqdd = nic_view("NIC.Mezzanine.2C-2-4", logger)
       expect(fqdd.type).to eq("Mezzanine")
       expect(fqdd.card).to eq("2")
       expect(fqdd.fabric).to eq("C")
@@ -102,7 +102,7 @@ describe ASM::NetworkConfiguration::NicPort do
     end
 
     it "should parse NIC.Mezzanine.2B-2" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Mezzanine.2B-2")
+      fqdd = nic_view("NIC.Mezzanine.2B-2")
       expect(fqdd.type).to eq("Mezzanine")
       expect(fqdd.card).to eq("2")
       expect(fqdd.fabric).to eq("B")
@@ -111,23 +111,57 @@ describe ASM::NetworkConfiguration::NicPort do
     end
 
     it "should parse rack fqdd in port 1" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Slot.2-1-1")
+      fqdd = nic_view("NIC.Slot.2-1-1")
       expect(fqdd.type).to eq("Slot")
       expect(fqdd.card).to eq("2")
-      # NOTE: these are rack fqdds, so maybe we should not populate fabric info...
-      expect(fqdd.fabric).to eq("B")
       expect(fqdd.port).to eq("1")
       expect(fqdd.partition_no).to eq("1")
     end
 
     it "should parse rack fqdd in port 2" do
-      fqdd = ASM::NetworkConfiguration::NicView.new("NIC.Slot.2-2-3")
+      fqdd = nic_view("NIC.Slot.2-2-3")
       expect(fqdd.type).to eq("Slot")
       expect(fqdd.card).to eq("2")
-      # NOTE: these are rack fqdds, so maybe we should not populate fabric info...
-      expect(fqdd.fabric).to eq("B")
       expect(fqdd.port).to eq("2")
       expect(fqdd.partition_no).to eq("3")
+    end
+  end
+
+  describe "#card_prefix" do
+    it "should include type and card" do
+      expect(nic_view("NIC.Integrated.1-1-1").card_prefix).to eq("NIC.Integrated.1")
+    end
+
+    it "should include fabric" do
+      expect(nic_view("NIC.Mezzanine.1C-1-1").card_prefix).to eq("NIC.Mezzanine.1C")
+    end
+  end
+
+  describe "#<=>" do
+    it "should show same FQDDs as equal" do
+      fqdd1 = "NIC.Integrated.1-1-1"
+      fqdd2 = "NIC.Integrated.1-1-1"
+      expect(nic_view(fqdd1) <=> nic_view(fqdd2)).to eq(0)
+    end
+
+    it "should order by type" do
+      expect(nic_view("NIC.Integrated.1-1-1") <=> nic_view("NIC.Mezzanine.1B-1-1")).to eq(-1)
+    end
+
+    it "should order by card" do
+      expect(nic_view("NIC.Slot.2-1-1") <=> nic_view("NIC.Slot.1-1-1")).to eq(1)
+    end
+
+    it "should order by fabric" do
+      expect(nic_view("NIC.Mezzanine.1B-1-1") <=> nic_view("NIC.Mezzanine.1C-1-1")).to eq(-1)
+    end
+
+    it "should order by port" do
+      expect(nic_view("NIC.Mezzanine.1B-2-1") <=> nic_view("NIC.Mezzanine.1B-1-1")).to eq(1)
+    end
+
+    it "should order by partition" do
+      expect(nic_view("NIC.Mezzanine.1B-1-4") <=> nic_view("NIC.Mezzanine.1B-1-1")).to eq(1)
     end
   end
 end

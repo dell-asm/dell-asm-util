@@ -50,12 +50,9 @@ module ASM
           if @fabric != expected_fabric
             logger.warn("Mismatched fabric information for #{orig_card}: #{@fabric} versus #{expected_fabric}") if logger
           end
-        else
-          if @type == "Embedded"
-            @port = @card
-            @card = "1"
-          end
-          @fabric = card_to_fabric(@card)
+        elsif @type == "Embedded"
+          @port = @card
+          @card = "1"
         end
       end
 
@@ -94,7 +91,7 @@ module ASM
       end
 
       def card_prefix
-        "NIC.%s.%s" % [type, card]
+        "NIC.%s.%s%s" % [type, card, fabric]
       end
 
       def to_s
@@ -102,17 +99,14 @@ module ASM
       end
 
       def <=>(other)
-        ret = type <=> other.type
-        if ret == 0
-          ret = Integer(card) <=> Integer(other.card)
-          if ret == 0
-            ret = Integer(port) <=> Integer(other.port)
-            if ret == 0
-              ret = Integer(partition_no) <=> Integer(other.partition_no)
-            end
-          end
+        [:type, :card, :fabric, :port, :partition_no].each do |method|
+          this = send(method)
+          this = Integer(this) if [:card, :port, :partition_no].include?(method)
+          that = other.send(method)
+          that = Integer(that) if [:card, :port, :partition_no].include?(method)
+          return this <=> that unless (this <=> that) == 0
         end
-        ret
+        0
       end
     end
   end
