@@ -298,6 +298,53 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#parse_iso_scheme" do
+    it "should convert nfs to :nfs" do
+      expect(wsman.parse_iso_scheme("nfs")).to eq(:nfs)
+    end
+
+    it "should convert smb to :cifs" do
+      expect(wsman.parse_iso_scheme("smb")).to eq(:cifs)
+    end
+
+    it "should convert cifs to :cifs" do
+      expect(wsman.parse_iso_scheme("cifs")).to eq(:cifs)
+    end
+
+    it "should raise ArgumentError otherwise" do
+      expect do
+        wsman.parse_iso_scheme("http")
+      end.to raise_error(ArgumentError, "Invalid ISO scheme http, only nfs:// or smb:// schemes are supported")
+    end
+  end
+
+  describe "#parse_iso_uri" do
+    let(:expected) do
+      {:share_type => :nfs,
+       :ip_address => "hostname",
+       :share_name => "/var/nfs",
+       :image_name => "ipxe.iso",
+       :user_name => nil,
+       :password => nil}
+    end
+
+    it "should convert uri to args" do
+      expect(wsman.parse_iso_uri("nfs://hostname/var/nfs/ipxe.iso")).to eq(expected)
+    end
+
+    it "should handle creds" do
+      expected[:user_name] = "guest"
+      expected[:password] = "password"
+      expect(wsman.parse_iso_uri("nfs://guest:password@hostname/var/nfs/ipxe.iso")).to eq(expected)
+    end
+
+    it "should replace localhost with preferred IP" do
+      ASM::Util.expects(:get_preferred_ip).with("rspec-host").returns("172.25.3.100")
+      expected[:ip_address] = "172.25.3.100"
+      expect(wsman.parse_iso_uri("nfs://localhost/var/nfs/ipxe.iso")).to eq(expected)
+    end
+  end
+
   describe "#boot_to_network_iso_command" do
     it "should invoke BootToNetworkISO" do
       client.expects(:invoke)
@@ -320,7 +367,8 @@ describe ASM::WsMan do
                   :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
                   :return_value => "4096")
             .returns("rspec-result")
-      expect(wsman.connect_network_iso_image_command).to eq("rspec-result")
+      wsman.expects(:parse_iso_uri).with("nfs://localhost/ipxe.iso").returns({})
+      expect(wsman.connect_network_iso_image_command(:uri => "nfs://localhost/ipxe.iso")).to eq("rspec-result")
     end
   end
 
@@ -330,10 +378,11 @@ describe ASM::WsMan do
             .with("ConnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
                   :params => {},
                   :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :optional_params => [:workgroup, :username, :password, :hash_type, :hash_value, :auto_connect],
                   :return_value => "4096")
             .returns("rspec-result")
-      expect(wsman.connect_rfs_iso_image_command).to eq("rspec-result")
+      wsman.expects(:parse_iso_uri).with("nfs://localhost/ipxe.iso").returns({})
+      expect(wsman.connect_rfs_iso_image_command(:uri => "nfs://localhost/ipxe.iso")).to eq("rspec-result")
     end
   end
 
