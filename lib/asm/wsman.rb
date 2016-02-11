@@ -6,6 +6,7 @@ require "asm/wsman/client"
 require "asm/wsman/parser"
 require "asm/wsman/response_error"
 require "rexml/document"
+require "uri"
 
 module ASM
   class WsMan
@@ -530,10 +531,49 @@ module ASM
       client.invoke("GetRemoteServicesAPIStatus", LC_SERVICE)
     end
 
+    # Convert a uri scheme to a :share_type value (:nfs or :cifs)
+    #
+    # @api private
+    # @return [Symbol] :nfs or :cifs
+    # @raise [ArgumentError] if an unsupported schemes is passed
+    def parse_iso_scheme(scheme)
+      case scheme
+      when "nfs"
+        :nfs
+      when "smb"
+        :cifs
+      when "cifs"
+        :cifs
+      else
+        raise(ArgumentError, "Invalid ISO scheme %s, only nfs:// or smb:// schemes are supported" % scheme)
+      end
+    end
+
+    # Convert a uri string into a WS-Man ISO params hash
+    #
+    # @note If the URI host is "localhost" it will be converted to a local IP that is routable by the wsman host
+    # @api private
+    # @param [String] uri URI string e.g. smb://localhost/path/to/foo.iso
+    # @return [Hash]
+    def parse_iso_uri(uri)
+      uri = URI.parse(uri)
+      {:share_type => parse_iso_scheme(uri.scheme),
+       :ip_address => uri.host == "localhost" ? ASM::Util.get_preferred_ip(host) : uri.host,
+       :share_name => File.dirname(uri.path),
+       :image_name => File.basename(uri.path),
+       :user_name => uri.user,
+       :password => uri.password}
+    end
+
     # Reboot server to a network ISO
     #
     # @note {detach_iso_image} should be called once the ISO is no longer needed.
     # @param options [Hash]
+    # @option options [String] :uri ISO URI string. Only nfs://, smb:// or cifs:// URI strings are allowed. If a URI
+    #                               string has localhost as the host, it will be converted into a local IP routable
+    #                               by the WS-Man host. The :ip_address, :share_name, :image_name, :share_type,
+    #                               :user_name and :password parameters will be overridden with values from the :uri
+    #                               if it is specified.
     # @option options [String] :ip_address CIFS or NFS share IPv4 address. For example, 192.168.10.100. Required.
     # @option options [String] :share_name NFS or CIFS network share point. For example, "/home/guest" or "guest_smb.". Required.
     # @option options [String] :image_name ISO image name. Required.
@@ -547,6 +587,10 @@ module ASM
     # @return [Hash]
     # @raise [ResponseError] if the command fails
     def boot_to_network_iso_command(params={})
+      if params[:uri]
+        params = params.merge(parse_iso_uri(params[:uri]))
+        params.delete(:uri)
+      end
       client.invoke("BootToNetworkISO", DEPLOYMENT_SERVICE,
                     :params => params,
                     :required_params => [:ip_address, :share_name, :share_type, :image_name],
@@ -564,6 +608,10 @@ module ASM
     # @param (see #boot_to_network_iso_command)
     # @raise [ResponseError] if the command fails
     def connect_network_iso_image_command(params={})
+      if params[:uri]
+        params = params.merge(parse_iso_uri(params[:uri]))
+        params.delete(:uri)
+      end
       client.invoke("ConnectNetworkISOImage", DEPLOYMENT_SERVICE,
                     :params => params,
                     :required_params => [:ip_address, :share_name, :share_type, :image_name],
@@ -586,10 +634,18 @@ module ASM
     # @example response
     #     {:job=>"DCIM_OSDConcreteJob:1", :return_value=>"4096"}
     def connect_rfs_iso_image_command(params={})
+      if params[:uri]
+        params = params.merge(parse_iso_uri(params[:uri]))
+        params.delete(:uri)
+      end
+
+      # This method uses :username instead of :user_name ...
+      params[:username] = params.delete(:user_name) if params[:user_name]
+
       client.invoke("ConnectRFSISOImage", DEPLOYMENT_SERVICE,
                     :params => params,
                     :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                    :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                    :optional_params => [:workgroup, :username, :password, :hash_type, :hash_value, :auto_connect],
                     :return_value => "4096")
     end
 
@@ -1228,6 +1284,11 @@ module ASM
     # @note {#disconnect_rfs_iso_image} should be called as soon as the ISO is not needed.
     #
     # @param options [Hash]
+    # @option options [String] :uri ISO URI string. Only nfs://, smb:// or cifs:// URI strings are allowed. If a URI
+    #                               string has localhost as the host, it will be converted into a local IP routable
+    #                               by the WS-Man host. The :ip_address, :share_name, :image_name, :share_type,
+    #                               :user_name and :password parameters will be overridden with values from the :uri
+    #                               if it is specified.
     # @option options [String] :ip_address CIFS or NFS share IPv4 address. For example, 192.168.10.100. Required.
     # @option options [String] :share_name NFS or CIFS network share point. For example, "/home/guest" or "guest_smb.". Required.
     # @option options [String] :image_name ISO image name. Required.
