@@ -75,6 +75,10 @@ module ASM
         vendor == :qlogic && product =~ /(^|\D)57840(\D|$)/ && n_ports == 4
       end
 
+      def is_intel_x520_i350?
+        vendor == :intel && product =~ /x520\/I350(\D|$)/i && n_ports == 4
+      end
+
       # Whether the NIC port belongs to a 2x10Gb Intel X520 NIC
       #
       # Note that there appear to be many X520 variants. This method only returns
@@ -96,8 +100,8 @@ module ASM
         return "10 Gbps" if is_qlogic_57840?
 
         # Broadcom / QLogic 57800 is a 2x10Gb, 2x1Gb NIC
-        return "10 Gbps" if is_qlogic_57800? && port.between?(1, 2)
-        return "1000 Mbps" if is_qlogic_57800? && port.between?(3, 4)
+        return "10 Gbps" if (is_qlogic_57800? || is_intel_x520_i350?) && port.between?(1, 2)
+        return "1000 Mbps" if (is_qlogic_57800? || is_intel_x520_i350?) && port.between?(3, 4)
 
         return "10 Gbps" if is_intel_x520?
         nil

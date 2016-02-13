@@ -50,6 +50,28 @@ describe ASM::NetworkConfiguration::NicPort do
       expect(port.link_speed).to eq("1000 Mbps")
     end
 
+    it "should override Intel X520/I350 LinkSpeed for port to 10Gbps" do
+      nic_view = {"FQDD" => "NIC.Integrated.1-1-1",
+                  "CurrentMACAddress" => "04:0A:F7:06:88:50",
+                  "PermanentMACAddress" => "04:0A:F7:06:88:50",
+                  "VendorName" => "Intel",
+                  "ProductName" => "X520/I350"}
+      nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
+      expect(port.link_speed).to eq("10 Gbps")
+    end
+
+    it "should override Intel X520/I350 LinkSpeed for port 3 to 1000 Mbps" do
+      nic_view = {"FQDD" => "NIC.Integrated.1-3-1",
+                  "CurrentMACAddress" => "04:0A:F7:06:88:50",
+                  "PermanentMACAddress" => "04:0A:F7:06:88:50",
+                  "VendorName" => "Intel",
+                  "ProductName" => "X520/I350"}
+      nic_info = ASM::NetworkConfiguration::NicView.new(nic_view)
+      port = ASM::NetworkConfiguration::NicPort.new([nic_info], 4, logger)
+      expect(port.link_speed).to eq("1000 Mbps")
+    end
+
     it "should override Broadcom 57810 LinkSpeed for port 1 of 2-port NIC to 10 Gbps" do
       nic_view = {"FQDD" => "NIC.Integrated.1-1-1",
                   "CurrentMACAddress" => "04:0A:F7:06:88:50",
