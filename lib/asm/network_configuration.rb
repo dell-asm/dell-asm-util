@@ -112,25 +112,35 @@ module ASM
       end.flatten
     end
 
-    def get_all_fqdds # rubocop:disable Style/AccessorMethodName
+    def collect_from_partitions
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
-          port.partitions.collect(&:fqdd)
+          port.partitions.collect do |partition|
+            yield partition
+          end
         end
-      end.flatten
+      end
+    end
+
+    def get_all_fqdds # rubocop:disable Style/AccessorMethodName
+      collect_from_partitions(&:fqdd).flatten
     end
 
     # Finds all networks of one of the specified network types
     def get_networks(*network_types)
-      cards.collect do |fabric|
-        fabric.interfaces.collect do |port|
-          port.partitions.collect do |partition|
-            (partition.networkObjects || []).find_all do |network|
-              network_types.include?(network.type)
-            end
-          end
+      collect_from_partitions do |partition|
+        (partition.networkObjects || []).find_all do |network|
+          network_types.include?(network.type)
         end
       end.flatten.uniq
+    end
+
+    def macs_for_network(network_id)
+      collect_from_partitions do |partition|
+        (partition.networkObjects || []).collect do |network_obj|
+          partition.mac_address if network_obj["id"] == network_id
+        end
+      end.flatten.compact
     end
 
     # Returns the network object for the given network type.  This method raises
@@ -325,30 +335,31 @@ module ASM
     #   { [ :TeamInfo => { :networks => [...], :mac_addresses => [ ... ] ] }
     def teams
       @teams ||= begin
-        err_msg = "NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!"
-        raise(err_msg) unless @network_config_add_nic
-        network_info = {}
+        raise("NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!") unless @network_config_add_nic
+        networks = []
+        mac_teams = {}
         partitions = get_all_partitions
         unless partitions.empty?
           partitions.each do |partition|
-            networks = begin
-              (partition.networkObjects || []).collect do |network|
-                network.staticNetworkConfiguration.delete("ipRange") unless network.staticNetworkConfiguration.nil?
-              end
+            network_objects = begin
               partition.networkObjects.reject { |network| network.type == "PXE" }
             end.flatten.uniq.compact
 
             # Need to find partitions which has same set of networks, for team
-            next unless networks && !networks.empty?
-
-            network_info[networks] ||= []
-            networks = networks.sort_by { |k| k["id"] }
-            network_info[networks].push(partition.mac_address)
+            next unless network_objects && !network_objects.empty?
+            network_objects.each do |obj|
+              networks.push(obj).uniq!
+            end
           end
         end
         @teams = []
-        network_info.each do |network, macs|
-          @teams.push(:networks => network, :mac_addresses => macs)
+        networks.each do |network|
+          mac_team = macs_for_network(network["id"])
+          mac_teams[mac_team] ||= []
+          mac_teams[mac_team].push(network)
+        end
+        mac_teams.each do |macs, team_networks|
+          @teams.push(:networks => team_networks, :mac_addresses => macs)
         end
         @teams
       end
