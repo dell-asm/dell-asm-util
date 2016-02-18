@@ -142,29 +142,6 @@
                 {
                   "id": "ff80808146056aa20146057c0aad03b9",
                   "name": "iSCSI",
-                  "description": "",
-                  "type": "STORAGE_ISCSI_SAN",
-                  "vlanId": 16,
-                  "static": true,
-                  "staticNetworkConfiguration":{
-                    "gateway":"172.16.0.1",
-                    "subnet":"255.255.0.0",
-                    "primaryDns":"172.20.0.8",
-                    "secondaryDns":null,
-                    "dnsSuffix":"aidev.net",
-                    "ipRange":[
-                      {
-                        "Id":"ff80808146056aa20146057c0aae03ba",
-                        "StartingIp":"172.16.12.115",
-                        "EndingIp":"172.16.12.135"
-                      }
-                    ],
-                    "ipAddress":"172.16.12.121"
-                  }
-                },
-                {
-                  "id": "ff80808146056aa20146057c0aad03b9",
-                  "name": "iSCSI",
                   "description": null,
                   "type": "STORAGE_ISCSI_SAN",
                   "vlanId": 16,
@@ -324,29 +301,6 @@
                 "ff80808146056aa20146057c0aad03b9"
               ],
               "networkObjects": [
-                {
-                  "id": "ff80808146056aa20146057c0aad03b9",
-                  "name": "iSCSI",
-                  "description": null,
-                  "type": "STORAGE_ISCSI_SAN",
-                  "vlanId": 16,
-                  "static": true,
-                  "staticNetworkConfiguration": {
-                    "gateway": "172.16.0.1",
-                    "subnet": "255.255.0.0",
-                    "primaryDns": "172.20.0.8",
-                    "secondaryDns": null,
-                    "dnsSuffix": "aidev.net",
-                    "ipRange": [
-                      {
-                        "Id": "ff80808146056aa20146057c0aae03ba",
-                        "StartingIp": "172.16.12.115",
-                        "EndingIp": "172.16.12.135"
-                      }
-                    ],
-                    "ipAddress": "172.16.12.120"
-                  }
-                },
                 {
                   "id": "ff80808146056aa20146057c0aad03b9",
                   "name": "iSCSI",

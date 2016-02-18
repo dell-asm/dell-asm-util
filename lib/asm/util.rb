@@ -138,7 +138,7 @@ module ASM
       unless result["exit_status"] == 0
         msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
         logger.error(msg) if logger
-        args[0] = "VI_PASSWORD=******" # mask password
+        args[2] = "VI_PASSWORD=******" # mask password
         raise("#{msg}: esxcli #{args.join(' ')}: #{result.inspect}")
       end
 
