@@ -129,7 +129,7 @@ module ASM
 
       if logger
         tmp = args.dup
-        tmp[0] = "VI_PASSWORD=******" # mask password
+        tmp[2] = "VI_PASSWORD=******" # mask password
         logger.debug("Executing esxcli #{tmp.join(' ')}")
       end
 
