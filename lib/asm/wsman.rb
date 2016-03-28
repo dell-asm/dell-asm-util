@@ -1153,7 +1153,7 @@ module ASM
     # @option options [FixNum] :timeout (5 minutes) default timeout
     # @return [Hash]
     def poll_for_lc_ready(options={})
-      options = {:timeout => 10 * 60}.merge(options)
+      options = {:timeout => 30 * 60}.merge(options)
 
       resp = remote_services_api_status
       return if resp[:lcstatus] == "0"
