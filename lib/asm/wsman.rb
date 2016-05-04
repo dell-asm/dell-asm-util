@@ -1312,7 +1312,6 @@ module ASM
       connect_rfs_iso_image(options)
 
       # Have to reboot in order for virtual cd to show up in boot source settings
-      reboot(options)
 
       # Wait for virtual cd to show up in boot source settings
       max_sleep = 60
