@@ -14,7 +14,6 @@ Gem::Specification.new do |s|
   s.add_dependency "nokogiri", "~> 1.5.10"
   s.add_dependency "i18n", "~> 0.6.5"
   s.add_dependency "pry", "~> 0.10"
-  s.add_dependency "ruby_dep ", "~> 1.2.0"
 
   s.add_development_dependency "logger-colors", "~> 1.0.0"
   s.add_development_dependency "guard-shell"
