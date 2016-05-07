@@ -1257,10 +1257,6 @@ module ASM
       end
 
       target = find_boot_device(boot_device)
-      unless target
-        raise("Could not find %s boot device in current list: %s" %
-                  [boot_device, boot_source_settings.map { |e| e[:element_name] }.join(", ")])
-      end
 
       if target[:current_assigned_sequence] == "0" && target[:current_enabled_status] == "1"
         logger.info("%s is already configured to boot from %s" % [host, target[:element_name]])
@@ -1312,13 +1308,10 @@ module ASM
       connect_rfs_iso_image(options)
 
       # Have to reboot in order for virtual cd to show up in boot source settings
-      reboot(options)
-
-      # Wait for virtual cd to show up in boot source settings
-      max_sleep = 60
-      ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
-        find_boot_device(:virtual_cd) || raise(RetryException)
-      end
+      # if ( power_state == :off || options[:reboot_job_type] == :power_cycle)
+      #   reboot(options)
+      #   poll_for_lc_ready
+      # end
 
       set_boot_order(:virtual_cd, options)
 
