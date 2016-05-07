@@ -1308,7 +1308,10 @@ module ASM
       connect_rfs_iso_image(options)
 
       # Have to reboot in order for virtual cd to show up in boot source settings
-      reboot(options) if power_state == :off
+      # if ( power_state == :off || options[:reboot_job_type] == :power_cycle)
+      #   reboot(options)
+      #   poll_for_lc_ready
+      # end
 
       set_boot_order(:virtual_cd, options)
 
