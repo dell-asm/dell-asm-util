@@ -7,6 +7,7 @@ require "timeout"
 require "uri"
 require "yaml"
 require "time"
+require "resolv"
 
 module ASM
   # Use this instead of Thread.new, or your exceptions will disappear into the ether...
@@ -109,6 +110,12 @@ module ASM
       end
 
       preferred
+    end
+
+    def self.default_routed_ip
+      result = run_command_with_args("ip route show 0/0")
+      gateway = result["stdout"].split(/\s+/)[2].match(Resolv::IPv4::Regex).to_s
+      get_preferred_ip(gateway)
     end
 
     # Execute esxcli command and parse table into list of hashes.
