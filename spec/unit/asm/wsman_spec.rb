@@ -597,7 +597,6 @@ describe ASM::WsMan do
       wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
-      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.set_boot_order(:virtual_cd, opts)
     end
@@ -630,7 +629,6 @@ describe ASM::WsMan do
       wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
-      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.set_boot_order(:virtual_cd, opts)
     end
@@ -641,7 +639,10 @@ describe ASM::WsMan do
 
     it "should connect iso, reboot, wait and set boot order" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.expects(:reboot).with(opts)
+      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
+      wsman.stubs(:power_state).returns(:on)
+      wsman.stubs(:request_power_state_change)
+      wsman.expects(:set_virtual_media_attach_state)
       ASM::Util.expects(:block_and_retry_until_ready).with(600, ASM::WsMan::RetryException, 60)
       wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
@@ -649,7 +650,10 @@ describe ASM::WsMan do
 
     it "should connect iso, reboot, set boot order when target device found" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.expects(:reboot).with(opts)
+      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
+      wsman.stubs(:power_state).returns(:on)
+      wsman.stubs(:request_power_state_change)
+      wsman.expects(:set_virtual_media_attach_state)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
       wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
@@ -658,7 +662,10 @@ describe ASM::WsMan do
     it "should connect iso, reboot, set boot order and fail if target device not found" do
       opts[:timeout] = 0.05
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.expects(:reboot).with(opts)
+      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
+      wsman.stubs(:power_state).returns(:on)
+      wsman.stubs(:request_power_state_change)
+      wsman.expects(:set_virtual_media_attach_state)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
       message = "Timed out waiting for virtual CD to become available on rspec-host"
       expect {wsman.boot_rfs_iso_image(opts)}.to raise_error(message)
