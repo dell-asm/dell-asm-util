@@ -19,7 +19,7 @@ module ASM
     POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system".freeze
     POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem,SystemName=systemmc,CreationClassName=DCIM_CSPowerManagementService,Name=pwrmgtsvc:1".freeze
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate".freeze
-    VIRTUAL_MEDIA_ATTACH_STATUS="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
+    VIRTUAL_MEDIA_ATTACH_STATUS = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_iDRACCardService,SystemName=DCIM:ComputerSystem,Name=DCIM:iDRACCardService".freeze
 
     # rubocop:enable Metrics/LineLength
@@ -1003,7 +1003,7 @@ module ASM
     # @option options [Symbol|String] :power_state 1 to 10"
     # @return [Hash]
     # @raise [ResponseError] if the command fails
-    def request_power_state_change(params={}) # rubocop:disable Style/AccessorMethodName
+    def request_power_state_change(params={})
       client.invoke("RequestPowerStateChange", POWER_STATE_CHANGE,
                     :params => params,
                     :required_params => :PowerState,
@@ -1305,8 +1305,9 @@ module ASM
     def set_virtual_media_attach_state
       va = virtual_media_attach_status.find { |x| x[:attribute_display_name] == "Attach State" }
       if va[:current_value] == "Auto-Attach"
-        resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1", :attribute_name => "VirtualConsole.1#AttachState",
-                            :attribute_value => "Attached")
+        resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
+                                      :attribute_name => "VirtualConsole.1#AttachState",
+                                      :attribute_value => "Attached")
         logger.info("Initiated Apply iDRAC attributes config job %s on %s" % [resp[:job], host])
         resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
         logger.info("Successfully executed BIOS config job %s on %s: %s" % [resp[:job], host, Parser.response_string(resp)])
@@ -1355,9 +1356,9 @@ module ASM
 
       # Have to reboot in order for virtual cd to show up in boot source settings
       if power_state == :off
-        request_power_state_change(:PowerState => '2')
+        request_power_state_change(:PowerState => "2")
       else
-        request_power_state_change(:PowerState => '10')
+        request_power_state_change(:PowerState => "10")
       end
 
 
