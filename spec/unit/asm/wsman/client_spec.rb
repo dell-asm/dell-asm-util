@@ -124,6 +124,12 @@ describe ASM::WsMan::Client do
         .to raise_error(message)
     end
 
+    it "should call exec with input_file if specified" do
+      client.expects(:exec).with("RspecMethod", url, :props => {}, :input_file => "foo").returns("<response />")
+      parser.expects(:parse).with("<response />").returns(:return_value => "0")
+      client.invoke("RspecMethod", url, :input_file => "foo")
+    end
+
     it "should call exec with params and parse the result" do
       client.expects(:exec).with("RspecMethod", url, :props => {"Foo" => "My foo"}).returns("<response />")
       parser.expects(:parse).with("<response />").returns(:return_value => "0")
