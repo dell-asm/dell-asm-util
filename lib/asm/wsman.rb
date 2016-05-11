@@ -19,7 +19,7 @@ module ASM
     POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system".freeze
     POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem,SystemName=systemmc,CreationClassName=DCIM_CSPowerManagementService,Name=pwrmgtsvc:1".freeze
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate".freeze
-    VIRTUAL_MEDIA_ATTACH_STATUS = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
+    IDRAC_CARD_ENUMERATION  = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_iDRACCardService,SystemName=DCIM:ComputerSystem,Name=DCIM:iDRACCardService".freeze
 
     # rubocop:enable Metrics/LineLength
@@ -229,8 +229,34 @@ module ASM
       client.enumerate("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim")
     end
 
-    def virtual_media_attach_status
-      client.enumerate(VIRTUAL_MEDIA_ATTACH_STATUS)
+    # Retrieve iDRAC Card Settings
+    #
+    # In each iDRAC configuration setting, enumeration values are:
+    #
+    # - :attribute_display_name - Display name of property
+    # - :attribute_name         - Name of the attribute
+    # - :current_value          - Current value of the attribute
+    # - :default_value          - Default value of the attribute
+    #
+    # @return [Array<Hash>]
+    #
+    # @example return
+    #     [{:attribute_display_name=>"Attach State",
+    #       :attribute_name=>"AttachState",
+    #       :current_value=>"Attached",
+    #       :default_value=>"Auto-Attach",
+    #       :dependency=>nil,
+    #       :display_order=>"589",
+    #       :fqdd=>"iDRAC.Embedded.1",
+    #       :group_display_name=>"Virtual Console Configuration",
+    #       :group_id=>"VirtualConsole.1",
+    #       :instance_id=>"iDRAC.Embedded.1#VirtualConsole.1#AttachState",
+    #       :is_read_only=>"false",
+    #       :pending_value=>nil,
+    #       :possible_values=>"Auto-Attach"},
+    #     ]
+    def idrac_card_enumeration
+      client.enumerate(IDRAC_CARD_ENUMERATION)
     end
 
     # Get server power state
@@ -238,11 +264,22 @@ module ASM
     # @return [Symbol] :on or :off
     def power_state
       ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
-      raise(Error, "No power management enumerations found") if ret.empty?
-      power_state = ret.first[:power_state]
-      return :on if power_state == "2"
-      return :off if power_state == "13"
-      raise(Error, "Invalid power state returned: %s" % power_state)
+      retry_counter = 0
+      begin
+        raise(Error, "No power management enumerations found") if ret.empty?
+        power_state = ret.first[:power_state]
+        return :on if power_state == "2"
+        return :off if power_state == "13"
+        raise(Error, "Invalid power state returned: %s" % power_state)
+      rescue
+        if retry_counter < 3
+          sleep 5
+          retry_counter += 1
+          retry
+        else
+          raise(Error, "Invalid power state returned: %s" % power_state)
+        end
+      end
     end
 
     def self.reboot(endpoint, logger=nil)
@@ -760,7 +797,7 @@ module ASM
     end
 
     def apply_idrac_attributes(params={})
-      client.invoke("ApplyAttributes ", APPLY_ATTRIBUTES,
+      client.invoke("ApplyAttributes", APPLY_ATTRIBUTES,
                     :params => params,
                     :required_params => [:target, :attribute_name, :attribute_value],
                     :return_value => "4096")
@@ -1006,7 +1043,7 @@ module ASM
     def request_power_state_change(params={})
       client.invoke("RequestPowerStateChange", POWER_STATE_CHANGE,
                     :params => params,
-                    :required_params => :PowerState,
+                    :required_params => :power_state,
                     :return_value => "0")
     end
 
@@ -1302,8 +1339,13 @@ module ASM
                           :reboot_job_type => options[:reboot_job_type])
     end
 
+    # Set Virtual Media state to "Attached"
+    #
+    # Set Virtula Media state to "Attached" so that it always in boot order
+    #
+    # @return [void]
     def set_virtual_media_attach_state
-      va = virtual_media_attach_status.find { |x| x[:attribute_display_name] == "Attach State" }
+      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "Attach State" }
       if va[:current_value] == "Auto-Attach"
         resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
                                       :attribute_name => "VirtualConsole.1#AttachState",
@@ -1356,9 +1398,9 @@ module ASM
 
       # Have to reboot in order for virtual cd to show up in boot source settings
       if power_state == :off
-        request_power_state_change(:PowerState => "2")
+        request_power_state_change(:PowerState => :on)
       else
-        request_power_state_change(:PowerState => "10")
+        request_power_state_change(:PowerState => :reboot)
       end
 
 
