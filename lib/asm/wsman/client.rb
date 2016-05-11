@@ -142,6 +142,7 @@ module ASM
       # @option options [String|Array<String>] :url_params required parameter keys to include in the url
       # @option options [String|Array<String>] :required_params required parameter keys to include as invoke parameters
       # @option options [String|Array<String>] :optional_params optional parameter keys to include as invoke parameters
+      # @option options [String] :input_file path to an xml config file
       # @return [Hash]
       def invoke(method, url, options={})
         params = options.delete(:params) || {}
@@ -168,7 +169,10 @@ module ASM
           url = "%s%s%s" % [url, uri.query ? "&" : "?", encoded_arguments]
         end
 
-        resp = exec(method, url, :props => props)
+        exec_options = {:props => props}
+        exec_options[:input_file] = options[:input_file] if options[:input_file]
+
+        resp = exec(method, url, exec_options)
         ret = Parser.parse(resp)
         if return_value && !Array(return_value).include?(ret[:return_value])
           raise(ASM::WsMan::ResponseError.new("%s failed" % method, ret))
