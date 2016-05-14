@@ -441,9 +441,22 @@ describe ASM::WsMan do
 
   describe "#power_off" do
     it "should power server off if it is on" do
-      wsman.expects(:power_state).returns(:on)
+      wsman.stubs(:power_state).returns(:on, :off)
       wsman.expects(:set_power_state).with(:requested_state => :off)
       wsman.power_off
+    end
+
+    it "should retry power server off if it is still on" do
+      wsman.stubs(:power_state).returns(:on, :on, :off)
+      wsman.expects(:set_power_state).with(:requested_state => :off)
+      wsman.power_off
+    end
+
+    it "should raise error if when power state is not off after multiple retry" do
+      wsman.stubs(:power_state).returns(:on, :on, :on, :on, :on)
+      wsman.expects(:set_power_state).with(:requested_state => :off)
+      message = "Power state not updated to off"
+      expect {wsman.power_off}.to raise_error(message)
     end
 
     it "should do nothing if it is already off" do
