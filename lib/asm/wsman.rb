@@ -1398,9 +1398,9 @@ module ASM
 
       # Have to reboot in order for virtual cd to show up in boot source settings
       if power_state == :off
-        request_power_state_change(:PowerState => :on)
+        request_power_state_change(:power_state => :on)
       else
-        request_power_state_change(:PowerState => :reboot)
+        request_power_state_change(:power_state => :reboot)
       end
 
       # Wait for virtual cd to show up in boot source settings
