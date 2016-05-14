@@ -19,7 +19,7 @@ module ASM
     POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system".freeze
     POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem,SystemName=systemmc,CreationClassName=DCIM_CSPowerManagementService,Name=pwrmgtsvc:1".freeze
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate".freeze
-    IDRAC_CARD_ENUMERATION  = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
+    IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_iDRACCardService,SystemName=DCIM:ComputerSystem,Name=DCIM:iDRACCardService".freeze
 
     # rubocop:enable Metrics/LineLength
@@ -1402,7 +1402,6 @@ module ASM
       else
         request_power_state_change(:PowerState => :reboot)
       end
-
 
       # Wait for virtual cd to show up in boot source settings
       max_sleep = 60

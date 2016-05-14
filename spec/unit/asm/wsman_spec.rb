@@ -453,7 +453,6 @@ describe ASM::WsMan do
     end
   end
 
-
   describe "#request_power_state_change" do
     it "should invoke RequestStateChange" do
       client.expects(:invoke).with("RequestPowerStateChange", ASM::WsMan::POWER_STATE_CHANGE,
@@ -649,21 +648,24 @@ describe ASM::WsMan do
     let(:opts) {{:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}}
 
     it "should set virtual media to attached mode when current state is Auto-Attach" do
-      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name=>"Attach State",:attribute_name=>"AttachState",:current_value=>"Auto-Attach"}])
-      wsman.expects(:poll_lc_job).with('123', :timeout => 30 * 60).returns(:job => '123', :message => "Success")
+      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "Attach State",
+                                                       :attribute_name => "AttachState",
+                                                       :current_value => "Auto-Attach"}])
+      wsman.expects(:poll_lc_job).with("123", :timeout => 30 * 60).returns(:job => "123", :message => "Success")
       wsman.expects(:poll_for_lc_ready)
-      wsman.expects(:apply_idrac_attributes).returns(:job => '123')
+      wsman.expects(:apply_idrac_attributes).returns(:job => "123")
       wsman.set_virtual_media_attach_state
     end
 
     it "should skip virtual media to attached mode when current state is Attached" do
-      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name=>"Attach State",:attribute_name=>"AttachState",:current_value=>"Attached"}])
-      wsman.expects(:poll_lc_job).with('123', :timeout => 30 * 60).returns(:job => '123', :message => "Success").never
+      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "Attach State",
+                                                       :attribute_name => "AttachState",
+                                                       :current_value => "Attached"}])
+      wsman.expects(:poll_lc_job).with("123", :timeout => 30 * 60).returns(:job => "123", :message => "Success").never
       wsman.expects(:poll_for_lc_ready).never
-      wsman.expects(:apply_idrac_attributes).returns(:job => '123').never
+      wsman.expects(:apply_idrac_attributes).returns(:job => "123").never
       wsman.set_virtual_media_attach_state
     end
-
   end
 
   describe "#boot_rfs_iso_image" do
