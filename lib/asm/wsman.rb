@@ -1008,6 +1008,13 @@ module ASM
 
       if power_state != :off
         set_power_state(:requested_state => :off)
+        p_state = :on
+        1.upto(10) do
+          sleep 5
+          p_state = power_state
+          break if p_state == :off
+        end
+        raise("Power state not updated to off") if p_state != :off
       else
         logger.debug "Server is already powered off"
       end
