@@ -12,9 +12,7 @@ describe ASM::WsMan do
       # NOTE: this data is from a rack with a dual-port slot nic and a quad-port
       # integrated nic. Note the quad-port nic isn't showing any current or
       # permanent mac addresses, so it isn't found in the get_mac_addresses call
-      file_name = File.join(File.dirname(__FILE__), "..", "..",
-                            "fixtures", "wsman", "nic_view.xml")
-      @nic_view_response = File.read(file_name)
+      @nic_view_response = SpecHelper.load_fixture("wsman/nic_view.xml")
     end
 
     it "should find current macs" do
@@ -607,6 +605,7 @@ describe ASM::WsMan do
       wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
+      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.set_boot_order(:virtual_cd, opts)
     end
@@ -637,9 +636,20 @@ describe ASM::WsMan do
     it "should set boot order and run bios config job otherwise" do
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
-      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => "5")
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
+      wsman.set_boot_order(:virtual_cd, opts)
+    end
+
+    it "should not change boot source state if it is already enabled" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => "5", :current_enabled_status => "1")
+      wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
+      wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.expects(:change_boot_source_state).never
       wsman.set_boot_order(:virtual_cd, opts)
     end
   end
@@ -647,60 +657,67 @@ describe ASM::WsMan do
   describe "#set_virtual_media_attach_state" do
     let(:opts) {{:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}}
 
-    it "should set virtual media to attached mode when current state is Auto-Attach" do
+    it "shoud fail on invalid attach state symbols" do
+      msg = "Invalid  value: foobar; allowed values are: :detached (Detached), :attached (Attached), :auto_attach (Auto-Attach)"
+      expect { wsman.set_virtual_media_attach_state(:foobar) }.to raise_error(msg)
+    end
+
+    it "should change virtual media attach state if not already set correctly" do
       wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "Attach State",
                                                        :attribute_name => "AttachState",
                                                        :current_value => "Auto-Attach"}])
       wsman.expects(:poll_lc_job).with("123", :timeout => 30 * 60).returns(:job => "123", :message => "Success")
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:apply_idrac_attributes).returns(:job => "123")
-      wsman.set_virtual_media_attach_state
+      wsman.set_virtual_media_attach_state(:attached)
     end
 
-    it "should skip virtual media to attached mode when current state is Attached" do
+    it "should not set virtual media attach state if already set correctly" do
       wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "Attach State",
                                                        :attribute_name => "AttachState",
                                                        :current_value => "Attached"}])
       wsman.expects(:poll_lc_job).with("123", :timeout => 30 * 60).returns(:job => "123", :message => "Success").never
       wsman.expects(:poll_for_lc_ready).never
       wsman.expects(:apply_idrac_attributes).returns(:job => "123").never
-      wsman.set_virtual_media_attach_state
+      wsman.set_virtual_media_attach_state(:attached)
     end
   end
 
   describe "#boot_rfs_iso_image" do
     let(:opts) {{:reboot_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle, :timeout => 600}}
 
-    it "should connect iso, reboot, wait and set boot order" do
+    it "should connect iso, reboot if target device not found, wait and set boot order" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
-      wsman.stubs(:power_state).returns(:on)
-      wsman.stubs(:request_power_state_change)
-      wsman.expects(:set_virtual_media_attach_state)
+      wsman.expects(:set_virtual_media_attach_state).with(:attached)
       ASM::Util.expects(:block_and_retry_until_ready).with(600, ASM::WsMan::RetryException, 60)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil).returns({})
+      wsman.expects(:reboot).with(opts)
       wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 
-    it "should connect iso, reboot, set boot order when target device found" do
+    it "should connect iso, NOT reboot, and set boot order when target device found" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
-      wsman.stubs(:power_state).returns(:on)
-      wsman.stubs(:request_power_state_change)
-      wsman.expects(:set_virtual_media_attach_state)
+      wsman.expects(:set_virtual_media_attach_state).with(:attached)
       wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
       wsman.expects(:set_boot_order).with(:virtual_cd, opts)
       wsman.boot_rfs_iso_image(opts)
     end
 
+    it "should pass attach_state to set_virtual_media_attach_state" do
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:set_virtual_media_attach_state).with(:auto_attach)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
+      wsman.boot_rfs_iso_image(opts.merge(:attach_state => :auto_attach))
+    end
+
     it "should connect iso, reboot, set boot order and fail if target device not found" do
       opts[:timeout] = 0.05
       wsman.expects(:connect_rfs_iso_image).with(opts)
-      wsman.stubs(:virtual_media_attach_status).returns([{:attribute_display_name => "Attach State", :current_value => "Attached"}])
-      wsman.stubs(:power_state).returns(:on)
-      wsman.stubs(:request_power_state_change)
-      wsman.expects(:set_virtual_media_attach_state)
-      wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
+      wsman.expects(:set_virtual_media_attach_state).with(:attached)
+      wsman.expects(:find_boot_device).at_least_once.with(:virtual_cd).returns(nil)
+      wsman.expects(:reboot).with(opts)
       message = "Timed out waiting for virtual CD to become available on rspec-host"
       expect {wsman.boot_rfs_iso_image(opts)}.to raise_error(message)
     end

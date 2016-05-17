@@ -1334,22 +1334,40 @@ module ASM
 
       change_boot_order_by_instance_id(:instance_id => "IPL",
                                        :source => target[:instance_id])
+
+      unless target[:current_enabled_status] == "1"
+        logger.info("Enabling boot device %s on %s" % [target[:instance_id], host])
+        change_boot_source_state(:instance_id => "IPL", :enabled_state => "1",
+                                 :source => target[:instance_id])
+      end
+
       run_bios_config_job(:target => boot_mode[:fqdd],
                           :scheduled_start_time => options[:scheduled_start_time],
                           :reboot_job_type => options[:reboot_job_type])
     end
 
-    # Set Virtual Media state to "Attached"
+    # Set Virtual Media attach state
     #
-    # Set Virtula Media state to "Attached" so that it always in boot order
+    # Sets virtual media attach state to one of three states:
     #
+    # 1. :detached -- the virtual media devices will not be visible in the {#boot_source_settings}
+    # 2. :attached -- the virtual media devices will always be visible in the {#boot_source_settings},
+    #    even if there is no virtual media image connected.
+    # 3. :auto_attach -- the virtual media devices will only be visible in the {#boot_source_settings}
+    #    after an image is connected and inventory collection is run
+    #
+    # @param state [Symbol] :detach, :attach or :auto_attach
     # @return [void]
-    def set_virtual_media_attach_state
+    def set_virtual_media_attach_state(state) # rubocop:disable Style/AccessorMethodName
+      state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "Auto-Attach"}
+      state_string = Parser.enum_value(nil, state_map, state)
+
       va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "Attach State" }
-      if va[:current_value] == "Auto-Attach"
+      if va[:current_value] != state_string
+        logger.info("Changing %s Attach State from %s to %s" % [host, va[:attribute_value], state_string])
         resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
                                       :attribute_name => "VirtualConsole.1#AttachState",
-                                      :attribute_value => "Attached")
+                                      :attribute_value => state_string)
         logger.info("Initiated Apply iDRAC attributes config job %s on %s" % [resp[:job], host])
         resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
         logger.info("Successfully executed BIOS config job %s on %s: %s" % [resp[:job], host, Parser.response_string(resp)])
@@ -1385,28 +1403,29 @@ module ASM
     # @option params [String] :reboot_start_time Schedules the "reboot job" at the specified start time in the
     #                         format: yyyymmddhhmmss. A special value of "TIME_NOW" schedules the job(s) immediately.
     # @option params [FixNum] :timeout (600) The number of seconds to wait for the virtual CD to become available
+    # @option options [Symbol] :attach or :auto_attach. Defaults to :attach. In :auto_attach mode the virtual CD will only be visible while connected.
     # @return [void]
     # @raise [ResponseError] if a command fails
     def boot_rfs_iso_image(options={})
       options = {:reboot_job_type => :graceful_with_forced_shutdown,
                  :reboot_start_time => "TIME_NOW",
+                 :attach_state => :attached,
                  :timeout => 10 * 60}.merge(options)
       # Virtual Media needs to be in attach state
-      set_virtual_media_attach_state
+      set_virtual_media_attach_state(options.delete(:attach_state))
 
       connect_rfs_iso_image(options)
 
-      # Have to reboot in order for virtual cd to show up in boot source settings
-      if power_state == :off
-        request_power_state_change(:power_state => :on)
-      else
-        request_power_state_change(:power_state => :reboot)
-      end
+      # In auto-attach mode have to reboot in order for virtual CD to show up in boot source settings.
+      unless find_boot_device(:virtual_cd)
+        logger.info("Virtual CD not seen for %s, rebooting" % host)
+        reboot(options)
 
-      # Wait for virtual cd to show up in boot source settings
-      max_sleep = 60
-      ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
-        find_boot_device(:virtual_cd) || raise(RetryException)
+        # Wait for virtual cd to show up in boot source settings
+        max_sleep = 60
+        ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
+          find_boot_device(:virtual_cd) || raise(RetryException)
+        end
       end
 
       set_boot_order(:virtual_cd, options)
