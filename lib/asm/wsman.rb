@@ -17,7 +17,11 @@ module ASM
     LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_LCService,SystemName=DCIM:ComputerSystem,Name=DCIM:LCService".freeze
     LC_RECORD_LOG_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_LCRecordLog?__cimnamespace=root/dcim".freeze
     POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem,Name=srv:system".freeze
+    POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem,SystemName=systemmc,CreationClassName=DCIM_CSPowerManagementService,Name=pwrmgtsvc:1".freeze
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService,SystemCreationClassName=DCIM_ComputerSystem,SystemName=IDRAC:ID,Name=SoftwareUpdate".freeze
+    IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
+    APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem,CreationClassName=DCIM_iDRACCardService,SystemName=DCIM:ComputerSystem,Name=DCIM:iDRACCardService".freeze
+
     # rubocop:enable Metrics/LineLength
 
     attr_reader :client
@@ -225,16 +229,57 @@ module ASM
       client.enumerate("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim")
     end
 
+    # Retrieve iDRAC Card Settings
+    #
+    # In each iDRAC configuration setting, enumeration values are:
+    #
+    # - :attribute_display_name - Display name of property
+    # - :attribute_name         - Name of the attribute
+    # - :current_value          - Current value of the attribute
+    # - :default_value          - Default value of the attribute
+    #
+    # @return [Array<Hash>]
+    #
+    # @example return
+    #     [{:attribute_display_name=>"Attach State",
+    #       :attribute_name=>"AttachState",
+    #       :current_value=>"Attached",
+    #       :default_value=>"Auto-Attach",
+    #       :dependency=>nil,
+    #       :display_order=>"589",
+    #       :fqdd=>"iDRAC.Embedded.1",
+    #       :group_display_name=>"Virtual Console Configuration",
+    #       :group_id=>"VirtualConsole.1",
+    #       :instance_id=>"iDRAC.Embedded.1#VirtualConsole.1#AttachState",
+    #       :is_read_only=>"false",
+    #       :pending_value=>nil,
+    #       :possible_values=>"Auto-Attach"},
+    #     ]
+    def idrac_card_enumeration
+      client.enumerate(IDRAC_CARD_ENUMERATION)
+    end
+
     # Get server power state
     #
     # @return [Symbol] :on or :off
     def power_state
       ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
-      raise(Error, "No power management enumerations found") if ret.empty?
-      power_state = ret.first[:power_state]
-      return :on if power_state == "2"
-      return :off if power_state == "13"
-      raise(Error, "Invalid power state returned: %s" % power_state)
+      retry_counter = 0
+      begin
+        raise(Error, "No power management enumerations found") if ret.empty?
+        power_state = ret.first[:power_state]
+        return :on if power_state == "2"
+        return :off if power_state == "13"
+        raise(Error, "Invalid power state returned: %s" % power_state)
+      rescue
+        if retry_counter < 3
+          sleep 5
+          retry_counter += 1
+          retry
+        else
+          raise(Error, "Invalid power state returned: %s" % power_state)
+        end
+      end
     end
 
     def self.reboot(endpoint, logger=nil)
@@ -751,6 +796,13 @@ module ASM
                     :return_value => "0")
     end
 
+    def apply_idrac_attributes(params={})
+      client.invoke("ApplyAttributes", APPLY_ATTRIBUTES,
+                    :params => params,
+                    :required_params => [:target, :attribute_name, :attribute_value],
+                    :return_value => "4096")
+    end
+
     # Create a BIOS configuration job
     #
     # The scheduled job will reboot the server and apply queued BIOS settings.
@@ -979,6 +1031,19 @@ module ASM
       client.invoke("RequestStateChange", POWER_SERVICE,
                     :params => params,
                     :required_params => :requested_state,
+                    :return_value => "0")
+    end
+
+    # Update power state of the server.
+    #
+    # @param options [Hash]
+    # @option options [Symbol|String] :power_state 1 to 10"
+    # @return [Hash]
+    # @raise [ResponseError] if the command fails
+    def request_power_state_change(params={})
+      client.invoke("RequestPowerStateChange", POWER_STATE_CHANGE,
+                    :params => params,
+                    :required_params => :power_state,
                     :return_value => "0")
     end
 
@@ -1269,11 +1334,46 @@ module ASM
 
       change_boot_order_by_instance_id(:instance_id => "IPL",
                                        :source => target[:instance_id])
-      change_boot_source_state(:instance_id => "IPL", :enabled_state => "1",
-                               :source => target[:instance_id])
+
+      unless target[:current_enabled_status] == "1"
+        logger.info("Enabling boot device %s on %s" % [target[:instance_id], host])
+        change_boot_source_state(:instance_id => "IPL", :enabled_state => "1",
+                                 :source => target[:instance_id])
+      end
+
       run_bios_config_job(:target => boot_mode[:fqdd],
                           :scheduled_start_time => options[:scheduled_start_time],
                           :reboot_job_type => options[:reboot_job_type])
+    end
+
+    # Set Virtual Media attach state
+    #
+    # Sets virtual media attach state to one of three states:
+    #
+    # 1. :detached -- the virtual media devices will not be visible in the {#boot_source_settings}
+    # 2. :attached -- the virtual media devices will always be visible in the {#boot_source_settings},
+    #    even if there is no virtual media image connected.
+    # 3. :auto_attach -- the virtual media devices will only be visible in the {#boot_source_settings}
+    #    after an image is connected and inventory collection is run
+    #
+    # @param state [Symbol] :detach, :attach or :auto_attach
+    # @return [void]
+    def set_virtual_media_attach_state(state) # rubocop:disable Style/AccessorMethodName
+      state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "Auto-Attach"}
+      state_string = Parser.enum_value(nil, state_map, state)
+
+      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "Attach State" }
+      if va[:current_value] != state_string
+        logger.info("Changing %s Attach State from %s to %s" % [host, va[:attribute_value], state_string])
+        resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
+                                      :attribute_name => "VirtualConsole.1#AttachState",
+                                      :attribute_value => state_string)
+        logger.info("Initiated Apply iDRAC attributes config job %s on %s" % [resp[:job], host])
+        resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
+        logger.info("Successfully executed BIOS config job %s on %s: %s" % [resp[:job], host, Parser.response_string(resp)])
+        logger.info("Waiting for LC ready on %s" % host)
+        poll_for_lc_ready
+      end
     end
 
     # Connect the remote file system ISO and boot it
@@ -1303,21 +1403,29 @@ module ASM
     # @option params [String] :reboot_start_time Schedules the "reboot job" at the specified start time in the
     #                         format: yyyymmddhhmmss. A special value of "TIME_NOW" schedules the job(s) immediately.
     # @option params [FixNum] :timeout (600) The number of seconds to wait for the virtual CD to become available
+    # @option options [Symbol] :attach or :auto_attach. Defaults to :attach. In :auto_attach mode the virtual CD will only be visible while connected.
     # @return [void]
     # @raise [ResponseError] if a command fails
     def boot_rfs_iso_image(options={})
       options = {:reboot_job_type => :graceful_with_forced_shutdown,
                  :reboot_start_time => "TIME_NOW",
+                 :attach_state => :attached,
                  :timeout => 10 * 60}.merge(options)
+      # Virtual Media needs to be in attach state
+      set_virtual_media_attach_state(options.delete(:attach_state))
+
       connect_rfs_iso_image(options)
 
-      # Have to reboot in order for virtual cd to show up in boot source settings
-      reboot(options)
+      # In auto-attach mode have to reboot in order for virtual CD to show up in boot source settings.
+      unless find_boot_device(:virtual_cd)
+        logger.info("Virtual CD not seen for %s, rebooting" % host)
+        reboot(options)
 
-      # Wait for virtual cd to show up in boot source settings
-      max_sleep = 60
-      ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
-        find_boot_device(:virtual_cd) || raise(RetryException)
+        # Wait for virtual cd to show up in boot source settings
+        max_sleep = 60
+        ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
+          find_boot_device(:virtual_cd) || raise(RetryException)
+        end
       end
 
       set_boot_order(:virtual_cd, options)
