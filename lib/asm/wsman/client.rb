@@ -105,7 +105,7 @@ module ASM
               sleep 10
               return exec(method, schema, options)
             end
-            msg = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at #{host}."
+            msg = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at #{host} or you need to upgrade your wsmancli version to 2.6.0 as current wsmancli version is not compatible with this library "
           else
             msg = "Failed to execute wsman command against server #{host}"
           end
