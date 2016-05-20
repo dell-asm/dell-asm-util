@@ -142,6 +142,8 @@ module ASM
                            :read_only_and_password_hash => "3"}, value)
         when :requested_state
           enum_value(key, {:on => "2", :off => "3", :reset => "11"}, value)
+        when :power_state
+          enum_value(key, {:on => "2", :reboot => "10"}, value)
         else
           value
         end
