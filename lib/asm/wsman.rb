@@ -1417,7 +1417,8 @@ module ASM
       connect_rfs_iso_image(options)
 
       # In auto-attach mode have to reboot in order for virtual CD to show up in boot source settings.
-      unless find_boot_device(:virtual_cd)
+      boot_device = find_boot_device(:virtual_cd)
+      unless boot_device
         logger.info("Virtual CD not seen for %s, rebooting" % host)
         reboot(options)
 
@@ -1428,8 +1429,13 @@ module ASM
         end
       end
 
-      set_boot_order(:virtual_cd, options)
-
+      if boot_device && boot_device[:current_enabled_status] == "1" && boot_device[:current_assigned_sequence] == "0"
+        # Virtual CD is already first in boot order, but we need to boot into the ISO
+        reboot(options)
+      else
+        # Set virtual CD first in boot order (will have the side-effect of rebooting)
+        set_boot_order(:virtual_cd, options)
+      end
     rescue Timeout::Error
       raise(Error, "Timed out waiting for virtual CD to become available on %s" % host)
     end
