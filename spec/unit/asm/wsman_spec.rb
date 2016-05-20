@@ -721,6 +721,15 @@ describe ASM::WsMan do
       message = "Timed out waiting for virtual CD to become available on rspec-host"
       expect {wsman.boot_rfs_iso_image(opts)}.to raise_error(message)
     end
+
+    it "should connect iso and reboot if virtual CD already first in boot order" do
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:set_virtual_media_attach_state).with(:attached)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:current_enabled_status => "1", :current_assigned_sequence => "0")
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts).never
+      wsman.expects(:reboot).with(opts)
+      wsman.boot_rfs_iso_image(opts)
+    end
   end
 
   describe "#connect_network_iso_image" do
