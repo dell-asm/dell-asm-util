@@ -120,7 +120,7 @@ describe ASM::WsMan do
 
   describe "#controller_views" do
     it "should enumerate DCIM_ControllerView" do
-      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wsscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView").returns("rspec-result")
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView").returns("rspec-result")
       expect(wsman.controller_views).to eq("rspec-result")
     end
   end

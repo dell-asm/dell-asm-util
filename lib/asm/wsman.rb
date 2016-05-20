@@ -109,7 +109,7 @@ module ASM
     #
     # @return [Array<Hash>] list of RAID controllers
     def controller_views
-      client.enumerate("http://schemas.dmtf.org/wbem/wsscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView")
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_ControllerView")
     end
 
     # Retrieve the list of server enclosures
