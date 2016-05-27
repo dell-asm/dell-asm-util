@@ -1363,7 +1363,9 @@ module ASM
       state_string = Parser.enum_value(nil, state_map, state)
 
       va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "Attach State" }
-      if va[:current_value] != state_string
+      if !va
+        logger.warn("Attach State not found and will not be set for %s; may be an unsupported iDrac firmware" % host)
+      elsif va[:current_value] != state_string
         logger.info("Changing %s Attach State from %s to %s" % [host, va[:attribute_value], state_string])
         resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
                                       :attribute_name => "VirtualConsole.1#AttachState",
