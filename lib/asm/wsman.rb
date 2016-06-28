@@ -330,6 +330,13 @@ module ASM
       end.compact
     end
 
+    def self.get_wwpns_wwnns(endpoint, logger=nil)
+      response = invoke(endpoint, "enumerate",
+                        "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_FCView",
+                        :logger => logger)
+      ( response.scan(/<n1:VirtualWWN>(\S+)<\/n1:VirtualWWN>\s*<n1:VirtualWWPN>(\S+)<\/n1:VirtualWWPN>/) || [] )
+    end
+
     def self.nic_status(fqdd, bios_info)
       fqdd_display = bios_display_name(fqdd)
       nic_enabled = "Enabled"
