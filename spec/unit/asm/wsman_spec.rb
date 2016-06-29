@@ -764,12 +764,10 @@ describe ASM::WsMan do
   end
 
   describe "#get_wwpn_wwnn" do
-    before do
-      @wwpn_response = SpecHelper.load_fixture("wsman/fc_view.xml")
-    end
+    let(:wwpn_response) {SpecHelper.load_fixture("wsman/fc_view.xml")}
 
     it "should find wwwpn and wwnn values" do
-      ASM::WsMan.stubs(:invoke).returns(@wwpn_response)
+      ASM::WsMan.stubs(:invoke).returns(wwpn_response)
       wwpn_wwnn = ASM::WsMan.get_wwpns_wwnns(nil, nil)
       wwpn_wwnn.should == [["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
                            ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]

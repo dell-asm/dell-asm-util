@@ -330,6 +330,16 @@ module ASM
       end.compact
     end
 
+    # Retrieve WWNN and WWPN for server using NIC_FC_View
+    #
+    # @param endpoint [Hash] Hash of server access endpoint
+    # @param logger [Object] Logger object
+    #
+    # @return [Array<Array>]
+    #
+    # @example return
+    #   [["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
+    #   ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]
     def self.get_wwpns_wwnns(endpoint, logger=nil)
       response = invoke(endpoint, "enumerate",
                         "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_FCView",
