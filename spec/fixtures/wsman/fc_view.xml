@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration">
+  <s:Header>
+    <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse</wsa:Action>
+    <wsa:RelatesTo>uuid:12b479fc-3658-1658-8002-b25892565000</wsa:RelatesTo>
+    <wsa:MessageID>uuid:11ead32d-3658-1658-a5b2-5830d9ddf95c</wsa:MessageID>
+  </s:Header>
+  <s:Body>
+    <wsen:EnumerateResponse>
+      <wsen:EnumerationContext>11e5a605-3658-1658-a5b1-5830d9ddf95c</wsen:EnumerationContext>
+    </wsen:EnumerateResponse>
+  </s:Body>
+</s:Envelope>
+        <?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:n1="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_FCView" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<s:Header>
+  <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+  <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
+  <wsa:RelatesTo>uuid:12c47bd4-3658-1658-8003-b25892565000</wsa:RelatesTo>
+  <wsa:MessageID>uuid:11ecee33-3658-1658-a5b3-5830d9ddf95c</wsa:MessageID>
+</s:Header>
+<s:Body>
+  <wsen:PullResponse>
+    <wsen:Items>
+      <n1:DCIM_FCView>
+        <n1:Bus>3</n1:Bus>
+        <n1:ChipType>2532, Rev. 02</n1:ChipType>
+        <n1:Device>0</n1:Device>
+        <n1:DeviceDescription>Fibre Channel in Mezzanine 2-1</n1:DeviceDescription>
+        <n1:DeviceName>QLogic Fibre Channel Adapter - 21000024FF4ABB5A</n1:DeviceName>
+        <n1:EFIVersion>6.08</n1:EFIVersion>
+        <n1:FCTapeEnable>3</n1:FCTapeEnable>
+        <n1:FQDD>FC.Mezzanine.2B-1</n1:FQDD>
+        <n1:FabricLoginRetryCount>0</n1:FabricLoginRetryCount>
+        <n1:FabricLoginTimeout>0</n1:FabricLoginTimeout>
+        <n1:FamilyVersion>03.21.04</n1:FamilyVersion>
+        <n1:FirstFCTargetLUN>0</n1:FirstFCTargetLUN>
+        <n1:FirstFCTargetWWPN>00:00:00:00:00:00:00:00</n1:FirstFCTargetWWPN>
+        <n1:FramePayloadSize>2048</n1:FramePayloadSize>
+        <n1:Function>0</n1:Function>
+        <n1:HardZoneAddress>0</n1:HardZoneAddress>
+        <n1:HardZoneEnable>3</n1:HardZoneEnable>
+        <n1:InstanceID>FC.Mezzanine.2B-1</n1:InstanceID>
+        <n1:LinkDownTimeout>45000</n1:LinkDownTimeout>
+        <n1:LinkStatus>0</n1:LinkStatus>
+        <n1:LoopResetDelay>5</n1:LoopResetDelay>
+        <n1:PCIDeviceID>2532</n1:PCIDeviceID>
+        <n1:PortDownRetryCount>45</n1:PortDownRetryCount>
+        <n1:PortDownTimeout>0</n1:PortDownTimeout>
+        <n1:PortLoginRetryCount>8</n1:PortLoginRetryCount>
+        <n1:PortLoginTimeout>3000</n1:PortLoginTimeout>
+        <n1:PortNumber>1</n1:PortNumber>
+        <n1:PortSpeed>2</n1:PortSpeed>
+        <n1:SecondFCTargetLUN>0</n1:SecondFCTargetLUN>
+        <n1:SecondFCTargetWWPN>00:00:00:00:00:00:00:00</n1:SecondFCTargetWWPN>
+        <n1:VendorName xsi:nil="true"/>
+        <n1:VirtualWWN>20:00:00:24:FF:4A:BB:5A</n1:VirtualWWN>
+        <n1:VirtualWWPN>21:00:00:24:FF:4A:BB:5A</n1:VirtualWWPN>
+        <n1:WWN>20:00:00:24:FF:4A:BB:5A</n1:WWN>
+        <n1:WWPN>21:00:00:24:FF:4A:BB:5A</n1:WWPN>
+      </n1:DCIM_FCView>
+      <n1:DCIM_FCView>
+        <n1:Bus>3</n1:Bus>
+        <n1:ChipType>2532, Rev. 02</n1:ChipType>
+        <n1:Device>0</n1:Device>
+        <n1:DeviceDescription>Fibre Channel in Mezzanine 2-2</n1:DeviceDescription>
+        <n1:DeviceName>QLogic Fibre Channel Adapter - 21000024FF4ABB5B</n1:DeviceName>
+        <n1:EFIVersion>6.08</n1:EFIVersion>
+        <n1:FCTapeEnable>3</n1:FCTapeEnable>
+        <n1:FQDD>FC.Mezzanine.2B-2</n1:FQDD>
+        <n1:FabricLoginRetryCount>0</n1:FabricLoginRetryCount>
+        <n1:FabricLoginTimeout>0</n1:FabricLoginTimeout>
+        <n1:FamilyVersion>03.21.04</n1:FamilyVersion>
+        <n1:FirstFCTargetLUN>0</n1:FirstFCTargetLUN>
+        <n1:FirstFCTargetWWPN>00:00:00:00:00:00:00:00</n1:FirstFCTargetWWPN>
+        <n1:FramePayloadSize>2048</n1:FramePayloadSize>
+        <n1:Function>1</n1:Function>
+        <n1:HardZoneAddress>0</n1:HardZoneAddress>
+        <n1:HardZoneEnable>3</n1:HardZoneEnable>
+        <n1:InstanceID>FC.Mezzanine.2B-2</n1:InstanceID>
+        <n1:LinkDownTimeout>45000</n1:LinkDownTimeout>
+        <n1:LinkStatus>0</n1:LinkStatus>
+        <n1:LoopResetDelay>5</n1:LoopResetDelay>
+        <n1:PCIDeviceID>2532</n1:PCIDeviceID>
+        <n1:PortDownRetryCount>45</n1:PortDownRetryCount>
+        <n1:PortDownTimeout>0</n1:PortDownTimeout>
+        <n1:PortLoginRetryCount>8</n1:PortLoginRetryCount>
+        <n1:PortLoginTimeout>3000</n1:PortLoginTimeout>
+        <n1:PortNumber>2</n1:PortNumber>
+        <n1:PortSpeed>2</n1:PortSpeed>
+        <n1:SecondFCTargetLUN>0</n1:SecondFCTargetLUN>
+        <n1:SecondFCTargetWWPN>00:00:00:00:00:00:00:00</n1:SecondFCTargetWWPN>
+        <n1:VendorName xsi:nil="true"/>
+        <n1:VirtualWWN>20:00:00:24:FF:4A:BB:5B</n1:VirtualWWN>
+        <n1:VirtualWWPN>21:00:00:24:FF:4A:BB:5B</n1:VirtualWWPN>
+        <n1:WWN>20:00:00:24:FF:4A:BB:5B</n1:WWN>
+        <n1:WWPN>21:00:00:24:FF:4A:BB:5B</n1:WWPN>
+      </n1:DCIM_FCView>
+    </wsen:Items>
+    <wsen:EndOfSequence/>
+  </wsen:PullResponse>
+</s:Body>
+</s:Envelope>

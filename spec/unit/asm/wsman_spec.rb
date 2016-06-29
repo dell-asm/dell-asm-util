@@ -764,4 +764,17 @@ describe ASM::WsMan do
       wsman.boot_to_network_iso_image
     end
   end
+
+  describe "#get_wwpn_wwnn" do
+    before do
+      @wwpn_response = SpecHelper.load_fixture("wsman/fc_view.xml")
+    end
+
+    it "should find wwwpn and wwnn values" do
+      ASM::WsMan.stubs(:invoke).returns(@wwpn_response)
+      wwpn_wwnn = ASM::WsMan.get_wwpns_wwnns(nil,nil)
+      wwpn_wwnn.should == [["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
+                           ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]
+    end
+  end
 end
