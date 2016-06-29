@@ -25,8 +25,7 @@ describe ASM::WsMan do
                       "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
                       "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
                       "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
-                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"
-      }
+                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"}
     end
 
     it "should find permanent macs" do
@@ -39,8 +38,7 @@ describe ASM::WsMan do
                       "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
                       "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
                       "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
-                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"
-      }
+                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"}
     end
   end
 
@@ -772,7 +770,7 @@ describe ASM::WsMan do
 
     it "should find wwwpn and wwnn values" do
       ASM::WsMan.stubs(:invoke).returns(@wwpn_response)
-      wwpn_wwnn = ASM::WsMan.get_wwpns_wwnns(nil,nil)
+      wwpn_wwnn = ASM::WsMan.get_wwpns_wwnns(nil, nil)
       wwpn_wwnn.should == [["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
                            ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]
     end
