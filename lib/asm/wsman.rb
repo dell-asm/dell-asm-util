@@ -1073,6 +1073,10 @@ module ASM
 
       if power_state != :off
         set_power_state(:requested_state => :off)
+        (1..30).each do |wait_counter|
+          break if power_state == :off
+          sleep 10
+        end
       else
         logger.debug "Server is already powered off"
       end
