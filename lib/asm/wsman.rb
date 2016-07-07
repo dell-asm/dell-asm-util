@@ -1080,6 +1080,7 @@ module ASM
           logger.debug "Server is not in power-off state. Retry counter %d" % wait_counter if logger
           sleep 10
         end
+        logger.warn "Server is still not powered-off. Check the server console" if power_state != :off
       else
         logger.debug "Server is already powered off"
       end
