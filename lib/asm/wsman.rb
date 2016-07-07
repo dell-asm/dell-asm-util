@@ -1065,6 +1065,8 @@ module ASM
 
     # Power the server off.
     #
+    # After executing the power-off operation, check the power-state and returns once server is in power-off state
+    #
     # @return [void]
     # @raise [ResponseError] if the command fails
     def power_off
@@ -1073,6 +1075,12 @@ module ASM
 
       if power_state != :off
         set_power_state(:requested_state => :off)
+        (1..30).each do |wait_counter|
+          break if power_state == :off
+          logger.debug "Server is not in power-off state. Retry counter %d" % wait_counter if logger
+          sleep 10
+        end
+        logger.warn "Server is still not powered-off. Check the server console" if power_state != :off
       else
         logger.debug "Server is already powered off"
       end

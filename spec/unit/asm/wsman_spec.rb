@@ -439,7 +439,7 @@ describe ASM::WsMan do
 
   describe "#power_off" do
     it "should power server off if it is on" do
-      wsman.expects(:power_state).returns(:on)
+      wsman.expects(:power_state).times(4).returns(:on, :on, :off, :off)
       wsman.expects(:set_power_state).with(:requested_state => :off)
       wsman.power_off
     end
