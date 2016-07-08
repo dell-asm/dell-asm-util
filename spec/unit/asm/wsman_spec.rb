@@ -658,14 +658,14 @@ describe ASM::WsMan do
     let(:opts) {{:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}}
 
     it "shoud fail on invalid attach state symbols" do
-      msg = "Invalid  value: foobar; allowed values are: :detached (Detached), :attached (Attached), :auto_attach (Auto-Attach)"
+      msg = "Invalid  value: foobar; allowed values are: :detached (Detached), :attached (Attached), :auto_attach (AutoAttach)"
       expect { wsman.set_virtual_media_attach_state(:foobar) }.to raise_error(msg)
     end
 
     it "should change virtual media attach state if not already set correctly" do
-      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "Attach State",
-                                                       :attribute_name => "AttachState",
-                                                       :current_value => "Auto-Attach"}])
+      wsman.expects(:idrac_card_enumeration).returns([{:attribute_display_name => "RAC Virtual Media Attached",
+                                                       :attribute_name => "Attached",
+                                                       :current_value => "AutoAttach"}])
       wsman.expects(:poll_lc_job).with("123", :timeout => 30 * 60).returns(:job => "123", :message => "Success")
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:apply_idrac_attributes).returns(:job => "123")
