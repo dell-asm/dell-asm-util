@@ -1082,6 +1082,8 @@ module ASM
 
     # Power the server off.
     #
+    # After executing the power-off operation, check the power-state and returns once server is in power-off state
+    #
     # @return [void]
     # @raise [ResponseError] if the command fails
     def power_off
@@ -1090,6 +1092,12 @@ module ASM
 
       if power_state != :off
         set_power_state(:requested_state => :off)
+        (1..30).each do |wait_counter|
+          break if power_state == :off
+          logger.debug "Server is not in power-off state. Retry counter %d" % wait_counter if logger
+          sleep 10
+        end
+        logger.warn "Server is still not powered-off. Check the server console" if power_state != :off
       else
         logger.debug "Server is already powered off"
       end
@@ -1376,16 +1384,16 @@ module ASM
     # @param state [Symbol] :detach, :attach or :auto_attach
     # @return [void]
     def set_virtual_media_attach_state(state) # rubocop:disable Style/AccessorMethodName
-      state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "Auto-Attach"}
+      state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "AutoAttach"}
       state_string = Parser.enum_value(nil, state_map, state)
 
-      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "Attach State" }
+      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "RAC Virtual Media Attached" }
       if !va
         logger.warn("Attach State not found and will not be set for %s; may be an unsupported iDrac firmware" % host)
       elsif va[:current_value] != state_string
         logger.info("Changing %s Attach State from %s to %s" % [host, va[:attribute_value], state_string])
         resp = apply_idrac_attributes(:target => "iDRAC.Embedded.1",
-                                      :attribute_name => "VirtualConsole.1#AttachState",
+                                      :attribute_name => "VirtualMedia.1#Attached",
                                       :attribute_value => state_string)
         logger.info("Initiated Apply iDRAC attributes config job %s on %s" % [resp[:job], host])
         resp = poll_lc_job(resp[:job], :timeout => 30 * 60)
