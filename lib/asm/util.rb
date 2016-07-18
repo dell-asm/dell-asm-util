@@ -357,5 +357,11 @@ module ASM
       end
       host_group
     end
+
+    # Does a deep merge on a hash
+    def self.deep_merge!(source, new_hash)
+      merger = proc { |_, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.merge(v2, &merger) : v2 }
+      source.merge!(new_hash, &merger)
+    end
   end
 end

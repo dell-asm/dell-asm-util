@@ -110,4 +110,26 @@ vMotion                 vSwitch1                     1       23
       expect(certname).to eq("CrAzY_NaMe1234")
     end
   end
+
+  describe "#deep_merge!" do
+    it "should recursively merge one hash into another" do
+      original = {"asm::fcdatastore" =>
+                    {"drsmixh01:drs-cplmix03" =>
+                       {"data_center" => "drsmix01dc", "datastore" => "drs-cplmix03",
+                        "cluster" => "drsmix01dc", "ensure" => "present",
+                        "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true}}}
+      new = {"asm::fcdatastore" =>
+               {"drsmixh01:drs-cplmix04" =>
+                  {"data_center" => "drsmix01dc", "datastore" => "drs-cplmix04", "cluster" => "drsmix01dc",
+                   "ensure" => "present", "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true}}}
+      ASM::Util.deep_merge!(original, new)
+      expect(original).to eq("asm::fcdatastore" =>
+                                {"drsmixh01:drs-cplmix03" =>
+                                   {"data_center" => "drsmix01dc", "datastore" => "drs-cplmix03", "cluster" => "drsmix01dc",
+                                    "ensure" => "present", "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true},
+                                 "drsmixh01:drs-cplmix04" =>
+                                   {"data_center" => "drsmix01dc", "datastore" => "drs-cplmix04", "cluster" => "drsmix01dc",
+                                    "ensure" => "present", "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true}})
+    end
+  end
 end
