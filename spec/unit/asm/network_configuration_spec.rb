@@ -20,6 +20,23 @@ describe ASM::NetworkConfiguration do
     end
   end
 
+  describe "#has_fc?" do
+    let(:json) { {"interfaces" => [{"fabrictype" => "fc", "enabled" => true}]} }
+    let(:json1) { SpecHelper.load_fixture("network_configuration/blade_partitioned.json") }
+    let(:net_config) { ASM::NetworkConfiguration.new(json) }
+    let(:net_config1) { ASM::NetworkConfiguration.new(JSON.parse(json1)) }
+
+    it "should return true if fc is set" do
+      expect(net_config.has_fc).to eq(true)
+      expect(net_config.cards.size).to be(0)
+    end
+
+    it "should return true if fc is set" do
+      expect(net_config1.has_fc).to eq(false)
+      expect(net_config1.cards.size).to be(1)
+    end
+  end
+
   describe "when parsing a partitioned network config" do
     let(:json) { SpecHelper.load_fixture("network_configuration/blade_partitioned.json") }
     let(:net_config) { ASM::NetworkConfiguration.new(JSON.parse(json)) }

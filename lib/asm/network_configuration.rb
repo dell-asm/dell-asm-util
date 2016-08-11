@@ -49,11 +49,13 @@ module ASM
     attr_reader(:logger)
     attr_reader(:cards)
     attr_reader(:teams)
+    attr_reader(:has_fc)
 
     def initialize(network_config_hash, logger=nil)
       @logger = logger
       mash = Hashie::Mash.new(network_config_hash)
       @hash = mash.to_hash
+      @has_fc = false
       @cards = build_cards(mash.interfaces)
     end
 
@@ -174,6 +176,8 @@ module ASM
 
       interfaces.each do |orig_card|
         # For now we are discarding FC interfaces!
+        @has_fc ||= ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype == "fc"
+
         next unless ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype != "fc"
 
         card = Hashie::Mash.new(orig_card)
