@@ -363,5 +363,31 @@ module ASM
       merger = proc { |_, v1, v2| v1.is_a?(Hash) && v2.is_a?(Hash) ? v1.merge(v2, &merger) : v2 }
       source.merge!(new_hash, &merger)
     end
+
+    def self.wait_for_idrac(endpoint, logger, timeout=180, state=0)
+      raise("Timeout waiting for Idrac") if timeout == 0
+      logger.debug("waiting #{timeout} seconds for Idrac...")
+      sleep timeout
+      begin
+        wait_for_idrac(endpoint, logger, timeout / 2) if ASM::WsMan.lcstatus(endpoint, logger).to_i != state
+      rescue
+        wait_for_idrac(endpoint, logger, timeout / 2)
+      end
+    end
+
+    # @api private
+    def self.augment_logger(logger)
+      if !logger.respond_to?(:error) && logger.respond_to?(:err)
+        # Puppet logger has most Logger methods, but uses err and warning
+        def logger.error(msg)
+          err(msg)
+        end
+
+        def logger.warn(msg)
+          warning(msg)
+        end
+      end
+      logger
+    end
   end
 end
