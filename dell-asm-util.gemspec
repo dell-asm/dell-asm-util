@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "mocha"
   s.add_development_dependency "puppet"
   s.add_development_dependency "puppetlabs_spec_helper", "0.4.1"
+  s.add_development_dependency "json_pure", "2.0.1"
 
   s.executables << "wsman_shell.rb"
 
