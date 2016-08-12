@@ -5,6 +5,7 @@ require "asm/util"
 require "asm/wsman/client"
 require "asm/wsman/parser"
 require "asm/wsman/response_error"
+require "asm/racadm"
 require "rexml/document"
 require "uri"
 
@@ -226,7 +227,18 @@ module ASM
     #       :pending_enabled_status=>"1"}, # ...
     #     ]
     def boot_source_settings
+      tries ||= 1
       client.enumerate("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootSourceSetting?__cimnamespace=root/dcim")
+    rescue ASM::WsMan::UTF8Error
+      if tries == 1
+        logger.debug("Parser error retrieving DCIM_BootSourceSetting due to non regular UTF-8. Resetting iDRAC and retrying.")
+        tries += 1
+        ASM::Racadm.new(client.endpoint, :logger => logger).reset_idrac
+        ASM::Util.wait_for_idrac(client.endpoint, logger, 360)
+        retry
+      else
+        raise(Error, "Unable to parse DCIM_BootSourceSetting after resetting iDRAC")
+      end
     end
 
     # Retrieve iDRAC Card Settings
