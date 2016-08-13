@@ -49,14 +49,16 @@ module ASM
     attr_reader(:logger)
     attr_reader(:cards)
     attr_reader(:teams)
-    attr_reader(:has_fc)
 
     def initialize(network_config_hash, logger=nil)
       @logger = logger
       mash = Hashie::Mash.new(network_config_hash)
       @hash = mash.to_hash
-      @has_fc = false
       @cards = build_cards(mash.interfaces)
+    end
+
+    def has_fc?
+      !!@has_fc
     end
 
     def get_wsman_nic_info(endpoint)
@@ -173,6 +175,7 @@ module ASM
       interface_i = 0
       card_i = 0
       cards = []
+      @has_fc = false
 
       interfaces.each do |orig_card|
         # For now we are discarding FC interfaces!

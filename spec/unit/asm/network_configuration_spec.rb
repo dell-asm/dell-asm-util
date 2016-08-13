@@ -27,12 +27,12 @@ describe ASM::NetworkConfiguration do
     let(:net_config1) { ASM::NetworkConfiguration.new(JSON.parse(json1)) }
 
     it "should return true if fc is set" do
-      expect(net_config.has_fc).to eq(true)
+      expect(net_config.has_fc?).to eq(true)
       expect(net_config.cards.size).to be(0)
     end
 
     it "should return true if fc is set" do
-      expect(net_config1.has_fc).to eq(false)
+      expect(net_config1.has_fc?).to eq(false)
       expect(net_config1.cards.size).to be(1)
     end
   end
