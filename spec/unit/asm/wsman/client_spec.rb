@@ -107,6 +107,14 @@ describe ASM::WsMan::Client do
       message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
     end
+
+    it "should raise an UTF8Error when we get a parser issue" do
+      response.stderr = "Entity: line 2: parser error : Input is not proper UTF-8, indicate encoding..."
+      ASM::Util.expects(:run_command_with_args)
+               .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schema", *args)
+               .returns(response)
+      expect {client.exec("enumerate", "rspec-schema")}.to raise_error(ASM::WsMan::UTF8Error)
+    end
   end
 
   describe "#invoke" do
