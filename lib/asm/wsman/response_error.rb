@@ -15,7 +15,5 @@ module ASM
         "%s: %s" % [super.to_s, Parser.response_string(response)]
       end
     end
-
-    class UTF8Error < ResponseError; end
   end
 end
