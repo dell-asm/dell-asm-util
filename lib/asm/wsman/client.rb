@@ -12,7 +12,7 @@ module ASM
         missing_params = [:host, :user, :password].reject { |k| endpoint.include?(k) }
         raise("Missing required endpoint parameter(s): %s" % [missing_params.join(", ")]) unless missing_params.empty?
         @endpoint = endpoint
-        @logger = ASM::Util.augment_logger(options.delete(:logger) || Logger.new(nil))
+        @logger = augment_logger(options.delete(:logger) || Logger.new(nil))
 
         proxy_warn
       end
@@ -22,6 +22,21 @@ module ASM
         if ENV.include?("http_proxy") || ENV.include?("https_proxy")
           logger.warn("wsman invocations will use the proxy set in http_proxy or https_proxy")
         end
+      end
+
+      # @api private
+      def augment_logger(logger)
+        if !logger.respond_to?(:error) && logger.respond_to?(:err)
+          # Puppet logger has most Logger methods, but uses err and warning
+          def logger.error(msg)
+            err(msg)
+          end
+
+          def logger.warn(msg)
+            warning(msg)
+          end
+        end
+        logger
       end
 
       def host
@@ -91,10 +106,6 @@ module ASM
               return exec(method, schema, options)
             end
             msg = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at #{host}."
-          elsif result["stderr"] =~ /Input is not proper UTF-8/
-            msg = "Failed to execute wsman command due to UTF-8 parsing error against server #{host}"
-            logger.error(msg)
-            raise(ASM::WsMan.UTF8Error.new("WsMan Parser Error due to non-proper UTF-8", result))
           else
             msg = "Failed to execute wsman command against server #{host}"
           end
