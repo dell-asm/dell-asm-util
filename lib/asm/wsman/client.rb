@@ -94,7 +94,7 @@ module ASM
           elsif result["stderr"] =~ /Input is not proper UTF-8/
             msg = "Failed to execute wsman command due to UTF-8 parsing error against server #{host}"
             logger.error(msg)
-            raise(ASM::WsMan::UTF8Error.new("WsMan Parser Error due to non-proper UTF-8", result))
+            raise(ASM::WsMan.UTF8Error.new("WsMan Parser Error due to non-proper UTF-8", result))
           else
             msg = "Failed to execute wsman command against server #{host}"
           end
