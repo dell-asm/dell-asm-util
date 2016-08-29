@@ -323,7 +323,7 @@ module ASM
       ret.each do |key, value|
         if value.is_a?(Hash)
           ret[key] = sanitize(value)
-        elsif key.to_s.downcase.include?("password")
+        elsif key.to_s.downcase =~ /password|pwd/
           ret[key] = "******"
         end
       end
