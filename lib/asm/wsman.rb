@@ -538,6 +538,17 @@ module ASM
                     :return_value => "4096")
     end
 
+    # Parse the specified XML generated schema
+    #
+    # @params options [Hash] the options to install specified config file path
+    # @example
+    #      :input_file => "/tmp/xml_parsed_path"
+    # @return [Hash]
+    # @raise [ResponseError] if command fails
+    def install_from_uri(options={})
+      client.invoke("InstallFromURI", SOFTWARE_INSTALLATION_SERVICE, :input_file => options[:input_file])
+    end
+
     # Set up a job queue with jobs to execute
     #
     # This method is used for creating a job queue that shall contain one or more

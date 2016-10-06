@@ -1,0 +1,333 @@
+require "asm/wsman"
+require "asm/wsman/client"
+require "erb"
+require "tempfile"
+require "asm/transport/racadm"
+
+module ASM
+  class Firmware
+    IDRAC_ID = 252_27
+    LC_ID = 288_97
+    UEFI_DIAGNOSTICS_ID = 258_06
+    DRIVER_PACK = 189_81
+    OS_COLLECTOR = 101_734
+
+    # Component ids that do not require a reboot (DIRECT UPDATES)
+    NO_REBOOT_COMPONENT_IDS = [IDRAC_ID, LC_ID, UEFI_DIAGNOSTICS_ID, DRIVER_PACK, OS_COLLECTOR].freeze
+
+    # Max time to wait for a job to complete
+    MAX_WAIT_SECONDS = 1800
+    attr_reader :logger
+
+    def initialize(cred, options={})
+      @endpoint = cred
+      @logger = options[:logger]
+    end
+
+    # Used to update server firmware via iDrac
+    #
+    # @param config [Hash] schema of resources used to update the firmware
+    # @example
+    #        {"asm::server_update"=>
+    #          {"rackserver-5xclw12"=>
+    #            {"asm_hostname" =>"172.25.5.100",
+    #             "force_restart" => false,
+    #             "install_type" => "uri",
+    #             "path" => "/var/nfs/firmware/ff8080815746abab0157481ecea1000f/ASMCatalog.xml",
+    #             "server_firmware" => "[{\"instance_id\":\"DCIM:INSTALLED#701__NIC.Embedded.1-1-1\",
+    #                                     \"uri_path\":\"/var/nfs/firmware/ff8080815746abab0157481ecea1000f/FOLDER03287319M/3/Network_Firmware_0MT4K_WN64_7.10.64.EXE\"
+    #                                   }]"
+    #            }
+    #          }
+    #        }
+    # @param resource_hash [Array<Hash>] of instances with nfs and uri paths
+    # @example
+    #      [{"instance_id" => "DCIM:INSTALLED#701__NIC.Embedded.1-1-1",
+    #        "uri_path" => "nfs://172.25.5.100/FOLDER03287319M/3/Network_Firmware_0MT4K_WN64_7.10.64.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+    #       },
+    #       {"instance_id" => "DCIM:INSTALLED#iDRAC.Embedded.1-1#IDRACinfo",
+    #        "component_id" => "25227",
+    #        "uri_path" => "nfs://172.25.5.100/FOLDER03526343M/2/iDRAC-with-Lifecycle-Controller_Firmware_JHF76_WN64_2.30.30.30_A00.EXE;
+    #                       mountpoint="/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+    #       }]
+    # @param device_config [Hash]
+    # @example
+    #      {"cert_name"=>"rackserver-5xclw12",
+    #       "host"=>"172.17.5.35",
+    #       "port"=>nil,
+    #       "path"=>"/asm/bin/idrac-discovery.rb",
+    #       "scheme"=>"script",
+    #       "arguments"=>{"credential_id"=>"ff80808157bfd05a0157bfd13392000d"},
+    #       "user"=>"username",
+    #       "enc_password"=>nil,
+    #       "password"=> "1234"
+    #      }
+    #
+    # @param logger [Logger]
+    # @return [void]
+    # @raise [Error] resource_hash was empty
+    def self.idrac_fw_install_from_uri(config, resource_hash, device_config, logger)
+      raise("Received empty resources to update the firmware on server") if resource_hash.nil?
+
+      cert_name = config["asm::server_update"].keys.first
+      options = {:host => device_config["host"], :user => device_config["user"], :password => device_config["password"]}
+      firmware_instance = ASM::Firmware.new(options, :logger => logger)
+      wsman_instance = ASM::WsMan.new(options, :logger => logger)
+      firmware_instance.clear_job_queue_retry(wsman_instance)
+      force_restart = config["asm::server_update"][cert_name]["force_restart"]
+      pre = []
+      main = []
+
+      resource_hash.each do |firmware|
+        logger.debug(firmware)
+        if [LC_ID, IDRAC_ID].include? firmware["component_id"].to_i
+          pre << firmware
+        else
+          main << firmware
+        end
+      end
+
+      unless pre.empty?
+        logger.debug("LC Update required, installing first")
+        firmware_instance.update_idrac_firmware(pre, force_restart, wsman_instance)
+      end
+      firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance)
+
+      # After updating Ensure LC is up and in good state before exiting
+      wsman_instance.poll_for_lc_ready
+    end
+
+    # Clearing the job_queue with retry
+    #
+    # make sure lc ready after clearing the job queue other wise reset the IDRAC
+    # @param wsman [Object]
+    # @return [void]
+    # @raise [StandardError] if the command delete_job_queue operation or lc_status was not ready after job queue deletion
+    def clear_job_queue_retry(wsman)
+      attempts ||= 0
+      begin
+        attempts += 1
+        logger.debug("Clearing the Job Queue...")
+        resp = wsman.delete_job_queue(:job_id => "JID_CLEARALL")
+
+        if resp[:return_value] == "0"
+          logger.debug("Jobs in job queue was cleared successfully...")
+        else
+          raise("Unable to clear all the job queue")
+        end
+
+        wsman.poll_for_lc_ready # Make sure Lc status was ready
+      rescue StandardError => e
+        logger.debug("Job queue cannot be cleared.") if attempts > 1
+        logger.debug("Job queue still shows jobs exist after attempting to clear the job queue.")
+        logger.debug("Caught exception in clearing job queue %s : %s" % [e, e.class])
+        logger.debug("Resetting the Idrac ...")
+
+        # Resets two times
+        if attempts < 3
+          transport = ASM::Transport::Racadm.new(ASM::WsMan::Client.endpoint, logger)
+          transport.reset_idrac
+          sleep 60
+          retry
+        else
+          raise("Unable to find the LC status after clearing job queue")
+        end
+      end
+    end
+
+    # Used to update the iDrac firmware
+    #
+    # @param firmware_list [Array[<Hash>]] Each instance with mount and nfs path
+    # @param force_restart [Boolean]
+    # @param wsman [Object]
+    # @return [void]
+    # @raise [StandardError] if firmware gets_install_uri_job was not able to create job_id to receive or created duplicate job_ids or firmware update fails
+    def update_idrac_firmware(firmware_list, force_restart, wsman)
+      statuses = {}
+
+      # Initiate all firmware update jobs
+      firmware_list.each do |fw|
+        logger.debug(fw)
+        job_id = gets_install_uri_job(fw, wsman)
+        raise("Failed to initiate the firmware job for %s" % fw) unless job_id
+        raise("Duplicate job id %s for firmware %s: %s" % [job_id, fw, statuses[job_id]]) if statuses[job_id]
+        statuses = block_until_downloaded(job_id, fw, wsman)
+      end
+
+      statuses.each do |_, v|
+        if NO_REBOOT_COMPONENT_IDS.include?(v[:firmware]["component_id"].to_i)
+          v[:desired] = "Completed"
+          v[:reboot_required] = false
+        else
+          force_restart ? v[:desired] = "Completed" : v[:desired] = "Scheduled"
+          v[:reboot_required] = true
+        end
+      end
+
+      reboot_firmwares = statuses.select { |_, v| v[:reboot_required] }
+      completed_endstate_firmwares = statuses.select { |_, v| v[:desired] == "Completed" }
+      scheduled_endstate_firmwares = statuses.select { |_, v| v[:desired] == "Scheduled" }
+
+      schedule_reboot_job_queue(reboot_firmwares, force_restart, wsman) # Reboot required if firmware instance does not include :component_id key
+
+      [scheduled_endstate_firmwares, completed_endstate_firmwares].each do |firmware_set|
+        until firmware_set.values.all? { |v| v[:status] =~ /#{v[:desired]}|Failed|InternalTimeout/ }
+          firmware_set.each do |key, val|
+            if val[:status] != val[:desired] && Time.now - val[:start_time] > MAX_WAIT_SECONDS
+              val[:status] = "InternalTimeout"
+            else
+              lc_job = wsman.get_lc_job(key)
+              val[:status] = lc_job[:job_status]
+              logger.debug("Job Status #{key}: #{val[:status]}")
+            end
+          end
+          sleep 30
+        end
+      end
+      # Raise an error if any firmware jobs failed
+      failures = statuses.values.find_all { |v| v[:status] =~ /Failed|InternalTimeout/ }
+      if failures.empty?
+        logger.debug("Firmware update completed successfully")
+      else
+        logger.info("Failed firmware jobs: #{failures}")
+        raise("Firmware update failed in the lifecycle controller. Please refer to LifeCycle job logs")
+      end
+    end
+
+    # Used to install specified firmware instance on IDRAC
+    #
+    # @param firmware [Hash]
+    # @param wsman [Object]
+    # @option firmware [String] :instance_id specifies the particular firmware instance ID
+    # @option firmware [String] :uri_path specifies NFS mount share path
+    # @option firmware [String] :component_id specifies the component_id for iDRAC
+    # @return [String] created JOB_ID
+    # @raise [ASM::Error] if install_from_uri wsman command fails or unable to mount the specified firmware path
+    def gets_install_uri_job(firmware, wsman)
+      config_file = create_xml_config_file(firmware["instance_id"], firmware["uri_path"])
+      resp = wsman.install_from_uri(:input_file => config_file.path)
+      if resp[:return_value] == "4096"
+        job_id = resp[:job]
+        logger.debug("InstallFromURI started")
+        logger.debug("JOB_ID: #{job_id}")
+      else
+        logger.debug("Error installing From URI config: #{config_file.read}")
+        raise("Problem running InstallFromURI: #{resp[:message]}")
+      end
+      job_id
+    end
+
+    # Helper method used to block till firmware status completed
+    #
+    # @param job_id [String]
+    # @param firmware [Hash]
+    # @param wsman [Object]
+    # @option firmware [String] :instance_id defines each firmware instance ID
+    # @option firmware [String] :uri_path defines specific mount share path
+    # @option firmware [String] :component_id by default component id is "25227"
+    # @return statuses [Hash]
+    # @option statuses [String] :job_id created job_id
+    # @option statuses ["new", "Failed", "TemporaryFailure", "Downloaded", "Completed"] :status statuses
+    # @option statuses [String] :firmware defines specific firmware instance
+    # @raise [StandardError]  if the checkjobstatus command fails
+    # @raise [Error] if the firmware job status was failed
+    def block_until_downloaded(job_id, firmware, wsman)
+      statuses = {
+        job_id => {
+          :job_id => job_id,
+          :status => "new",
+          :firmware => firmware,
+          :start_time => Time.now
+        }
+      }
+      until statuses[job_id][:status] =~ /Downloaded|Completed|Failed/
+        sleep 30
+        begin
+          lc_status = wsman.get_lc_job(job_id)
+          statuses[job_id][:status] = lc_status[:job_status]
+        rescue StandardError => e
+          statuses[job_id][:status] = "TemporaryFailure"
+          logger.warn("Look up job status #{job_id} failed: #{e}")
+        end
+        logger.debug("Job Status: #{statuses[job_id][:status]}")
+
+        if Time.now - statuses[job_id][:start_time] > MAX_WAIT_SECONDS
+          logger.warn("Timed out waiting for firmware job #{job_id} to complete")
+          statuses[job_id][:status] = "Failed"
+        end
+      end
+
+      if statuses[job_id][:status] == "Completed"
+        logger.debug("Firmware update completed successfully")
+      elsif statuses[job_id][:status] == "Failed"
+        raise("Firmware update failed in the lifecycle controller.  Please refer to LifeCycle job logs")
+      elsif statuses[job_id][:status] == "Downloaded"
+        logger.debug("Firmware downloaded to idrac")
+      end
+      statuses
+    end
+
+    # Used to schedule the reboot job queue
+    #
+    # @param reboot_firmwares [Hash] contains list of firmwares which requires reboot
+    # @option reboot_firmwares [String] :instance_id contains job_id
+    # @option reboot_firmwares [String] :uri_path contains NFS mount path
+    # @param force_restart [Boolean]
+    # @param wsman [Object]
+    # @return [void]
+    def schedule_reboot_job_queue(reboot_firmwares, force_restart, wsman)
+      unless reboot_firmwares.empty?
+        reboot_id = nil
+        if force_restart
+          logger.debug("Creating Reboot Job")
+          resp = wsman.create_reboot_job(:reboot_job_type => :power_cycle, :timeout => 5 * 60)
+          reboot_id = resp[:reboot_job_id]
+          logger.debug("Reboot Job scheduled successfully")
+        end
+        logger.debug("Setting the Job queue")
+
+        if reboot_id
+          wsman.setup_job_queue(:job_array => reboot_id, :start_time_interval => "TIME_NOW")
+        end
+
+        reboot_firmwares.keys.each do |job_id|
+          wsman.setup_job_queue(:job_array => job_id, :start_time_interval => "TIME_NOW")
+        end
+
+        if force_restart
+          reboot_status = "new"
+          until reboot_status == "Reboot Completed"
+            sleep 30
+            lc_job = wsman.get_lc_job(reboot_id)
+            reboot_status = lc_job[:job_status]
+            logger.debug("Reboot Status: #{reboot_status}")
+          end
+        end
+      end
+    end
+
+    # Used to create an XML file:
+    #
+    # @param instance_id [String] job_id
+    # @return [void]
+    # Path specifies moount path
+    def create_xml_config_file(instance_id, path)
+      template = <<-EOF
+<p:InstallFromURI_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService">
+<p:URI><%= path %></p:URI>
+<p:Target xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+<a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+<a:ReferenceParameters>
+<w:ResourceURI>http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_SoftwareIdentity</w:ResourceURI>
+<w:SelectorSet>
+<w:Selector Name="InstanceID"><%= instance_id %></w:Selector>
+</w:SelectorSet> </a:ReferenceParameters> </p:Target> </p:InstallFromURI_INPUT>
+      EOF
+      xmlout = ERB.new(template)
+      temp_file = Tempfile.new("xml_config")
+      temp_file.write(xmlout.result(binding))
+      temp_file.close
+      temp_file
+    end
+  end
+end

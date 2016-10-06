@@ -277,6 +277,15 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#install_from_uri" do
+    it "should invoke InstallFromURI" do
+      client.expects(:invoke).with("InstallFromURI",
+                                   ASM::WsMan::SOFTWARE_INSTALLATION_SERVICE,
+                                   :input_file => "/tmp").returns("rspec-result")
+      expect(wsman.install_from_uri(:input_file => "/tmp")).to eq("rspec-result")
+    end
+  end
+
   describe "#delete_job_queue" do
     it "should invoke DeleteJobQueue" do
       client.expects(:invoke).with("DeleteJobQueue", ASM::WsMan::JOB_SERVICE,
