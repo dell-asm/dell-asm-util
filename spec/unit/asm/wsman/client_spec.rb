@@ -49,6 +49,13 @@ describe ASM::WsMan::Client do
       expect(client.exec("get", "rspec-schmea")).to eq(response.stdout)
     end
 
+    it "should execute identify" do
+      ASM::Util.expects(:run_command_with_args)
+               .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "identify", "rspec-schema", *args)
+               .returns(response)
+      expect(client.exec("identify", "rspec-schema")).to eq(response.stdout)
+    end
+
     it "should execute invoke methods" do
       ASM::Util.expects(:run_command_with_args)
                .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "invoke", "-a", "MyMethod", "rspec-schmea", *args)
@@ -106,6 +113,15 @@ describe ASM::WsMan::Client do
       client.expects(:sleep).with(10).twice
       message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response.to_s
       expect {client.exec("enumerate", "rspec-schmea")}.to raise_error(message)
+    end
+
+    it "should fail and not retry if connection fails and retry is false" do
+      ASM::Util.stubs(:run_command_with_args)
+               .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schema", *args)
+               .returns(conn_failed_response)
+      client.expects(:sleep).never
+      message = "Connection failed, Couldn't connect to server. Please check IP address credentials for iDrac at rspec-host.: %s" % conn_failed_response.to_s
+      expect {client.exec("enumerate", "rspec-schema", :retry_on_error => false)}.to raise_error(message)
     end
   end
 
@@ -181,6 +197,15 @@ describe ASM::WsMan::Client do
       client.expects(:exec).with("enumerate", url).returns("<response />")
       parser.expects(:parse_enumeration).returns(:response => "ERROR")
       expect {client.enumerate(url)}.to raise_error("FooCollection enumeration failed: response: ERROR")
+    end
+  end
+
+  describe "#identify" do
+    it "should call identify" do
+      client.expects(:exec).with("identify", nil, :transport_timeout => 10, :retry_on_error => false)
+            .returns("<response />")
+      parser.expects(:parse_enumeration).returns(:foo => "foo")
+      expect(client.identify(10)).to eq(:foo => "foo")
     end
   end
 end

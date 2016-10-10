@@ -1483,6 +1483,36 @@ module ASM
       end
     end
 
+    # Execute identify command
+    #
+    # executes identify command on the server, and returns raw output
+    #
+    # @param timeout [FixNum] command timeout in seconds
+    # @return [Hash] nil if there was a command timeout, otherwise output result
+    # @example response
+    #  {
+    #    :protocol_version=>"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd",
+    #    :product_vendor=>"Dell, Inc.",
+    #    :product_version=>"iDRAC : System Type = 12G Monolithic : LC Version = 2.30.30.30 : Version = 2.30.30.30",
+    #    :smashversion=>"2.0.0",
+    #    :product_name=>"iDRAC",
+    #    :system_generation=>"12G Monolithic",
+    #    :firmware_version=>"2.30.30.30",
+    #    :lifecycle_controller_version=>"2.30.30.30",
+    #    :security_profiles=>"HTTP_TLS_1HTTP_TLS_2"
+    #  }
+    # @raise [ASM::WsMan::Error] when error other than timeout occurs
+    def identify(timeout)
+      response = nil
+      begin
+        response = client.identify(timeout)
+      rescue ASM::WsMan::Error => ex
+        # when identify command errors on timeout, we return nil value to the caller to indicate no identity info
+        raise ex unless ex.message =~ /Timeout/
+      end
+      response
+    end
+
     def self.sleep_time
       60
     end
