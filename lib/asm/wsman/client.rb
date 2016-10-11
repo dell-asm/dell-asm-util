@@ -55,6 +55,8 @@ module ASM
       # @option options [String] :input_file an XML file containing options for an invoke command
       # @option options Logger] :logger logger for debug messages
       # @option options [FixNum] :nth_attempt used internally to allow recursive retry
+      # @option options [FixNum] :transport_timeout command execution timeout in seconds
+      # @option options [Boolean] :retry_on_error specifies if command should be retried on error
       # @return [String]
       # rubocop:disable Metrics/MethodLength
       def exec(method, schema, options={})
@@ -62,11 +64,14 @@ module ASM
           :selector => nil,
           :props => {},
           :input_file => nil,
-          :nth_attempt => 0
+          :nth_attempt => 0,
+          :transport_timeout => 300,
+          :retry_on_error => true
         }.merge(options)
 
-        if %w(enumerate get).include?(method)
-          args = [method, schema]
+        if %w(enumerate get identify).include?(method)
+          args = [method]
+          args << schema if schema && !schema.empty?
         else
           args = ["invoke", "-a", method, schema]
         end
@@ -74,7 +79,7 @@ module ASM
         args += ["-h", host,
                  "-V", "-v", "-c", "dummy.cert", "-P", "443",
                  "-u", endpoint[:user],
-                 "-j", "utf-8", "-m", "256", "-y", "basic", "--transport-timeout=300"]
+                 "-j", "utf-8", "-m", "256", "-y", "basic", "--transport-timeout=%d" % options[:transport_timeout]]
         args += ["-J", options[:input_file]] if options[:input_file]
         options[:props].each do |key, val|
           args += ["-k", "#{key}=#{val}"]
@@ -89,7 +94,7 @@ module ASM
         # have to check stderr as well...
         unless result.exit_status == 0 && result.stderr.empty?
           if result["stdout"] =~ /Authentication failed/
-            if options[:nth_attempt] < 2
+            if options[:nth_attempt] < 2 && options[:retry_on_error]
               # We have seen sporadic authentication failed errors from idrac. Retry a couple times
               options[:nth_attempt] += 1
               logger.info("Authentication failed, retrying #{host}...")
@@ -98,7 +103,7 @@ module ASM
             end
             msg = "Authentication failed, please retry with correct credentials after resetting the iDrac at #{host}."
           elsif result["stdout"] =~ /Connection failed./ || result["stderr"] =~ /Connection failed./
-            if options[:nth_attempt] < 2
+            if options[:nth_attempt] < 2 && options[:retry_on_error]
               # We have seen sporadic connection failed errors from idrac. Retry a couple times
               options[:nth_attempt] += 1
               logger.info("Connection failed, retrying #{host}...")
@@ -200,6 +205,18 @@ module ASM
           raise(ResponseError.new("%s enumeration failed" % klazz, resp))
         end
         resp
+      end
+
+      # Execute wsman identify command
+      #
+      # executes identify command on the server, and returns raw output
+      #
+      # @param timeout [FixNum] command timeout in seconds
+      # @return [String] raw stdout response
+      # @raise [StandardError] when network configuration cannot be applied
+      def identify(timeout)
+        content = exec("identify", nil, :transport_timeout => timeout, :retry_on_error => false)
+        Parser.parse_enumeration(content)
       end
     end
   end

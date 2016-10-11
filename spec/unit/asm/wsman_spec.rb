@@ -773,4 +773,21 @@ describe ASM::WsMan do
                            ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]
     end
   end
+
+  describe "#identify" do
+    it "should call identify and return nil when error is timeout" do
+      client.expects(:identify).with(10).raises(ASM::WsMan::Error, "Some text\nTimeout reached")
+      expect(wsman.identify(10)).to eq(nil)
+    end
+
+    it "should call identify and raise an error when error is other than timeout" do
+      client.expects(:identify).with(10).raises(ASM::WsMan::Error, "Random error happened")
+      expect {wsman.identify(10)}.to raise_error(ASM::WsMan::Error, "Random error happened")
+    end
+
+    it "should call identify and get valid hash response" do
+      client.expects(:identify).with(10).returns(:product_name => "iDRAC")
+      expect(wsman.identify(10)).to eq(:product_name => "iDRAC")
+    end
+  end
 end
