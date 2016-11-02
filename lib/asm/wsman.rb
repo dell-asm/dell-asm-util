@@ -13,7 +13,7 @@ module ASM
     # rubocop:disable Metrics/LineLength
     BIOS_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_BIOSService&SystemName=DCIM:ComputerSystem&Name=DCIM:BIOSService".freeze
     DEPLOYMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_OSDeploymentService&SystemName=DCIM:ComputerSystem&Name=DCIM:OSDeploymentService".freeze
-    JOB_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_JobService?CreationClassName=DCIM_JobService&Name=JobService&SystemName=Idrac&SystemCreationClassName=DCIM_ComputerSystem".freeze
+    JOB_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService?CreationClassName=DCIM_JobService&Name=JobService&SystemName=Idrac&SystemCreationClassName=DCIM_ComputerSystem&__cimnamespace=root/dcim".freeze
     LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_LCService&SystemName=DCIM:ComputerSystem&Name=DCIM:LCService".freeze
     LC_RECORD_LOG_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_LCRecordLog?__cimnamespace=root/dcim".freeze
     POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem&Name=srv:system".freeze
@@ -562,13 +562,19 @@ module ASM
     #                         string "TIME_NOW" means immediate.
     # @option params [String] :until_time End time for the job execution in format: yyyymmddhhmmss. If this
     #                         parameter is not NULL, then StartTimeInterval parameter shall also be specified.
+    # @option params [String] :input_file Path to a configuration input file.  This can not be used with :job_array
     # @return [Hash]
     # @raise [ResponseError] if the command fails
     def setup_job_queue(params={})
-      client.invoke("SetupJobQueue", JOB_SERVICE,
-                    :params => params,
-                    :optional_params => [:job_array, :start_time_interval, :until_time],
-                    :return_value => "0")
+      input_file = params.delete(:input_file)
+      options = {
+        :params => params,
+        :optional_params => [:job_array, :start_time_interval, :until_time],
+        :return_value => "0"
+      }
+      options[:input_file] = input_file if input_file
+
+      client.invoke("SetupJobQueue", JOB_SERVICE, options)
     end
 
     # Delete one or all jobs from the job queue

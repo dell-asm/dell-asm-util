@@ -75,6 +75,7 @@ module ASM
       wsman_instance = ASM::WsMan.new(options, :logger => logger)
       firmware_instance.clear_job_queue_retry(wsman_instance)
       force_restart = config["asm::server_update"][cert_name]["force_restart"]
+      logger.debug("Idrac FW update, force restart selected for %s" % cert_name) if force_restart
       pre = []
       main = []
 
@@ -125,7 +126,7 @@ module ASM
 
         # Resets two times
         if attempts < 3
-          transport = ASM::Transport::Racadm.new(ASM::WsMan::Client.endpoint, logger)
+          transport = ASM::Transport::Racadm.new(wsman.client.endpoint, logger)
           transport.reset_idrac
           sleep 60
           retry
@@ -143,49 +144,53 @@ module ASM
     # @return [void]
     # @raise [StandardError] if firmware gets_install_uri_job was not able to create job_id to receive or created duplicate job_ids or firmware update fails
     def update_idrac_firmware(firmware_list, force_restart, wsman)
-      statuses = {}
+      statuses = []
 
       # Initiate all firmware update jobs
       firmware_list.each do |fw|
         logger.debug(fw)
         job_id = gets_install_uri_job(fw, wsman)
         raise("Failed to initiate the firmware job for %s" % fw) unless job_id
-        raise("Duplicate job id %s for firmware %s: %s" % [job_id, fw, statuses[job_id]]) if statuses[job_id]
-        statuses = block_until_downloaded(job_id, fw, wsman)
+        statuses << block_until_downloaded(job_id, fw, wsman)
       end
 
-      statuses.each do |_, v|
-        if NO_REBOOT_COMPONENT_IDS.include?(v[:firmware]["component_id"].to_i)
-          v[:desired] = "Completed"
-          v[:reboot_required] = false
+      logger.debug("First statuses set: %s" % statuses)
+
+      statuses.each do |status|
+        if NO_REBOOT_COMPONENT_IDS.include?(status[:firmware]["component_id"].to_i)
+          status[:desired] = "Completed"
+          status[:reboot_required] = false
         else
-          force_restart ? v[:desired] = "Completed" : v[:desired] = "Scheduled"
-          v[:reboot_required] = true
+          force_restart ? status[:desired] = "Completed" : status[:desired] = "Scheduled"
+          status[:reboot_required] = true
         end
       end
 
-      reboot_firmwares = statuses.select { |_, v| v[:reboot_required] }
-      completed_endstate_firmwares = statuses.select { |_, v| v[:desired] == "Completed" }
-      scheduled_endstate_firmwares = statuses.select { |_, v| v[:desired] == "Scheduled" }
+      logger.debug("Updated statuses set: %s" % statuses)
+
+      reboot_firmwares = statuses.select { |status| status[:reboot_required] }
+      logger.debug("Reboot firmwares: %s" % reboot_firmwares.to_s)
+      completed_endstate_firmwares = statuses.select { |status| status[:desired] == "Completed" }
+      scheduled_endstate_firmwares = statuses.select { |status| status[:desired] == "Scheduled" }
 
       schedule_reboot_job_queue(reboot_firmwares, force_restart, wsman) # Reboot required if firmware instance does not include :component_id key
 
       [scheduled_endstate_firmwares, completed_endstate_firmwares].each do |firmware_set|
-        until firmware_set.values.all? { |v| v[:status] =~ /#{v[:desired]}|Failed|InternalTimeout/ }
-          firmware_set.each do |key, val|
-            if val[:status] != val[:desired] && Time.now - val[:start_time] > MAX_WAIT_SECONDS
-              val[:status] = "InternalTimeout"
+        until firmware_set.all? { |v| v[:status] =~ /#{v[:desired]}|Failed|InternalTimeout/ }
+          firmware_set.each do |firmware|
+            if firmware[:status] != firmware[:desired] && Time.now - firmware[:start_time] > MAX_WAIT_SECONDS
+              firmware[:status] = "InternalTimeout"
             else
-              lc_job = wsman.get_lc_job(key)
-              val[:status] = lc_job[:job_status]
-              logger.debug("Job Status #{key}: #{val[:status]}")
+              lc_job = wsman.get_lc_job(firmware[:job_id])
+              firmware[:status] = lc_job[:job_status]
+              logger.debug("Job Status %s: %s" % [firmware[:job_id], firmware[:status]])
             end
           end
           sleep 30
         end
       end
       # Raise an error if any firmware jobs failed
-      failures = statuses.values.find_all { |v| v[:status] =~ /Failed|InternalTimeout/ }
+      failures = statuses.find_all { |v| v[:status] =~ /Failed|InternalTimeout/ }
       if failures.empty?
         logger.debug("Firmware update completed successfully")
       else
@@ -232,39 +237,37 @@ module ASM
     # @raise [StandardError]  if the checkjobstatus command fails
     # @raise [Error] if the firmware job status was failed
     def block_until_downloaded(job_id, firmware, wsman)
-      statuses = {
-        job_id => {
-          :job_id => job_id,
-          :status => "new",
-          :firmware => firmware,
-          :start_time => Time.now
-        }
+      status = {
+        :job_id => job_id,
+        :status => "new",
+        :firmware => firmware,
+        :start_time => Time.now
       }
-      until statuses[job_id][:status] =~ /Downloaded|Completed|Failed/
+      until status[:status] =~ /Downloaded|Completed|Failed/
         sleep 30
         begin
           lc_status = wsman.get_lc_job(job_id)
-          statuses[job_id][:status] = lc_status[:job_status]
+          status[:status] = lc_status[:job_status]
         rescue StandardError => e
-          statuses[job_id][:status] = "TemporaryFailure"
+          status[:status] = "TemporaryFailure"
           logger.warn("Look up job status #{job_id} failed: #{e}")
         end
-        logger.debug("Job Status: #{statuses[job_id][:status]}")
+        logger.debug("Job Status: #{status[:status]}")
 
-        if Time.now - statuses[job_id][:start_time] > MAX_WAIT_SECONDS
+        if Time.now - status[:start_time] > MAX_WAIT_SECONDS
           logger.warn("Timed out waiting for firmware job #{job_id} to complete")
-          statuses[job_id][:status] = "Failed"
+          status[:status] = "Failed"
         end
       end
 
-      if statuses[job_id][:status] == "Completed"
+      if status[:status] == "Completed"
         logger.debug("Firmware update completed successfully")
-      elsif statuses[job_id][:status] == "Failed"
+      elsif status[:status] == "Failed"
         raise("Firmware update failed in the lifecycle controller.  Please refer to LifeCycle job logs")
-      elsif statuses[job_id][:status] == "Downloaded"
+      elsif status[:status] == "Downloaded"
         logger.debug("Firmware downloaded to idrac")
       end
-      statuses
+      status
     end
 
     # Used to schedule the reboot job queue
@@ -277,33 +280,80 @@ module ASM
     # @return [void]
     def schedule_reboot_job_queue(reboot_firmwares, force_restart, wsman)
       unless reboot_firmwares.empty?
-        reboot_id = nil
+        reboot_job_id = nil
         if force_restart
           logger.debug("Creating Reboot Job")
           resp = wsman.create_reboot_job(:reboot_job_type => :power_cycle, :timeout => 5 * 60)
-          reboot_id = resp[:reboot_job_id]
+          reboot_job_id = resp[:reboot_job_id]
           logger.debug("Reboot Job scheduled successfully")
         end
         logger.debug("Setting the Job queue")
 
-        if reboot_id
-          wsman.setup_job_queue(:job_array => reboot_id, :start_time_interval => "TIME_NOW")
-        end
+        job_ids = reboot_firmwares.map {|r| r[:job_id]}
 
-        reboot_firmwares.keys.each do |job_id|
-          wsman.setup_job_queue(:job_array => job_id, :start_time_interval => "TIME_NOW")
-        end
+        job_queue_config_file = create_job_queue_config(job_ids, reboot_job_id)
+        logger.debug("Job Queue config file: %s" % File.read(job_queue_config_file.path))
+
+        setup_job_queue(job_queue_config_file, wsman)
 
         if force_restart
           reboot_status = "new"
           until reboot_status == "Reboot Completed"
             sleep 30
-            lc_job = wsman.get_lc_job(reboot_id)
+            lc_job = wsman.get_lc_job(reboot_job_id)
             reboot_status = lc_job[:job_status]
             logger.debug("Reboot Status: #{reboot_status}")
           end
         end
       end
+    end
+
+    # Helper method for seting up firmware job queue
+    #
+    # There can be intermittent issues caused by the idrac lifecyle controller
+    # that causes this to incorrectly fail. This just adds some retry logic around it
+    #
+    # @param [File] config_file the wsman configuration file to use for the job queue
+    # @param [ASM::WsMan] wsman the wsman object
+    def setup_job_queue(config_file, wsman)
+      logger.debug("Setting up Job Queue")
+      4.times do |t|
+        resp = wsman.setup_job_queue(:input_file => config_file.path)
+        if resp[:return_value] == "0"
+          logger.debug("Job Queue created successfully")
+          break
+        elsif t < 3
+          logger.debug("Error scheduling Job Queue.  ..retrying")
+          sleep 10
+        else
+          logger.debug("Error Job Queue config: %s" % File.read(config_file.path))
+          raise("Problem scheduling the job queue.  Message: %s" % resp[:message])
+        end
+      end
+    end
+
+    # Creates SetupJobQueue config file
+    #
+    # this creates a temporary file to be used for the SetupJobQueue wsman call
+    #
+    # @param [Array<string>] job_ids job ids to be scheduled
+    # @param [String] reboot_id the reboot job
+    # @return [File] the xml file object
+    def create_job_queue_config(job_ids, reboot_id=nil)
+      template = <<-EOF
+<p:SetupJobQueue_INPUT xmlns:p="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"><% job_ids.each do |job_id| %>
+<p:JobArray><%= job_id %></p:JobArray><% end %><% if reboot_id %>
+<p:JobArray><%= reboot_id %></p:JobArray><% end %>
+<p:RunMonth>6</p:RunMonth>
+  <p:RunDay>18</p:RunDay>
+<p:StartTimeInterval>TIME_NOW</p:StartTimeInterval>
+</p:SetupJobQueue_INPUT>
+      EOF
+      xmlout = ERB.new(template)
+      temp_file = Tempfile.new("jq_config")
+      temp_file.write(xmlout.result(binding))
+      temp_file.close
+      temp_file
     end
 
     # Used to create an XML file:
