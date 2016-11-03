@@ -68,52 +68,52 @@ describe ASM::Firmware do
     ]
   end
   let(:status) do
-    {"JID_767739984470" =>
-         {:job_id => "JID_767739984470",
-          :status => "new",
-          :firmware => {"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-                        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-                       },
-          :start_time => Time.now
-         }
+    {
+      :job_id => "JID_767739984470",
+      :status => "new",
+      :firmware => {
+        "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
+        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+      },
+      :start_time => Time.now
     }
   end
 
   let(:status2) do
-    {"JID_767739984470" =>
-         {:job_id => "JID_767739984470",
-          :status => "Scheduled",
-          :firmware => {"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-                        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-                       },
-          :start_time => Time.now
-         }
+    {
+      :job_id => "JID_767739984470",
+      :status => "Scheduled",
+      :firmware => {
+        "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
+        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+      },
+      :start_time => Time.now
     }
   end
 
   let(:status3) do
-    {"JID_123" =>
-       {:job_id => "JID_123",
-        :status => "Completed",
-        :firmware => {"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-                      "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-                     },
-        :start_time => Time.now
-       }
+    {
+      :job_id => "JID_123",
+      :status => "Completed",
+      :firmware => {
+        "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
+        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+      },
+      :start_time => Time.now
     }
   end
 
   let(:status4) do
-    {"JID_767739984470" =>
-       {:job_id => "JID_767739984470",
-        :status => "new",
-        :firmware => {"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-                      "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-                     },
-        :start_time => Time.now,
-        :reboot_required => true,
-        :desired => "Scheduled"
-       }
+    {
+      :job_id => "JID_767739984470",
+      :status => "new",
+      :firmware => {
+        "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
+        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+      },
+      :start_time => Time.now,
+      :reboot_required => true,
+      :desired => "Scheduled"
     }
   end
 
@@ -164,7 +164,7 @@ describe ASM::Firmware do
       mock_transport.expects(:reset_idrac).twice
       firmware_obj.stubs(:sleep).with(60).returns(nil)
       wsman.expects(:poll_for_lc_ready)
-      ASM::WsMan::Client.stubs(:endpoint).returns(endpoint)
+      wsman.expects(:client).returns(stub(:endpoint => endpoint)).times(2)
       ASM::Transport::Racadm.expects(:new).with(endpoint, logger).returns(mock_transport).times(2)
       wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").times(3).returns(response2, response2, response)
       firmware_obj.clear_job_queue_retry(wsman)
@@ -174,7 +174,7 @@ describe ASM::Firmware do
       mock_transport = mock("mock transport")
       mock_transport.expects(:reset_idrac).twice
       firmware_obj.stubs(:sleep).with(60).returns(nil)
-      ASM::WsMan::Client.stubs(:endpoint).returns(endpoint)
+      wsman.expects(:client).returns(stub(:endpoint => endpoint)).times(2)
       ASM::Transport::Racadm.expects(:new).with(endpoint, logger).returns(mock_transport).times(2)
       wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response2).times(3)
       expect do
@@ -188,7 +188,7 @@ describe ASM::Firmware do
       firmware_obj.stubs(:gets_install_uri_job).returns("JID_767739984470")
       firmware_obj.stubs(:block_until_downloaded).returns(status2)
       firmware_obj.stubs(:schedule_reboot_job_queue).returns(nil)
-      Time.stubs(:now).returns(status["JID_767739984470"][:start_time])
+      Time.stubs(:now).returns(status[:start_time])
       firmware_obj.stubs(:sleep)
       wsman.stubs(:get_lc_job).with("JID_767739984470").returns("Completed")
       firmware_obj.update_idrac_firmware(firmware_list, false, wsman)
@@ -197,7 +197,7 @@ describe ASM::Firmware do
     it "Internal Timeout while Error while updating the firmware" do
       firmware_obj.stubs(:gets_install_uri_job).returns("JID")
       firmware_obj.stubs(:block_until_downloaded).returns(status)
-      Time.stubs(:now).returns(status["JID_767739984470"][:start_time] + ASM::Firmware::MAX_WAIT_SECONDS + 1)
+      Time.stubs(:now).returns(status[:start_time] + ASM::Firmware::MAX_WAIT_SECONDS + 1)
       firmware_obj.stubs(:sleep)
       firmware_obj.stubs(:schedule_reboot_job_queue).returns(nil)
       wsman.stubs(:get_lc_job).with("JID_767739984470").returns("Complete")
