@@ -235,7 +235,7 @@ describe ASM::NetworkConfiguration do
 
     it "should ignore dhcp when finding static ips" do
       ips = net_config.get_static_ips("PXE")
-      expect(ips.empty?).to be_true
+      expect(ips.empty?).to be(true)
     end
   end
 
@@ -787,7 +787,17 @@ describe ASM::NetworkConfiguration do
                                                         "primaryDns" => "172.20.0.8",
                                                         "secondaryDns" => nil,
                                                         "dnsSuffix" => "aidev.net",
-                                                        "ipAddress" => "172.28.12.116"})],
+                                                        "ipAddress" => "172.28.12.116"}
+                     ),
+                      Hashie::Mash.new(
+                        "id" => "ff80808146056aa2014605840b3303e0",
+                        "name" => "PXE 2",
+                        "description" => "",
+                        "type" => "PXE",
+                        "vlanId" => 20,
+                        "static" => false,
+                        "staticNetworkConfiguration" => nil
+                      )],
                  :mac_addresses => ["00:0A:F7:06:88:50", "00:0A:F7:06:88:52"]},
                 {:networks =>
                      [Hashie::Mash.new(
@@ -797,33 +807,36 @@ describe ASM::NetworkConfiguration do
                        "type" => "HYPERVISOR_MANAGEMENT",
                        "vlanId" => 23,
                        "static" => false,
-                       "staticNetworkConfiguration" => nil)],
+                       "staticNetworkConfiguration" => nil
+                     )],
                  :mac_addresses => ["00:0A:F7:06:88:54", "00:0A:F7:06:88:56"]},
                 {:networks =>
-                      [Hashie::Mash.new(
-                        "id" => "ff80808146056aa20146057c0bf003d1",
-                        "name" => "Workload",
-                        "description" => nil,
-                        "type" => "PRIVATE_LAN",
-                        "vlanId" => 27,
-                        "static" => false,
-                        "staticNetworkConfiguration" => nil)],
+                     [Hashie::Mash.new(
+                       "id" => "ff80808146056aa20146057c0bf003d1",
+                       "name" => "Workload",
+                       "description" => nil,
+                       "type" => "PRIVATE_LAN",
+                       "vlanId" => 27,
+                       "static" => false,
+                       "staticNetworkConfiguration" => nil
+                     )],
                  :mac_addresses => ["00:0A:F7:06:88:58", "00:0A:F7:06:88:5A"]},
                 {:networks =>
-                      [Hashie::Mash.new(
-                        "id" => "ff80808146056aa20146057c0aad03b9",
-                        "name" => "iSCSI",
-                        "description" => nil,
-                        "type" => "STORAGE_ISCSI_SAN",
-                        "vlanId" => 16, "static" => true,
-                        "staticNetworkConfiguration" => {"gateway" => "172.16.0.1",
-                                                         "subnet" => "255.255.0.0",
-                                                         "primaryDns" => "172.20.0.8",
-                                                         "secondaryDns" => nil,
-                                                         "dnsSuffix" => "aidev.net",
-                                                         "ipAddress" => "172.16.12.116"})],
+                     [Hashie::Mash.new(
+                       "id" => "ff80808146056aa20146057c0aad03b9",
+                       "name" => "iSCSI",
+                       "description" => nil,
+                       "type" => "STORAGE_ISCSI_SAN",
+                       "vlanId" => 16, "static" => true,
+                       "staticNetworkConfiguration" => {"gateway" => "172.16.0.1",
+                                                        "subnet" => "255.255.0.0",
+                                                        "primaryDns" => "172.20.0.8",
+                                                        "secondaryDns" => nil,
+                                                        "dnsSuffix" => "aidev.net",
+                                                        "ipAddress" => "172.16.12.116"}
+                     )],
                  :mac_addresses => ["00:0A:F7:06:88:5C", "00:0A:F7:06:88:5E"]}]
-      expect(net_config.teams).to eq(output)
+      expect(net_config.teams(:include_pxe => true)).to eq(output)
     end
   end
 
