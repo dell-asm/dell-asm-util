@@ -337,26 +337,24 @@ module ASM
     # Returns the information to be used for creating the NIC Team / NIC Bonding
     # Information contains the networks and associated MAC Addresses
     #
+    # @option options [Boolean] :include_pxe flag to include pxe in teams or not
     # @return [Hash] Hash having unique list of networks and corresponding server MAC addresses
     # @example
     #   { [ :TeamInfo => { :networks => [...], :mac_addresses => [ ... ] ] }
-    def teams
+    def teams(opt={})
       @teams ||= begin
         raise("NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!") unless @network_config_add_nic
         networks = []
         mac_teams = {}
         partitions = get_all_partitions
-        unless partitions.empty?
-          partitions.each do |partition|
-            network_objects = begin
-              partition.networkObjects.reject { |network| network.type == "PXE" }
-            end.flatten.uniq.compact
+        partitions.each do |partition|
+          network_objects = partition.networkObjects.dup
+          network_objects.reject! { |network| network.type == "PXE" } unless opt[:include_pxe]
 
-            # Need to find partitions which has same set of networks, for team
-            next unless network_objects && !network_objects.empty?
-            network_objects.each do |obj|
-              networks.push(obj).uniq!
-            end
+          # Need to find partitions which has same set of networks, for team
+          next unless network_objects && !network_objects.empty?
+          network_objects.each do |obj|
+            networks.push(obj).uniq!
           end
         end
         @teams = []
