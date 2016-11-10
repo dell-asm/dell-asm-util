@@ -19,7 +19,7 @@ module ASM
         logger.debug("Resetting iDrac...")
         Net::SSH.start(@endpoint[:host],
                        @endpoint[:user],
-                       :password => @endpoint[:pass],
+                       :password => @endpoint[:password],
                        :paranoid => Net::SSH::Verifiers::Null.new,
                        :global_known_hosts_file => "/dev/null") do |ssh|
           ssh.exec!("racadm racreset soft") do |_, stream, data|
