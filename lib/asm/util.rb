@@ -245,8 +245,11 @@ module ASM
     # Run cmd by passing it to the shell and stream stdout and stderr
     # to the specified outfile
     def self.run_command_streaming(cmd, outfile, timeout=nil)
+      if sudo = cmd.include?("sudo")
+        cmd = cmd.split("sudo ")[1]
+      end
       File.open(outfile, "a") do |fh|
-        Open3.popen3("#{"timeout #{timeout} " if timeout}#{cmd}") do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3("#{"sudo " if sudo}#{"timeout #{timeout} " if timeout}#{cmd}") do |stdin, stdout, stderr, wait_thr|
           stdin.close
 
           # Drain stdout
