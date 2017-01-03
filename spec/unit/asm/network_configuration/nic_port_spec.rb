@@ -6,7 +6,7 @@ describe ASM::NetworkConfiguration::NicPort do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil, :error => nil) }
 
   describe "NicPort.new" do
-    let(:endpoint) { mock("rspec-endpoint") }
+    let(:endpoint) { double("rspec-endpoint") }
 
     it "should use LinkSpeed for 10Gbps NIC" do
       nic_view = {"FQDD" => "NIC.Integrated.1-1-1",

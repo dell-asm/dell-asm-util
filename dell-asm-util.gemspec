@@ -23,11 +23,12 @@ Gem::Specification.new do |s|
   s.add_development_dependency "yard"
   s.add_development_dependency "kramdown"
   s.add_development_dependency "rubocop", "0.37.2"
-  s.add_development_dependency "rspec", "~>2.14.0"
+  s.add_development_dependency "rspec", "~> 3"
   s.add_development_dependency "mocha"
   s.add_development_dependency "puppet"
   s.add_development_dependency "puppetlabs_spec_helper", "0.4.1"
   s.add_development_dependency "json_pure", "2.0.1"
+  s.add_development_dependency "coveralls" if Integer(RUBY_VERSION.split(".").first) > 1
 
   s.executables << "wsman_shell.rb"
 

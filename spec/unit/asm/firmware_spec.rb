@@ -147,7 +147,7 @@ describe ASM::Firmware do
     let(:response2) { {:return_value => "1"} }
     let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
     let(:endpoint) { {:host => "rspec-host", :user => "rspec-user", :password => "rspec-password"} }
-    let(:transport) { mock("transport") }
+    let(:transport) { double("transport") }
 
     before(:each) do
       ASM::WsMan.stubs(:new).with(endpoint, :logger => logger).returns(wsman)

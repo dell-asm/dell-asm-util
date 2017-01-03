@@ -187,13 +187,13 @@ describe ASM::NetworkConfiguration do
       network_config.cards[0].interfaces[0].partitions[2].networkObjects.push(dup)
       expect do
         network_config.get_network("HYPERVISOR_MANAGEMENT")
-      end.to raise_error
+      end.to raise_error('There should be only one HYPERVISOR_MANAGEMENT network but found 2: ["Hypervisor Management", "Hypervisor Management"]')
     end
 
     it "should fail to find single network if multiple management networks found" do
       expect do
         net_config.get_network("STORAGE_ISCSI_SAN")
-      end.to raise_error
+      end.to raise_error('There should be only one STORAGE_ISCSI_SAN network but found 2: ["iSCSI", "iSCSI"]')
     end
 
     it "should find storage networks with correct mac addresses" do
@@ -411,7 +411,7 @@ describe ASM::NetworkConfiguration do
       ASM::WsMan.stubs(:get_nic_view).returns(build_nic_views(fqdd_to_mac))
       expect do
         net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"), :add_partitions => true)
-      end.to raise_error
+      end.to raise_error("Missing NICs for Interface (4x10Gb); available: NIC.Slot.2 (2x10Gb)")
     end
 
     it "should configure if quad port available" do
@@ -463,7 +463,7 @@ describe ASM::NetworkConfiguration do
           if partition_no == 1
             expect(partition.mac_address).to eq(fqdd_to_mac[fqdd])
           else
-            partition.mac_address.should be_nil
+            expect(partition.mac_address).to be_nil
           end
         end
       end
@@ -523,12 +523,12 @@ describe ASM::NetworkConfiguration do
             fqdd = "NIC.Slot.#{slot}-#{port_no}-#{partition_no}"
             partition = port.partitions.find { |p| p.name == partition_no.to_s }
             if partition_no > 1
-              partition.should be_nil
+              expect(partition).to be_nil
             else
               expect(partition.fqdd).to eq(fqdd)
               mac = fqdd_to_mac[fqdd]
               expect(partition.mac_address).to eq(mac)
-              found_macs.include?(mac).should be(false)
+              expect(found_macs.include?(mac)).to be(false)
               found_macs.push(mac)
             end
           end
@@ -563,12 +563,12 @@ describe ASM::NetworkConfiguration do
             fqdd = "#{fqdd_prefix}-#{port_no}-#{partition_no}"
             partition = port.partitions.find { |p| p.name == partition_no.to_s }
             if partition_no > 1
-              partition.should be_nil
+              expect(partition).to be_nil
             else
               expect(partition.fqdd).to eq(fqdd)
               mac = fqdd_to_mac[fqdd]
               expect(partition.mac_address).to eq(mac)
-              found_macs.include?(mac).should be(false)
+              expect(found_macs.include?(mac)).to be(false)
               found_macs.push(mac)
             end
           end
@@ -612,12 +612,12 @@ describe ASM::NetworkConfiguration do
             fqdd = "#{fqdd_prefix}-#{port_no}-#{partition_no}"
             partition = port.partitions.find { |p| p.name == partition_no.to_s }
             if partition_no > 1
-              partition.should be_nil
+              expect(partition).to be_nil
             else
               expect(partition.fqdd).to eq(fqdd)
               mac = fqdd_to_mac[fqdd]
               expect(partition.mac_address).to eq(mac)
-              found_macs.include?(mac).should be(false)
+              expect(found_macs.include?(mac)).to be(false)
               found_macs.push(mac)
             end
           end
@@ -665,12 +665,12 @@ describe ASM::NetworkConfiguration do
             fqdd = "#{fqdd_prefix}-#{port_no}-#{partition_no}"
             partition = port.partitions.find { |p| p.name == partition_no.to_s }
             if partition_no > 1
-              partition.should be_nil
+              expect(partition).to be_nil
             else
               expect(partition.fqdd).to eq(fqdd)
               mac = fqdd_to_mac[fqdd]
               expect(partition.mac_address).to eq(mac)
-              found_macs.include?(mac).should be(false)
+              expect(found_macs.include?(mac)).to be(false)
               found_macs.push(mac)
             end
           end
