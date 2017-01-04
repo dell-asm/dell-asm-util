@@ -233,15 +233,15 @@ describe ASM::NetworkConfiguration::NicInfo do
 
     describe "#split" do
       it "should split where the block returns true" do
-        ASM::NetworkConfiguration::NicInfo.split([2, 3, 4, 5, 6], &:odd?).should eq([[2], [3, 4], [5, 6]])
+        expect(ASM::NetworkConfiguration::NicInfo.split([2, 3, 4, 5, 6], &:odd?)).to eq([[2], [3, 4], [5, 6]])
       end
 
       it "should not start with an empty list when block returns true for 1st element" do
-        ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4], &:odd?).should eq([[1, 2], [3, 4]])
+        expect(ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4], &:odd?)).to eq([[1, 2], [3, 4]])
       end
 
       it "should not end with list of last element when block returns true for last element" do
-        ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4, 5], &:odd?).should eq([[1, 2], [3, 4], [5]])
+        expect(ASM::NetworkConfiguration::NicInfo.split([1, 2, 3, 4, 5], &:odd?)).to eq([[1, 2], [3, 4], [5]])
       end
     end
 

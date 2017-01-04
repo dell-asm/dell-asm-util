@@ -3,7 +3,7 @@ require "asm/network_configuration/nic_view"
 require "asm/network_configuration/nic_port"
 
 describe ASM::NetworkConfiguration::NicView do
-  let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
+  let(:logger) { double(:debug => nil, :warn => nil, :info => nil) }
 
   def nic_view(fqdd, logger=nil)
     ASM::NetworkConfiguration::NicView.new(fqdd, logger)

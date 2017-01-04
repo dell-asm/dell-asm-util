@@ -33,24 +33,24 @@ describe ASM::Util do
       mock_log = mock("foo")
       mock_log.expects(:info).with("Caught exception ASM::Error: ASM::Error")
       expects(:foo).twice.raises(ASM::Error).then.returns("bar")
-      ASM::Util.block_and_retry_until_ready(5, ASM::Error, nil, mock_log) do
+      expect(ASM::Util.block_and_retry_until_ready(5, ASM::Error, nil, mock_log) do
         foo
-      end.should == "bar"
+      end).to eq("bar")
     end
 
     it "should defer to max sleep time" do
       expects(:foo).twice.raises(ASM::Error).then.returns("bar")
       ASM::Util.expects(:sleep).with(0.01)
-      ASM::Util.block_and_retry_until_ready(5, ASM::Error, 0.01) do
+      expect(ASM::Util.block_and_retry_until_ready(5, ASM::Error, 0.01) do
         foo
-      end.should == "bar"
+      end).to eq("bar")
     end
   end
 
   describe "when uuid is valid" do
     it "should create the corresponding serial number" do
       uuid = "423b69b2-8bd7-0dde-746b-75c98eb74d2b"
-      ASM::Util.vm_uuid_to_serial_number(uuid).should == "VMware-42 3b 69 b2 8b d7 0d de-74 6b 75 c9 8e b7 4d 2b"
+      expect(ASM::Util.vm_uuid_to_serial_number(uuid)).to eq("VMware-42 3b 69 b2 8b d7 0d de-74 6b 75 c9 8e b7 4d 2b")
     end
   end
 
@@ -59,7 +59,7 @@ describe ASM::Util do
       uuid = "lkasdjflkasdj"
       expect do
         ASM::Util.vm_uuid_to_serial_number(uuid)
-      end.to raise_error
+      end.to raise_error("Invalid uuid lkasdjflkasdj")
     end
   end
 
@@ -93,13 +93,13 @@ vMotion                 vSwitch1                     1       23
   describe "when hash is deep" do
     it "should sanitize password value" do
       raw = {"foo" => {"password" => "secret"}}
-      ASM::Util.sanitize(raw).should == {"foo" => {"password" => "******"}}
+      expect(ASM::Util.sanitize(raw)).to eq("foo" => {"password" => "******"})
     end
 
     it "should maintain password value" do
       raw = {"foo" => {"password" => "secret"}}
       ASM::Util.sanitize(raw)
-      raw.should == {"foo" => {"password" => "secret"}}
+      expect(raw).to eq("foo" => {"password" => "secret"})
     end
   end
 

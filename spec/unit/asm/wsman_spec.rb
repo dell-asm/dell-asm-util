@@ -18,27 +18,27 @@ describe ASM::WsMan do
     it "should find current macs" do
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_mac_addresses(nil, nil)
-      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
-                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
-                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
-                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
-                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
-                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
-                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
-                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"}
+      expect(macs).to eq("NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
+                         "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
+                         "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
+                         "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
+                         "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
+                         "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
+                         "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
+                         "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE")
     end
 
     it "should find permanent macs" do
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_permanent_mac_addresses(nil, nil)
-      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
-                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
-                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
-                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
-                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
-                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
-                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
-                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE"}
+      expect(macs).to eq("NIC.Slot.2-1-1" => "00:0A:F7:06:9D:C0",
+                         "NIC.Slot.2-1-2" => "00:0A:F7:06:9D:C4",
+                         "NIC.Slot.2-1-3" => "00:0A:F7:06:9D:C8",
+                         "NIC.Slot.2-1-4" => "00:0A:F7:06:9D:CC",
+                         "NIC.Slot.2-2-1" => "00:0A:F7:06:9D:C2",
+                         "NIC.Slot.2-2-2" => "00:0A:F7:06:9D:C6",
+                         "NIC.Slot.2-2-3" => "00:0A:F7:06:9D:CA",
+                         "NIC.Slot.2-2-4" => "00:0A:F7:06:9D:CE")
     end
   end
 
@@ -56,14 +56,14 @@ describe ASM::WsMan do
       @nic_view_response.gsub!(/(ProductName[>]Broadcom.*)BCM57800/, '\1BCM5720')
       ASM::WsMan.stubs(:invoke).returns(@nic_view_response)
       macs = ASM::WsMan.get_mac_addresses(nil, nil)
-      macs.should == {"NIC.Slot.2-1-1" => "00:0A:F7:06:9E:20",
-                      "NIC.Slot.2-1-2" => "00:0A:F7:06:9E:24",
-                      "NIC.Slot.2-1-3" => "00:0A:F7:06:9E:28",
-                      "NIC.Slot.2-1-4" => "00:0A:F7:06:9E:2C",
-                      "NIC.Slot.2-2-1" => "00:0A:F7:06:9E:22",
-                      "NIC.Slot.2-2-2" => "00:0A:F7:06:9E:26",
-                      "NIC.Slot.2-2-3" => "00:0A:F7:06:9E:2A",
-                      "NIC.Slot.2-2-4" => "00:0A:F7:06:9E:2E"}
+      expect(macs).to eq("NIC.Slot.2-1-1" => "00:0A:F7:06:9E:20",
+                         "NIC.Slot.2-1-2" => "00:0A:F7:06:9E:24",
+                         "NIC.Slot.2-1-3" => "00:0A:F7:06:9E:28",
+                         "NIC.Slot.2-1-4" => "00:0A:F7:06:9E:2C",
+                         "NIC.Slot.2-2-1" => "00:0A:F7:06:9E:22",
+                         "NIC.Slot.2-2-2" => "00:0A:F7:06:9E:26",
+                         "NIC.Slot.2-2-3" => "00:0A:F7:06:9E:2A",
+                         "NIC.Slot.2-2-4" => "00:0A:F7:06:9E:2E")
     end
   end
 
@@ -446,6 +446,7 @@ describe ASM::WsMan do
 
   describe "#power_off" do
     it "should power server off if it is on" do
+      wsman.stubs(:sleep)
       wsman.expects(:power_state).times(4).returns(:on, :on, :off, :off)
       wsman.expects(:set_power_state).with(:requested_state => :off)
       wsman.power_off
@@ -778,8 +779,8 @@ describe ASM::WsMan do
     it "should find wwwpn and wwnn values" do
       ASM::WsMan.stubs(:invoke).returns(wwpn_response)
       wwpn_wwnn = ASM::WsMan.get_wwpns_wwnns(nil, nil)
-      wwpn_wwnn.should == [["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
-                           ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]]
+      expect(wwpn_wwnn).to eq([["20:00:00:24:FF:4A:BB:5A", "21:00:00:24:FF:4A:BB:5A"],
+                               ["20:00:00:24:FF:4A:BB:5B", "21:00:00:24:FF:4A:BB:5B"]])
     end
   end
 
