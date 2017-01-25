@@ -445,16 +445,37 @@ describe ASM::WsMan do
   end
 
   describe "#power_off" do
+    it "should fail on invalid requested state" do
+      expect {wsman.power_off(:foo)}.to raise_error("Invalid shutdown type: foo")
+    end
+
     it "should power server off if it is on" do
+      wsman.stubs(:sleep)
       wsman.expects(:power_state).times(4).returns(:on, :on, :off, :off)
-      wsman.expects(:set_power_state).with(:requested_state => :off)
-      wsman.power_off
+      wsman.expects(:request_power_state_change).with(:power_state => :power_off)
+      wsman.power_off(:power_off)
     end
 
     it "should do nothing if it is already off" do
+      wsman.stubs(:sleep)
       wsman.expects(:power_state).returns(:off)
-      wsman.expects(:set_power_state).never
-      wsman.power_off
+      wsman.expects(:request_power_state_change).never
+      wsman.power_off(:power_off)
+    end
+
+    it "should check power state up to 32 times and then give up for forced shutdown" do
+      wsman.stubs(:sleep)
+      wsman.expects(:power_state).times(32).returns(:on)
+      wsman.expects(:request_power_state_change).with(:power_state => :power_off)
+      wsman.power_off(:power_off)
+    end
+
+    it "should do a forced shutdown if graceful shutdown times out" do
+      wsman.stubs(:sleep)
+      wsman.expects(:power_state).times(64).returns(Array.new(62) { :off } + [:on])
+      wsman.expects(:request_power_state_change).with(:power_state => :power_off)
+      wsman.expects(:request_power_state_change).with(:power_state => :graceful_shutdown)
+      wsman.power_off(:graceful_shutdown)
     end
   end
 
