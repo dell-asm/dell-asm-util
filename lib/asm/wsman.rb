@@ -1071,7 +1071,7 @@ module ASM
     # Update power state of the server.
     #
     # @param options [Hash]
-    # @option options [Symbol|String] :power_state 1 to 10"
+    # @option options [Symbol|String] :power_state :power_on / "2", :power_cycle / "3", :power_off / "8", :reset / "10", :diagnostic / "11", :graceful_shutdown / "12"
     # @return [Hash]
     # @raise [ResponseError] if the command fails
     def request_power_state_change(params={})
@@ -1101,22 +1101,33 @@ module ASM
     #
     # After executing the power-off operation, check the power-state and returns once server is in power-off state
     #
+    # @param shutdown_type [Symbol|String] :power_off / "8" or :graceful_shutdown / "12"
     # @return [void]
     # @raise [ResponseError] if the command fails
-    def power_off
+    def power_off(shutdown_type=:graceful_shutdown)
+      raise("Invalid shutdown type: %s" % shutdown_type) unless [:power_off, "8", :graceful_shutdown, "12"].include?(shutdown_type)
+
       # Create the reboot job
-      logger.debug("Power off server %s" % host)
+      logger.debug("Power off server %s requested state = %s" % [host, shutdown_type])
 
       if power_state != :off
-        set_power_state(:requested_state => :off)
+        request_power_state_change(:power_state => shutdown_type)
         (1..30).each do |wait_counter|
           break if power_state == :off
-          logger.debug "Server is not in power-off state. Retry counter %d" % wait_counter if logger
+          logger.debug "Server %s is not in power-off state. Retry counter %d" % [host, wait_counter] if logger
           sleep 10
         end
-        logger.warn "Server is still not powered-off. Check the server console" if power_state != :off
+
+        return if power_state == :off
+
+        if shutdown_type == :graceful_shutdown
+          logger.warn "Server %s is still not powered-off after graceful shutdown, initiating forced shutdown." % host
+          power_off(:power_off)
+        else
+          logger.warn "Server %s is still not powered-off. Check the server console" % host
+        end
       else
-        logger.debug "Server is already powered off"
+        logger.debug "Server %s is already powered off" % host
       end
     end
 
