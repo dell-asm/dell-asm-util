@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.add_dependency "aescrypt", "~> 1.0.0"
   s.add_dependency "hashie", ">= 2.0.5"
   s.add_dependency "trollop", "~> 2.0"
-  s.add_dependency "nokogiri", "~> 1.5.10"
+  s.add_dependency "nokogiri", "~> 1.6.8"
   s.add_dependency "i18n", "~> 0.6.5"
   s.add_dependency "pry", "~> 0.10"
   s.add_dependency("rest-client", "1.8.0")
