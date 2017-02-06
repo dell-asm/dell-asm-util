@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "guard-shell"
   s.add_development_dependency "yard"
   s.add_development_dependency "kramdown"
+  s.add_development_dependency "rainbow", "~> 2.1.0" # for https://github.com/sickill/rainbow/issues/48
   s.add_development_dependency "rubocop", "0.37.2"
   s.add_development_dependency "rspec", "~> 3"
   s.add_development_dependency "mocha"
