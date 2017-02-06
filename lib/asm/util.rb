@@ -128,7 +128,7 @@ module ASM
     # Management Network      vSwitch0                     1        0
     # vMotion                 vSwitch1                     1       23
     def self.esxcli(cmd_array, endpoint, logger=nil, skip_parsing=false, time_out=600)
-      args = [time_out, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
+      args = [time_out.to_s, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
       args += ["-s", endpoint[:host],
                "-u", endpoint[:user]
               ]
