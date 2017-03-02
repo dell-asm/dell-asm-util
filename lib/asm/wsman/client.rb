@@ -10,9 +10,19 @@ module ASM
 
       def initialize(endpoint, options={})
         missing_params = [:host, :user, :password].reject { |k| endpoint.include?(k) }
+
         raise("Missing required endpoint parameter(s): %s" % [missing_params.join(", ")]) unless missing_params.empty?
+
         @endpoint = endpoint
         @logger = augment_logger(options.delete(:logger) || Logger.new(nil))
+        @default_options = {
+          :selector => nil,
+          :props => {},
+          :input_file => nil,
+          :nth_attempt => 0,
+          :transport_timeout => 300,
+          :retry_on_error => true
+        }.merge(options)
 
         proxy_warn
       end
@@ -60,14 +70,7 @@ module ASM
       # @return [String]
       # rubocop:disable Metrics/MethodLength
       def exec(method, schema, options={})
-        options = {
-          :selector => nil,
-          :props => {},
-          :input_file => nil,
-          :nth_attempt => 0,
-          :transport_timeout => 300,
-          :retry_on_error => true
-        }.merge(options)
+        options = @default_options.merge(options)
 
         if %w(enumerate get identify).include?(method)
           args = [method]
