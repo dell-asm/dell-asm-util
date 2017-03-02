@@ -35,7 +35,18 @@ describe ASM::WsMan::Client do
     let(:auth_failed_response) {Hashie::Mash.new(:exit_status => 1, :stdout => "Authentication failed", :stderr => "")}
     let(:conn_failed_response) {Hashie::Mash.new(:exit_status => 1, :stdout => "Connection failed.", :stderr => "")}
 
-    it "execute enumerate" do
+    it "should use the supplied client options as defauls" do
+      client = ASM::WsMan::Client.new(endpoint, :transport_timeout => 5)
+      args.pop
+      args << "--transport-timeout=5"
+
+      ASM::Util.expects(:run_command_with_args)
+               .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
+               .returns(response)
+      expect(client.exec("enumerate", "rspec-schmea")).to eq(response.stdout)
+    end
+
+    it "should execute enumerate" do
       ASM::Util.expects(:run_command_with_args)
                .with("env", "WSMAN_PASS=rspec-password", "wsman", "--non-interactive", "enumerate", "rspec-schmea", *args)
                .returns(response)
