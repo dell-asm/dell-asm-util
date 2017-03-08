@@ -222,7 +222,7 @@ describe ASM::Firmware do
     it "should raise an error when install_from_uri job fails" do
       data = {:name => "xyz", :description => "test file"}.to_json
       data.stubs(:path).returns("/tmp")
-      data.stubs(:read).returns("tmp")
+      File.stubs(:read).with("/tmp").returns("tmp")
       firmware_obj.stubs(:create_xml_config_file).returns(data)
       wsman.stubs(:install_from_uri).returns(failed_return)
       expect do

@@ -211,14 +211,16 @@ module ASM
     def gets_install_uri_job(firmware, wsman)
       config_file = create_xml_config_file(firmware["instance_id"], firmware["uri_path"])
       resp = wsman.install_from_uri(:input_file => config_file.path)
+
       if resp[:return_value] == "4096"
         job_id = resp[:job]
         logger.debug("InstallFromURI started")
         logger.debug("JOB_ID: #{job_id}")
       else
-        logger.debug("Error installing From URI config: #{config_file.read}")
+        logger.debug("Error installing From URI config: %s" % File.read(config_file.path))
         raise("Problem running InstallFromURI: #{resp[:message]}")
       end
+
       job_id
     end
 
@@ -336,9 +338,9 @@ module ASM
     #
     # this creates a temporary file to be used for the SetupJobQueue wsman call
     #
-    # @param [Array<string>] job_ids job ids to be scheduled
-    # @param [String] reboot_id the reboot job
-    # @return [File] the xml file object
+    # @param job_ids [Array<String>] job ids to be scheduled
+    # @param reboot_id [String] the reboot job
+    # @return [Tempfile] the xml file object
     def create_job_queue_config(job_ids, reboot_id=nil)
       template = <<-EOF
 <p:SetupJobQueue_INPUT xmlns:p="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"><% job_ids.each do |job_id| %>
@@ -359,8 +361,8 @@ module ASM
     # Used to create an XML file:
     #
     # @param instance_id [String] job_id
-    # @return [void]
-    # Path specifies moount path
+    # @param path [String] specifies moount path
+    # @return [Tempfile]
     def create_xml_config_file(instance_id, path)
       template = <<-EOF
 <p:InstallFromURI_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService">
