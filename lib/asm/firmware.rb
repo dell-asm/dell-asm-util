@@ -154,7 +154,7 @@ module ASM
         statuses << block_until_downloaded(job_id, fw, wsman)
       end
 
-      logger.debug("First statuses set: %s" % statuses)
+      logger.debug("First statuses set: %s" % statuses.to_s)
 
       statuses.each do |status|
         if NO_REBOOT_COMPONENT_IDS.include?(status[:firmware]["component_id"].to_i)
@@ -166,7 +166,7 @@ module ASM
         end
       end
 
-      logger.debug("Updated statuses set: %s" % statuses)
+      logger.debug("Updated statuses set: %s" % statuses.to_s)
 
       reboot_firmwares = statuses.select { |status| status[:reboot_required] }
       logger.debug("Reboot firmwares: %s" % reboot_firmwares.to_s)
