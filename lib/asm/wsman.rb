@@ -1042,7 +1042,7 @@ module ASM
     def reboot(options={})
       options = {:reboot_job_type => :graceful_with_forced_shutdown,
                  :reboot_start_time => "TIME_NOW",
-                 :timeout => 5 * 60}.merge(options)
+                 :timeout => 15 * 60}.merge(options)
       poll_for_lc_ready(options)
       logger.info("Rebooting server %s" % host)
       resp = create_reboot_job(options)
