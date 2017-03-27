@@ -194,10 +194,25 @@ module ASM
       fcoe_adapters
     end
 
-    def self.run_command_simple(cmd)
-      run_command(cmd)
-    end
-
+    # Execute a command with arguments
+    #
+    # The command will not be invoked within a shell unless the cmd argument itself is a shell.
+    #
+    # WARNING: Commands producing a large amount of stderr vs stdout will deadlock as the
+    # implementation just consumes all stdout before consuming stderr.
+    #
+    # @example
+    #
+    #    [3] pry(main)> ASM::Util.run_command_with_args("echo", "hello", "my", "friend")
+    #    => {"stdout"=>"hello my friend\n", "stderr"=>"", "pid"=>9762, "exit_status"=>0}
+    #    [4] pry(main)> ASM::Util.run_command_with_args("ls", "/noexist1", "/noexist2")
+    #    => {"stdout"=>"",
+    #        "stderr"=>
+    #          "ls: cannot access '/noexist1': No such file or directory\nls: cannot access '/noexist2': No such file or directory\n",
+    #        "pid"=>9842,
+    #        "exit_status"=>2}
+    #
+    # @return [Hashie::Mash] Mash with stdout, stderr, pid and exit_status keys
     def self.run_command_with_args(cmd, *args)
       run_command(cmd, *args)
     end
