@@ -103,7 +103,7 @@ vMotion                 vSwitch1                     1       23
     end
   end
 
-  describe '#hostname_to_certname' do
+  describe "#hostname_to_certname" do
     it "should generate a certname and not clobber the original hostname" do
       certname = "CrAzY_NaMe1234"
       expect(ASM::Util.hostname_to_certname(certname)).to eq("agent-crazyname1234")
@@ -130,6 +130,53 @@ vMotion                 vSwitch1                     1       23
                                  "drsmixh01:drs-cplmix04" =>
                                    {"data_center" => "drsmix01dc", "datastore" => "drs-cplmix04", "cluster" => "drsmix01dc",
                                     "ensure" => "present", "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true}})
+    end
+  end
+
+  describe "#bolt_command" do
+    it "should raise error when command is not successfull" do
+      endpoint = {:host => "1.1.1.1", :user => "user", :password => "password"}
+      result = {
+        "exit_status" => 2
+      }
+      ASM::Util.stubs(:run_command_with_args).returns(result)
+      command = "test command"
+      msg = "Failed to execute command %s with error message %s on node %s" % [command, result.inspect, endpoint[:host]]
+      expect {ASM::Util.bolt_command(command, endpoint)}.to raise_error(msg)
+    end
+
+    it "should return command output when command execution is successfull" do
+      endpoint = {:host => "1.1.1.1", :user => "user", :password => "password"}
+      result = {
+        "stdout" => "{ \"items\": [\n{\"node\":\"100.68.97.198\",\"status\":\"success\",\"result\":{\"stdout\":\"serverhostname\\n\"}}\n]}\n",
+        "exit_status" => 0
+      }
+      ASM::Util.stubs(:run_command_with_args).returns(result)
+      command = "hostname"
+      expect(ASM::Util.bolt_command(command, endpoint)).to eq("serverhostname")
+    end
+  end
+
+  describe "#bolt_script" do
+    it "should raise error when script execution is unsuccessful" do
+      endpoint = {:host => "1.1.1.1", :user => "user", :password => "password"}
+      result = {"exit_status" => 2}
+      ASM::Util.stubs(:run_command_with_args).returns(result)
+      script_path = "/tmp/script1.sh"
+      script_args = ["arg1", "arg2"]
+
+      msg = "Failed to execute script %s on node %s" % [script_path, endpoint[:host]]
+      expect {ASM::Util.bolt_script(script_path, script_args, endpoint)}.to raise_error(msg)
+    end
+
+    it "should return true when script execution is successfull" do
+      endpoint = {:host => "1.1.1.1", :user => "user", :password => "password"}
+      result = {"exit_status" => 0}
+      ASM::Util.stubs(:run_command_with_args).returns(result)
+      script_path = "/tmp/script1.sh"
+      script_args = ["arg1", "arg2"]
+
+      expect(ASM::Util.bolt_script(script_path, script_args, endpoint)).to be true
     end
   end
 end
