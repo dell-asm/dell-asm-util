@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = "dell-asm-util"
   s.version     = "0.1.0"
-  s.licenses    = ["Dell 2015"]
+  s.licenses    = ["Dell 2015-2018"]
   s.summary     = "Util classes for Dell ASM and ASM Puppet Modules"
   s.description = "Util classes for Dell ASM and ASM Puppet Modules"
   s.authors     = ["Dell"]
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.add_dependency "aescrypt", "~> 1.0.0"
   s.add_dependency "hashie", ">= 2.0.5"
   s.add_dependency "trollop", "~> 2.0"
-  s.add_dependency "nokogiri", "~> 1.6.8"
+  s.add_dependency "nokogiri", "~> 1.8.1"
   s.add_dependency "i18n", "~> 0.6.5"
   s.add_dependency "pry", "~> 0.10"
   s.add_dependency("rest-client", "1.8.0")
@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "yard"
   s.add_development_dependency "kramdown"
   s.add_development_dependency "rainbow", "~> 2.1.0" # for https://github.com/sickill/rainbow/issues/48
-  s.add_development_dependency "rubocop", "0.37.2"
+  s.add_development_dependency "rubocop", "0.49.0"
   s.add_development_dependency "rspec", "~> 3"
   s.add_development_dependency "mocha"
   s.add_development_dependency "puppet"
