@@ -63,7 +63,42 @@ describe ASM::Util do
     end
   end
 
-  it "should parse esxcli output" do
+  it "should parse esxcli thumbprint and output" do
+    esxcli_thumbprint_msg = <<-eos
+Connect to 100.1.1.100 failed. Server SHA-1 thumbprint: 28:C6:8D:54:1B:08:A1:08:7A:0B:50:6D:B7:73:06:96:71:A1:6D:03 (not trusted).
+    eos
+    err_result = {
+      "exit_status" => 1,
+      "stdout" => esxcli_thumbprint_msg
+    }
+
+    stdout = <<-eos
+Name                    Virtual Switch  Active Clients  VLAN ID
+----------------------  --------------  --------------  -------
+ISCSI0                  vSwitch3                     1       16
+ISCSI1                  vSwitch3                     1       16
+Management Network      vSwitch0                     1        0
+Management Network (1)  vSwitch0                     1       28
+VM Network              vSwitch0                     1        0
+Workload Network        vSwitch2                     0       20
+vMotion                 vSwitch1                     1       23
+
+    eos
+    result = {
+      "exit_status" => 0,
+      "stdout" => stdout
+    }
+    ASM::Util.stubs(:run_command_with_args).returns(err_result, result)
+    endpoint = {}
+    ret = ASM::Util.esxcli(["command_to_get_network_info"], endpoint)
+    expect(ret.size).to eq(7)
+    expect(ret[3]["Name"]).to eq("Management Network (1)")
+    expect(ret[3]["Virtual Switch"]).to eq("vSwitch0")
+    expect(ret[3]["Active Clients"]).to eq("1")
+    expect(ret[3]["VLAN ID"]).to eq("28")
+  end
+
+  it "should parse esxcli output and use provided thumbprint" do
     stdout = <<-eos
 Name                    Virtual Switch  Active Clients  VLAN ID
 ----------------------  --------------  --------------  -------
@@ -81,7 +116,7 @@ vMotion                 vSwitch1                     1       23
       "stdout" => stdout
     }
     ASM::Util.stubs(:run_command_with_args).returns(result)
-    endpoint = {}
+    endpoint = {:thumbprint => "28:C6:8D:54:1B:08:A1:08:7A:0B:50:6D:B7:73:06:96:71:A1:6D:03"}
     ret = ASM::Util.esxcli([], endpoint)
     expect(ret.size).to eq(7)
     expect(ret[3]["Name"]).to eq("Management Network (1)")

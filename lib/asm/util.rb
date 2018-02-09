@@ -128,10 +128,17 @@ module ASM
     # Management Network      vSwitch0                     1        0
     # vMotion                 vSwitch1                     1       23
     def self.esxcli(cmd_array, endpoint, logger=nil, skip_parsing=false, time_out=600)
+      unless cmd_array.empty?
+        endpoint[:thumbprint] ||= begin
+          thumbprint_output = esxcli([], endpoint, logger, true, time_out)
+          thumbprint_output.slice(/(?<=thumbprint: )(.*)(?= \(not)/)
+        end
+      end
       args = [time_out.to_s, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
       args += ["-s", endpoint[:host],
                "-u", endpoint[:user]
-              ]
+      ]
+      args += ["-d", endpoint[:thumbprint]] if endpoint[:thumbprint]
       args += cmd_array.map(&:to_s)
 
       if logger
@@ -139,10 +146,9 @@ module ASM
         tmp[2] = "VI_PASSWORD=******" # mask password
         logger.debug("Executing esxcli #{tmp.join(' ')}")
       end
-
       result = ASM::Util.run_command_with_args("timeout", *args)
 
-      unless result["exit_status"] == 0
+      if result["exit_status"] != 0 && !cmd_array.empty?
         msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
         logger.error(msg) if logger
         args[2] = "VI_PASSWORD=******" # mask password
@@ -152,31 +158,35 @@ module ASM
       if skip_parsing
         result["stdout"]
       else
-        lines = result["stdout"].split(/\n/)
-        if lines.size >= 2
-          header_line = lines.shift
-          seps = lines.shift.split
-          headers = []
+        parse_esxcli_result(result["stdout"])
+      end
+    end
+
+    def self.parse_esxcli_result(result_stdout)
+      lines = result_stdout.split(/\n/)
+      if lines.size >= 2
+        header_line = lines.shift
+        seps = lines.shift.split
+        headers = []
+        pos = 0
+        seps.each do |sep|
+          header = header_line.slice(pos, sep.length).strip
+          headers.push(header)
+          pos = pos + sep.length + 2
+        end
+
+        ret = []
+        lines.each do |line|
+          record = {}
           pos = 0
-          seps.each do |sep|
-            header = header_line.slice(pos, sep.length).strip
-            headers.push(header)
+          seps.each_with_index do |sep, index|
+            value = line.slice(pos, sep.length).strip
+            record[headers[index]] = value
             pos = pos + sep.length + 2
           end
-
-          ret = []
-          lines.each do |line|
-            record = {}
-            pos = 0
-            seps.each_with_index do |sep, index|
-              value = line.slice(pos, sep.length).strip
-              record[headers[index]] = value
-              pos = pos + sep.length + 2
-            end
-            ret.push(record)
-          end
-          ret
+          ret.push(record)
         end
+        ret
       end
     end
 
