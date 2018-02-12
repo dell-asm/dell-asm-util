@@ -2,10 +2,6 @@ require "spec_helper"
 require "asm/network_configuration"
 
 describe ASM::NetworkConfiguration::NicType do
-  before do
-    SpecHelper.init_i18n
-  end
-
   describe "#ASM::NicType" do
     describe "#ports" do
       it "should parse 2x10Gb" do

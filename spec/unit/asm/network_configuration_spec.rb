@@ -3,7 +3,6 @@ require "asm/network_configuration"
 
 describe ASM::NetworkConfiguration do
   before do
-    SpecHelper.init_i18n
     ASM::WsMan.stubs(:get_bios_enumeration).returns([])
   end
 

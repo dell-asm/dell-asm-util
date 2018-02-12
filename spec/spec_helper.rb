@@ -26,9 +26,4 @@ module SpecHelper
   def self.load_fixture(fixture)
     File.read(File.join(FIXTURE_PATH, fixture))
   end
-
-  def self.init_i18n
-    I18n.load_path = Dir[File.expand_path(File.join(File.dirname(__FILE__), "..", "locales", "*.yml"))]
-    I18n.locale = "en".intern
-  end
 end
