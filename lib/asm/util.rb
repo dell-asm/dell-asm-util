@@ -190,6 +190,53 @@ module ASM
       end
     end
 
+    # Execute puppet bolt command and parse JSON output
+    #
+    # Example output:
+    #
+    # bolt command run "command" "command arguments" --user username --password password --nodes <node ip / hostname>
+    def self.bolt_command(command, endpoint, logger=nil)
+      logger.debug("Puppet bolt command: %s" % [command]) if logger
+
+      args = ["command", "run"]
+      args += ["--nodes", endpoint[:host],
+               "--user", endpoint[:user],
+               "--password", endpoint[:password]
+      ]
+      args << command
+
+      result = ASM::Util.run_command_with_args("bolt", *args)
+      unless result["exit_status"] == 0
+        raise("Failed to execute command %s with error message %s on node %s" % [command, result.inspect, endpoint[:host]])
+      end
+      logger.debug("Command output %s" % [result.inspect]) if logger
+      JSON.parse(result["stdout"])["items"].first["result"]["stdout"].strip
+    end
+
+    # Execute puppet bolt command and parse JSON output
+    #
+    # Example output:
+    #
+    # bolt script run "script path" "script arguments" --user username --password password --nodes <node ip / hostname>
+    def self.bolt_script(script_path, script_args, endpoint, logger=nil)
+      logger.debug("Puppet bolt script path: %s" % [script_path]) if logger
+
+      args = ["script", "run"]
+      args += ["--nodes", endpoint[:host],
+               "--user", endpoint[:user],
+               "--password", endpoint[:password]
+      ]
+      args << script_path
+      args += script_args.map(&:to_s)
+
+      result = ASM::Util.run_command_with_args("bolt", *args)
+      unless result["exit_status"] == 0
+        raise("Failed to execute script %s on node %s" % [script_path, endpoint[:host]])
+      end
+
+      true
+    end
+
     def self.get_fcoe_adapters(esx_endpoint, logger=nil)
       fcoe_adapters = []
       fcoe_adapter = esxcli("fcoe nic list".split, esx_endpoint, logger, true)
