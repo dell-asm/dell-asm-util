@@ -53,7 +53,7 @@ describe ASM::NetworkConfiguration::NicType do
 
       it "should fail if not 10Gb NICs" do
         expect { ASM::NetworkConfiguration::NicType.new("4x1Gb").n_partitions }
-          .to raise_error("NICs without 10Gb ports cannot be partitioned")
+          .to raise_error("NIC type 4x1Gb does not support partitioning")
       end
     end
   end

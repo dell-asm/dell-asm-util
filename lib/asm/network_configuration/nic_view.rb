@@ -79,8 +79,16 @@ module ASM
       def vendor
         return :qlogic if self["VendorName"] =~ /qlogic|broadcom/i
         return :qlogic if self["PCIVendorID"] == "14e4"
+
+        return :mellanox if self["VendorName"] =~ /mellanox/i
+        return :mellanox if self["PCIVendorID"] == "15b3"
+
         return :intel if self["VendorName"] =~ /intel/i
         :intel if self["PCIVendorID"] == "8086" # have seen cases where VendorName not populated
+      end
+
+      def pci_device_id
+        self["PCIDeviceID"]
       end
 
       # The product name of the NIC port
