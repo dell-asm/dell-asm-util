@@ -161,11 +161,15 @@ module ASM
       #
       # @return [String] the nic type description
       def nic_type
-        return "2x10Gb" if ports.size == 2 && all_ports?(ports, "10 Gbps")
         return "2x1Gb" if ports.size == 2 && all_ports?(ports, "1000 Mbps")
-        return "4x10Gb" if ports.size == 4 && all_ports?(ports, "10 Gbps")
+        return "2x10Gb" if ports.size == 2 && all_ports?(ports, "10 Gbps")
+        return "2x25Gb" if ports.size == 2 && all_ports?(ports, "25 Gbps")
+
         return "4x1Gb" if ports.size == 4 && all_ports?(ports, "1000 Mbps")
+        return "4x10Gb" if ports.size == 4 && all_ports?(ports, "10 Gbps")
+
         return "2x10Gb,2x1Gb" if ports.size == 4 && all_ports?(ports.slice(0, 2), "10 Gbps") && all_ports?(ports.slice(2, 2), "1000 Mbps")
+
         "unknown"
       end
 

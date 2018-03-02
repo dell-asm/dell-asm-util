@@ -190,9 +190,10 @@ module ASM
           interface = Hashie::Mash.new(orig_interface)
           interface.partitions = []
           port_no = name_to_port(orig_interface.name).to_i
-          # Assuming all 10Gb ports enumerate first, which is currently the
-          # case but may not always be...
-          n_ports = card.nictype.n_10gb_ports
+          # Assuming all usable ports enumerate first, which is currently the
+          # case but may not always be... (i.e. on 2x10Gb,2x1Gb combo cards
+          # the 1Gb ports come second)
+          n_ports = card.nictype.n_usable_ports
           max_partitions = card.nictype.n_partitions
           next unless n_ports >= port_no
 

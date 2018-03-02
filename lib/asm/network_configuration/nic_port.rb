@@ -54,6 +54,13 @@ module ASM
         Integer(nic_view.port)
       end
 
+      # Whether the iPXE ISO has working drivers for this NIC
+      #
+      # @return [Boolean]
+      def ipxe_iso_supported?
+        [:intel, :mellanox].include?(vendor)
+      end
+
       # Whether the NIC port belongs to a Broadcom / QLogic 57800 NIC
       #
       # @return [Boolean]
@@ -75,18 +82,36 @@ module ASM
         vendor == :qlogic && product =~ /(^|\D)57840(\D|$)/ && n_ports == 4
       end
 
+      # Whether the NIC port belongs to an Intel X520/I350 combo card
+      #
+      # @return [Boolean]
       def is_intel_x520_i350?
         vendor == :intel && product =~ /x520\/I350(\D|$)/i && n_ports == 4
       end
 
-      # Whether the NIC port belongs to a 2x10Gb Intel X520 NIC
+      # Whether the NIC port belongs to an Intel X710/I350 combo card
       #
-      # Note that there appear to be many X520 variants. This method only returns
-      # true for 2x10Gb X520 NICs
+      # @return [Boolean]
+      def is_intel_x710_i350?
+        vendor == :intel && product =~ /x710\/I350(\D|$)/i && n_ports == 4
+      end
+
+      # Whether the NIC port belongs to a 2x10Gb Intel X520 NIC
       #
       # @return [Boolean]
       def is_intel_x520?
         vendor == :intel && product =~ /x520(\D|$)/i && n_ports == 2
+      end
+
+      # Whether the NIC port belongs to an Intel X710 NIC
+      #
+      # @return [Boolean]
+      def is_intel_x710?
+        vendor == :intel && product =~ /x710(\D|$)/i
+      end
+
+      def is_mellanox_connect_x_4_lx?
+        vendor == :mellanox && n_ports == 2 && nic_view.pci_device_id == "1015"
       end
 
       # The NIC port speed as determined by NIC vendor and model information
@@ -100,10 +125,15 @@ module ASM
         return "10 Gbps" if is_qlogic_57840?
 
         # Broadcom / QLogic 57800 is a 2x10Gb, 2x1Gb NIC
-        return "10 Gbps" if (is_qlogic_57800? || is_intel_x520_i350?) && port.between?(1, 2)
-        return "1000 Mbps" if (is_qlogic_57800? || is_intel_x520_i350?) && port.between?(3, 4)
+        return "10 Gbps" if (is_qlogic_57800? || is_intel_x520_i350? || is_intel_x710_i350?) && port.between?(1, 2)
+        return "1000 Mbps" if (is_qlogic_57800? || is_intel_x520_i350? || is_intel_x710_i350?) && port.between?(3, 4)
 
         return "10 Gbps" if is_intel_x520?
+
+        return "10 Gbps" if is_intel_x710?
+
+        return "25 Gbps" if is_mellanox_connect_x_4_lx?
+
         nil
       end
 

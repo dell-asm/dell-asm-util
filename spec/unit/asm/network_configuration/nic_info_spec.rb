@@ -86,6 +86,32 @@ describe ASM::NetworkConfiguration::NicInfo do
         expect(nic_infos[0].card_prefix).to eq("NIC.Integrated.1")
         expect(nic_infos[1].card_prefix).to eq("NIC.Slot.4")
       end
+
+      it "should recognize Intel X710/I350 2x10Gb,2x1Gb combo card" do
+        nic_views_xml = SpecHelper.load_fixture("network_configuration/x710_i350_nic_view.xml")
+        ASM::WsMan.expects(:invoke)
+                  .with(endpoint, "enumerate", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_NICView", :logger => logger)
+                  .returns(nic_views_xml)
+        ASM::WsMan.expects(:get_bios_enumeration).with(endpoint, logger).returns([])
+        nic_infos = ASM::NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+        expect(nic_infos.size).to eq(1)
+        expect(nic_infos[0].nic_type).to eq("2x10Gb,2x1Gb")
+        expect(nic_infos[0].card_prefix).to eq("NIC.Integrated.1")
+      end
+
+      it "should recognize Mellanox ConnectX-4 LX 25Gb slot card" do
+        nic_views_xml = SpecHelper.load_fixture("network_configuration/mellanox_connect_x_4_lx_nic_view.xml")
+        ASM::WsMan.expects(:invoke)
+                  .with(endpoint, "enumerate", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_NICView", :logger => logger)
+                  .returns(nic_views_xml)
+        ASM::WsMan.expects(:get_bios_enumeration).with(endpoint, logger).returns([])
+        nic_infos = ASM::NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+        expect(nic_infos.size).to eq(2)
+        expect(nic_infos[0].nic_type).to eq("2x25Gb")
+        expect(nic_infos[0].card_prefix).to eq("NIC.Slot.1")
+        expect(nic_infos[1].nic_type).to eq("2x25Gb")
+        expect(nic_infos[1].card_prefix).to eq("NIC.Slot.2")
+      end
     end
 
     describe ".create" do
