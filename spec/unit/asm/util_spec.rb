@@ -167,4 +167,43 @@ vMotion                 vSwitch1                     1       23
                                     "ensure" => "present", "esxhost" => "172.31.37.143", "lun" => nil, "iscsi_volume" => true}})
     end
   end
+
+  describe "#get_preferred_ip" do
+    let(:logger) { Logger.new(nil) }
+
+    it "should find the host ip" do
+      Resolv.expects(:getaddress).with("host-foo").returns("192.168.253.100")
+
+      ASM::Util.expects(:`)
+               .with("ip route get 192.168.253.100")
+               .returns(<<EOF
+192.168.253.100 dev ens192 src 192.168.253.1
+    cache
+
+EOF
+                       )
+
+      expect(ASM::Util.get_preferred_ip("host-foo", logger)).to eq("192.168.253.1")
+    end
+
+    it "should retry a few times and fail" do
+      Resolv.expects(:getaddress).with("192.168.253.100").returns("192.168.253.100")
+
+      ASM::Util.expects(:sleep).at_least_once
+      ASM::Util.expects(:`).at_least_once.with("ip route get 192.168.253.100").returns("Error")
+
+      ASM::Util.expects(:`)
+               .at_least_once
+               .with("ip route")
+               .returns(<<EOF
+default via 100.68.107.190 dev ens160 proto static metric 100
+100.68.107.128/26 dev ens160 proto kernel scope link src 100.68.107.160 metric 100
+192.168.253.0/24 dev ens192 proto kernel scope link src 192.168.253.1 metric 100
+
+EOF
+                       )
+
+      expect {ASM::Util.get_preferred_ip("192.168.253.100", logger)}.to raise_error("Failed to find preferred route to 192.168.253.100 after 10 tries")
+    end
+  end
 end
