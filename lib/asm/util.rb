@@ -83,22 +83,35 @@ module ASM
       end.ip_address
     end
 
-    # In case of dual NIC appliance with access to non-routable network
-    # method will get the IP address of the appliance which has the access to a particular network
-    # ping the destination IP with specific NIC interface to confirm the access
-    def self.get_preferred_ip(ipaddress)
+    # Return the host IP that routes to the specified host
+    #
+    # Uses `ip route get` to determine which local interface traffic to the
+    # specified remote host will be routed through. The IP address of that
+    # local interface is returned. The remote host should be able to access
+    # the local host via that IP.
+    #
+    # @param [String] remote_host Remote host to access
+    #
+    # @return [String] the local host IP address
+    def self.get_preferred_ip(remote_host, logger=nil)
       tries = 0
       max_tries = 10
       preferred = nil
 
+      ip = Resolv.getaddress(remote_host)
+
       while tries < max_tries
-        parts = `ip route get #{ipaddress}`.split(/\s+/)
+        parts = `ip route get #{ip}`.split(/\s+/)
 
         if position = parts.index("src")
           preferred = parts[position + 1]
           break
         else
-          puts("failed to determine target route from routing table: \n%s" % `ip route`)
+          message = "failed to determine target route from routing table: \n%s" % `ip route`
+
+          puts(message) unless logger
+          logger.debug(message) if logger
+
           sleep 1
         end
 
@@ -106,7 +119,8 @@ module ASM
       end
 
       if tries == max_tries
-        raise("Failed to find preferred route to %s after %d tries" % [ipaddress, tries])
+        address = ip == remote_host ? ip : "%s (%s)" % [remote_host, ip]
+        raise("Failed to find preferred route to %s after %d tries" % [address, tries])
       end
 
       preferred
