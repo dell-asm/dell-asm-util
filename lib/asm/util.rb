@@ -288,20 +288,32 @@ module ASM
         Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
           stdin.close
 
-          # Drain stdout
-          while line = stdout.gets
-            fh.puts(line)
-            # Interleave stderr if available
-            while stderr.ready?
-              if err = stderr.gets
-                fh.puts(err)
+          files = [stdout, stderr]
+
+          # Attempt to interleave stdout and stderr if possible
+          # by using gets instead of read_nonblock to read a
+          # line at a time. Slower but interleaves better.
+          until files.empty?
+            ready = IO.select(files)
+            readable = ready[0]
+            readable.each do |f|
+              begin
+                data = f.gets
+                if data.nil?
+                  # gets returns nil on EOF so remove this file
+                  # from the list of files to select on (read from)
+                  files.delete(f)
+                else
+                  fh.write data
+                  fh.flush
+                end
+              rescue IOError
+                # A catch-all to prevent spinning in case
+                # some weird exception happens - just delete
+                # the offending file from the list
+                files.delete(f)
               end
             end
-          end
-
-          # Drain stderr
-          while line = stderr.gets
-            fh.puts(line)
           end
 
           fh.close

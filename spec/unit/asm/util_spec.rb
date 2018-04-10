@@ -1,4 +1,5 @@
 require "asm/util"
+require "asm/errors"
 require "spec_helper"
 require "tempfile"
 require "json"
@@ -204,6 +205,35 @@ EOF
                        )
 
       expect {ASM::Util.get_preferred_ip("192.168.253.100", logger)}.to raise_error("Failed to find preferred route to 192.168.253.100 after 10 tries")
+    end
+  end
+
+  describe "#run_command_streaming" do
+    it "should not block for stderr only case" do
+      outfile = Tempfile.new("run_command_streaming")
+      command = SpecHelper::FIXTURE_PATH + "/print_to_fd.sh"
+      ASM::Util.run_command_streaming(command + " 2 20 'Hi there'", outfile)
+      expected_output = SpecHelper::FIXTURE_PATH + "/util/stderr_only_short.out"
+      expect(File.readlines(outfile).sort).to eq(File.readlines(expected_output.to_s).sort)
+      outfile.unlink
+    end
+
+    it "should not block for stdout only case" do
+      outfile = Tempfile.new("run_command_streaming")
+      command = SpecHelper::FIXTURE_PATH + "/print_to_fd.sh"
+      ASM::Util.run_command_streaming(command + " 1 20 'Hi there'", outfile)
+      expected_output = SpecHelper::FIXTURE_PATH + "/util/stdout_only_short.out"
+      expect(File.readlines(outfile).sort).to eq(File.readlines(expected_output.to_s).sort)
+      outfile.unlink
+    end
+
+    it "should not block for stdout and stderr case" do
+      outfile = Tempfile.new("run_command_streaming")
+      command = SpecHelper::FIXTURE_PATH + "/print_to_fd.sh"
+      ASM::Util.run_command_streaming(command + " 3 20 'Hi there'", outfile)
+      expected_output = SpecHelper::FIXTURE_PATH + "/util/stdout_stderr_short.out"
+      expect(File.readlines(outfile).sort).to match_array(File.readlines(expected_output.to_s).sort)
+      outfile.unlink
     end
   end
 end
