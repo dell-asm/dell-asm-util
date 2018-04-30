@@ -95,7 +95,9 @@ module ASM
       firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance)
 
       # After updating Ensure LC is up and in good state before exiting
-      wsman_instance.poll_for_lc_ready
+      ASM::Util.block_and_retry_until_ready(1800, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+        wsman_instance.poll_for_lc_ready # Make sure Lc status was ready
+      end
     end
 
     # Clearing the job_queue with retry
