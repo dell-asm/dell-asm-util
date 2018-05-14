@@ -800,4 +800,36 @@ describe ASM::WsMan do
       expect(wsman.identify(10)).to eq(:product_name => "iDRAC")
     end
   end
+
+  describe "#identify_chassis" do
+    it "should turn on the LED using IdentifyChassis method when the IdentifyState value is 1" do
+      client.expects(:invoke).with("IdentifyChassis",
+                                   ASM::WsMan::SYSTEM_MANAGEMENT_SERVICE,
+                                   :params => {:identify_state => 1},
+                                   :required_params => :identify_state,
+                                   :optional_params => :duration_limit,
+                                   :return_value => "0").returns("message_arguments:" => "IdentifyState", "message_id" => "SYS004", "return_code" => 0)
+      wsman.identify_chassis(:identify_state => 1)
+    end
+
+    it "should turn off the LED using IdentifyChassis method when the IdentifyState value is 0" do
+      client.expects(:invoke).with("IdentifyChassis",
+                                   ASM::WsMan::SYSTEM_MANAGEMENT_SERVICE,
+                                   :params => {:identify_state => 0},
+                                   :required_params => :identify_state,
+                                   :optional_params => :duration_limit,
+                                   :return_value => "0").returns("message_arguments:" => "IdentifyState", "message_id" => "SYS001", "return_code" => 0)
+      wsman.identify_chassis(:identify_state => 0)
+    end
+
+    it "should turn on the LED using IdentifyChassis method with duration if DurationLimit parameter exists and IdentifyState is 2 " do
+      client.expects(:invoke).with("IdentifyChassis",
+                                   ASM::WsMan::SYSTEM_MANAGEMENT_SERVICE,
+                                   :params => {:identify_state => 2, :duration_limit => 30},
+                                   :required_params => :identify_state,
+                                   :optional_params => :duration_limit,
+                                   :return_value => "0").returns("message_arguments:" => "IdentifyState", "message_id" => "SYS001", "return_code" => 0)
+      wsman.identify_chassis(:identify_state => 2, :duration_limit => 30)
+    end
+  end
 end

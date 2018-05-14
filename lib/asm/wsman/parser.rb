@@ -144,6 +144,8 @@ module ASM
           enum_value(key, {:on => "2", :off => "3", :reset => "11"}, value)
         when :power_state
           enum_value(key, {:on => "2", :reboot => "10"}, value)
+        when :identify_state
+          enum_value(key, {:off => "0", :on => "1", :on_with_duration => "2"}, value)
         else
           value
         end

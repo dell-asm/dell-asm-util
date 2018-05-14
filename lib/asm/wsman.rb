@@ -21,6 +21,7 @@ module ASM
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService&SystemCreationClassName=DCIM_ComputerSystem&SystemName=IDRAC:ID&Name=SoftwareUpdate".freeze
     IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_iDRACCardService&SystemName=DCIM:ComputerSystem&Name=DCIM:iDRACCardService".freeze
+    SYSTEM_MANAGEMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemManagementService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_SystemManagementService&SystemName=srv:system&Name=DCIM:SystemManagementService".freeze
 
     # rubocop:enable Metrics/LineLength
 
@@ -1532,6 +1533,34 @@ module ASM
 
     def self.sleep_time
       60
+    end
+
+    # Turn on/off the identifying LED on the iDRAC front panel
+    #
+    # This method implements a call to iDRAC, through WsMan, to change the LED blinker
+    # state. To turn the blinking LED on, identify_state parameter must be passed with
+    # the value of 1. To turn it off, the value must be 0. By default, identy_state is
+    # set to 0.
+    #
+    # @param identify_state [FixNum] number that indicates desired LED blinker state
+    # @param options [Hash]
+    # @option [String|Fixnum|Symbol] :identify_state option to specify whether identifying LED should be blinking or off; allowed values are:"0", "1", "2", :off, :on, and
+    #                                                         :on_with_duration
+    #                                                         When "0" or :off is passed in for this option, this method will turn off the LED on the chassis
+    #                                                         When "1" or :on is passed in for this option, this method will turn on the LED to blink on the chassis
+    #                                                         When "2" or :on_with_duration" is passed in for this option, this method turns on the LED to blink on the chassis
+    #                                                         for time specified by :duration_limit option
+    # @option options [String|Fixnum] :duration_limit option to specify how long the LED should be blinking; unit = seconds
+    # @return [Void]
+    # @raise [RuntimeError] when invalid parameter option(s) are passed
+    # @raise [ResponseError] when it fails to set the LED state
+    def identify_chassis(options={})
+      client.invoke("IdentifyChassis",
+                    SYSTEM_MANAGEMENT_SERVICE,
+                    :params => options,
+                    :required_params => :identify_state,
+                    :optional_params => :duration_limit,
+                    :return_value => "0")
     end
   end
 end
