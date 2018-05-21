@@ -91,6 +91,9 @@ module ASM
       unless pre.empty?
         logger.debug("LC Update required, installing first")
         firmware_instance.update_idrac_firmware(pre, force_restart, wsman_instance)
+        ASM::Util.block_and_retry_until_ready(1800, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+          wsman_instance.poll_for_lc_ready
+        end
       end
       firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance)
 
