@@ -130,7 +130,7 @@ describe ASM::Firmware do
     it "should upate the firmware" do
       firmware_obj.expects(:clear_job_queue_retry).with(wsman).returns(nil)
       firmware_obj.expects(:update_idrac_firmware).returns(nil).twice
-      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:poll_for_lc_ready).twice
       ASM::Firmware.idrac_fw_install_from_uri(config, resource_hash, device_config, logger)
     end
 
