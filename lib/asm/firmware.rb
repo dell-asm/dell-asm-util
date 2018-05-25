@@ -91,14 +91,14 @@ module ASM
       unless pre.empty?
         logger.debug("LC Update required, installing first")
         firmware_instance.update_idrac_firmware(pre, force_restart, wsman_instance)
-        ASM::Util.block_and_retry_until_ready(1800, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+        ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
           wsman_instance.poll_for_lc_ready
         end
       end
       firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance)
 
       # After updating Ensure LC is up and in good state before exiting
-      ASM::Util.block_and_retry_until_ready(1800, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+      ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
         wsman_instance.poll_for_lc_ready # Make sure Lc status was ready
       end
     end
@@ -122,7 +122,9 @@ module ASM
           raise("Unable to clear all the job queue")
         end
 
-        wsman.poll_for_lc_ready # Make sure Lc status was ready
+        ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+          wsman.poll_for_lc_ready
+        end
       rescue StandardError => e
         logger.debug("Job queue cannot be cleared.") if attempts > 1
         logger.debug("Job queue still shows jobs exist after attempting to clear the job queue.")
