@@ -273,8 +273,8 @@ module ASM
         return :off if power_state == "13"
         raise(Error, "Invalid power state returned: %s" % power_state)
       rescue
-        if retry_counter < 3
-          sleep 5
+        if retry_counter < 8
+          sleep 15
           retry_counter += 1
           retry
         else
