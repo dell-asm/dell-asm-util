@@ -264,9 +264,9 @@ module ASM
     #
     # @return [Symbol] :on or :off
     def power_state
-      ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
       retry_counter = 0
       begin
+        ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
         raise(Error, "No power management enumerations found") if ret.empty?
         power_state = ret.first[:power_state]
         return :on if power_state == "2"
