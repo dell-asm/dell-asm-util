@@ -190,18 +190,7 @@ describe ASM::NetworkConfiguration::NicPort do
     let(:nic_info) { ASM::NetworkConfiguration::NicView.new("FQDD" => "NIC.Integrated.1-1-1") }
     let(:nic_port) { ASM::NetworkConfiguration::NicPort.new([nic_info], 2, logger) }
 
-    it "should return true for Intel NICs" do
-      nic_port.expects(:vendor).returns(:intel)
-      expect(nic_port.ipxe_iso_supported?).to be_truthy
-    end
-
-    it "should return true for Mellanox NICs" do
-      nic_port.expects(:vendor).returns(:mellanox)
-      expect(nic_port.ipxe_iso_supported?).to be_truthy
-    end
-
     it "should return false otherwise" do
-      nic_port.expects(:vendor).returns(:qlogic)
       expect(nic_port.ipxe_iso_supported?).to be_falsey
     end
   end
