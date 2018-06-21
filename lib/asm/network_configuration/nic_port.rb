@@ -58,7 +58,8 @@ module ASM
       #
       # @return [Boolean]
       def ipxe_iso_supported?
-        [:intel, :mellanox].include?(vendor)
+        # Seeing various iPXE ISO issues currently so disabling. See LUD-1437 and LUD-1455
+        false
       end
 
       # Whether the NIC port belongs to a Broadcom / QLogic 57800 NIC
