@@ -58,7 +58,9 @@ module ASM
       #
       # @return [Boolean]
       def ipxe_iso_supported?
-        [:intel, :mellanox].include?(vendor)
+        #Temporarily return false to only use nic based pxe
+
+        false
       end
 
       # Whether the NIC port belongs to a Broadcom / QLogic 57800 NIC
