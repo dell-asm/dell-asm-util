@@ -114,7 +114,8 @@ module ASM
       begin
         attempts += 1
         logger.debug("Clearing the Job Queue...")
-        resp = wsman.delete_job_queue(:job_id => "JID_CLEARALL")
+        clear_job_id = attempts > 1 ?  "JID_CLEARALL_FORCE" : "JID_CLEARALL"
+        resp = wsman.delete_job_queue(:job_id => clear_job_id)
 
         if resp[:return_value] == "0"
           logger.debug("Jobs in job queue was cleared successfully...")
