@@ -16,7 +16,7 @@ module ASM
     NO_REBOOT_COMPONENT_IDS = [IDRAC_ID, LC_ID, UEFI_DIAGNOSTICS_ID, DRIVER_PACK, OS_COLLECTOR].freeze
 
     # Max time to wait for a job to complete
-    MAX_WAIT_SECONDS = 1800
+    MAX_WAIT_SECONDS = 3600
     attr_reader :logger
 
     def initialize(cred, options={})
