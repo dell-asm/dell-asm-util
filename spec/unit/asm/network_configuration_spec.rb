@@ -147,6 +147,20 @@ describe ASM::NetworkConfiguration do
       expect(partitions[1].name).to eq("1")
     end
 
+    it "should find networks by id" do
+      partitions = net_config.get_partitions_by_id("ff808081508c08e301508c7e1ebf065e")
+
+      expect(partitions.size).to eq(2)
+      expect(partitions[0].name).to eq("1")
+      expect(partitions[1].name).to eq("1")
+    end
+
+    it "should not find non-existent network ids" do
+      partitions = net_config.get_partitions_by_id("BAD_ID")
+
+      expect(partitions.size).to eq(0)
+    end
+
     it "should find multiple network types" do
       partitions = net_config.get_partitions("PUBLIC_LAN", "PRIVATE_LAN")
       expect(partitions.size).to eq(2)
