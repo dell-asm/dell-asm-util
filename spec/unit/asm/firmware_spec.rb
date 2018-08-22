@@ -166,7 +166,8 @@ describe ASM::Firmware do
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:client).returns(stub(:endpoint => endpoint)).times(2)
       ASM::Transport::Racadm.expects(:new).with(endpoint, logger).returns(mock_transport).times(2)
-      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").times(3).returns(response2, response2, response)
+      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response2)
+      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL_FORCE").twice.returns(response2, response)
       firmware_obj.clear_job_queue_retry(wsman)
     end
 
@@ -176,7 +177,8 @@ describe ASM::Firmware do
       firmware_obj.stubs(:sleep).with(60).returns(nil)
       wsman.expects(:client).returns(stub(:endpoint => endpoint)).times(2)
       ASM::Transport::Racadm.expects(:new).with(endpoint, logger).returns(mock_transport).times(2)
-      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response2).times(3)
+      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response2)
+      wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL_FORCE").twice.returns(response2).times(2)
       expect do
         firmware_obj.clear_job_queue_retry(wsman)
       end.to raise_error("Unable to find the LC status after clearing job queue")
