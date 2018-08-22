@@ -106,6 +106,18 @@ module ASM
       end.flatten
     end
 
+    # Retrieve all partitions that have the specified network
+    #
+    # @param network_id [String] network id
+    # @return [Array<Hash>] list of partitions with the network
+    def get_partitions_by_id(network_id)
+      collect_from_partitions do |partition|
+        partition if partition.networkObjects && partition.networkObjects.find do |network|
+          network["id"] == network_id
+        end
+      end.flatten.compact
+    end
+
     def get_all_partitions # rubocop:disable Style/AccessorMethodName
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
