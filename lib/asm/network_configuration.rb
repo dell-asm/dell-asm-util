@@ -159,6 +159,18 @@ module ASM
       end.flatten.compact
     end
 
+    # Returns list of FQDDs for the NICS associated with specified network ID
+    #
+    # @params [String] network_id
+    # @return [Array] List of FQDDs associated with the network ID
+    def fqdds_for_network(network_id)
+      collect_from_partitions do |partition|
+        (partition.networkObjects || []).collect do |network_obj|
+          partition.fqdds if network_obj["id"] == network_id
+        end
+      end.flatten.compact
+    end
+
     # Returns the network object for the given network type.  This method raises
     # an exception if more than one network is found, so it is never valid to
     # call it for network types that may have more than one network associated

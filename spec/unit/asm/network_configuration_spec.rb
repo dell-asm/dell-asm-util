@@ -161,6 +161,12 @@ describe ASM::NetworkConfiguration do
       expect(partitions.size).to eq(0)
     end
 
+    it "should find fqdds by network_id" do
+      fqdds = net_config.fqdds_for_network("ff808081508c08e301508c7e1ebf065e")
+
+      expect(fqdds.size).to eq(0)
+    end
+
     it "should find multiple network types" do
       partitions = net_config.get_partitions("PUBLIC_LAN", "PRIVATE_LAN")
       expect(partitions.size).to eq(2)
