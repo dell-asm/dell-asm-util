@@ -171,7 +171,7 @@ module ASM
 
         unless url_params.empty?
           encoded_arguments = url_params.map do |key|
-            "%s=%s" % [CGI.escape(Parser.param_key(key)), CGI.escape(Parser.wsman_value(key, params[key]))]
+            "%s=%s" % [URI.escape(Parser.param_key(key)), URI.escape(Parser.wsman_value(key, params[key]))]
           end.join("&")
           uri = URI(url)
           url = "%s%s%s" % [url, uri.query ? "&" : "?", encoded_arguments]
