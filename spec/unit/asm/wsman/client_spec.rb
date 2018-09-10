@@ -165,7 +165,7 @@ describe ASM::WsMan::Client do
     end
 
     it "should call exec with url params and parse the result" do
-      client.expects(:exec).with("RspecMethod", "%s?Foo=My%%20foo" % url, :props => {}).returns("<response />")
+      client.expects(:exec).with("RspecMethod", CGI.escape("%s?Foo=My foo" % url), :props => {}).returns("<response />")
       parser.expects(:parse).with("<response />").returns(:return_value => "0")
       expect(client.invoke("RspecMethod", url, :params => {:foo => "My foo"}, :url_params => [:foo]))
         .to eq(:return_value => "0")
