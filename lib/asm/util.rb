@@ -322,6 +322,48 @@ module ASM
       end
     end
 
+    def self.execute_script_via_ssh(server, username, password, command, arguments)
+      require "net/ssh"
+      require "shellwords"
+
+      stdout = ""
+      stderr = ""
+      exit_code = -1
+
+      Net::SSH.start(server,
+                     username,
+                     :password => password,
+                     :verify_host_key => Net::SSH::Verifiers::Null.new,
+                     :global_known_hosts_file => "/dev/null") do |ssh|
+        cmd = "%s %s" % [command, arguments]
+
+        ssh.open_channel do |channel|
+          channel.exec(cmd) do |_ch, success|
+            unless success
+              stderr = "Failed to execute script over SSH."
+              exit_code = 126
+              break
+            end
+
+            channel.on_data do |_ch, data|
+              stdout += data
+            end
+
+            channel.on_extended_data do |_ch, _type, data|
+              stderr += data
+            end
+
+            channel.on_request("exit-status") do |_ch, data|
+              exit_code = data.read_long
+            end
+          end
+        end
+        ssh.loop
+      end
+
+      {:exit_code => exit_code, :stdout => stdout, :stderr => stderr}
+    end
+
     def self.block_and_retry_until_ready(timeout, exceptions=nil, max_sleep=nil, logger=nil, &block)
       failures = 0
       sleep_time = 0
