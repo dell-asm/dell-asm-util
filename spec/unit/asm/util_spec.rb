@@ -236,4 +236,24 @@ EOF
       outfile.unlink
     end
   end
+
+  describe "#execute_script_via_ssh" do
+    it "it should run ssh command" do
+      Net::SSH::Verifiers::Null = mock("Null")
+      Net::SSH::Verifiers::Null.expects(:new).returns(true)
+      session = mock("session")
+      channel = mock("channel")
+      channel.expects(:exec).yields("test", true)
+      channel.expects(:on_data).yields(nil, "test")
+      channel.expects(:on_extended_data)
+      channel.expects(:on_request)
+      session.expects(:open_channel).at_least_once.yields(channel)
+      session.expects(:loop)
+      Net::SSH.expects(:start)
+              .with("155.68.106.198", "root", :password => "P@ssw0rd", :verify_host_key => true, :global_known_hosts_file => "/dev/null")
+              .yields(session)
+      result = ASM::Util.execute_script_via_ssh("155.68.106.198", "root", "P@ssw0rd", "ls", "-lrt")
+      expect(result).to eq(:exit_code => -1, :stderr => "", :stdout => "test")
+    end
+  end
 end
