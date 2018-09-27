@@ -322,7 +322,7 @@ module ASM
       end
     end
 
-    def self.execute_script_via_ssh(server, username, password, command, arguments)
+    def self.execute_script_via_ssh(server, username, password, command, arguments=nil)
       require "net/ssh"
       require "shellwords"
 
@@ -335,7 +335,7 @@ module ASM
                      :password => password,
                      :verify_host_key => Net::SSH::Verifiers::Null.new,
                      :global_known_hosts_file => "/dev/null") do |ssh|
-        cmd = "%s %s" % [command, arguments]
+        cmd = ([command] + [arguments]).join(" ").strip
 
         ssh.open_channel do |channel|
           channel.exec(cmd) do |_ch, success|
