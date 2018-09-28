@@ -1,6 +1,7 @@
 require "asm/util"
 require "asm/wsman/response_error"
 require "asm/wsman/parser"
+require "cgi"
 require "logger"
 
 module ASM

@@ -102,6 +102,13 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#system_view" do
+    it "should get DCIM_SystemView" do
+      client.expects(:get).with("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemView", "System.Embedded.1").returns("rspec-result")
+      expect(wsman.system_view).to eq("rspec-result")
+    end
+  end
+
   describe "#fc_views" do
     it "should enumerate DCIM_FCView" do
       client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_FCView").returns("rspec-result")

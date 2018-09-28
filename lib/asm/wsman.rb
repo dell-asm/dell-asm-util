@@ -44,6 +44,81 @@ module ASM
       WsMan.new(endpoint, options).client.exec(method, schema, options)
     end
 
+    # Retrieve general server information
+    #
+    # @return [Hash]
+    #
+    # @example return
+    # {:asset_tag=>"",
+    #  :bios_release_date=>"001/22/2018",
+    #  :bios_version_string=>"2.7.1",
+    #  :base_board_chassis_slot=>"NA",
+    #  :battery_rollup_status=>"1",
+    #  :blade_geometry=>"255",
+    #  :board_part_number=>"0599V5A03",
+    #  :board_serial_number=>"CN768214AQ01C6",
+    #  :cmcip=>nil,
+    #  :cpldversion=>"1.0.1",
+    #  :cpurollup_status=>"1",
+    #  :chassis_model=>"",
+    #  :chassis_name=>"Main System Chassis",
+    #  :chassis_service_tag=>"XXXYP22",
+    #  :chassis_system_height=>"2",
+    #  :current_rollup_status=>"1",
+    #  :device_description=>"System",
+    #  :estimated_exhaust_temperature=>"32",
+    #  :estimated_system_airflow=>"24",
+    #  :express_service_code=>"16571039999",
+    #  :fqdd=>"System.Embedded.1",
+    #  :fan_rollup_status=>"1",
+    #  :host_name=>"host-c02",
+    #  :idsdmrollup_status=>nil,
+    #  :instance_id=>"System.Embedded.1",
+    #  :intrusion_rollup_status=>"1",
+    #  :last_system_inventory_time=>"20180927234821.000000+000",
+    #  :last_update_time=>"20180926195936.000000+000",
+    #  :licensing_rollup_status=>"1",
+    #  :lifecycle_controller_version=>"2.52.52.52",
+    #  :manufacturer=>"Dell Inc.",
+    #  :max_cpusockets=>"2",
+    #  :max_dimmslots=>"24",
+    #  :max_pcie_slots=>"7",
+    #  :memory_operation_mode=>"OptimizerMode",
+    #  :memory_rollup_status=>"1",
+    #  :model=>"PowerEdge R730",
+    #  :node_id=>"XXXYP22",
+    #  :psrollup_status=>"1",
+    #  :platform_guid=>"3232504f-c0b7-5980-3110-004d4c999933",
+    #  :populated_cpusockets=>"2",
+    #  :populated_dimmslots=>"4",
+    #  :populated_pcie_slots=>"1",
+    #  :power_cap=>"323",
+    #  :power_cap_enabled_state=>"3",
+    #  :power_state=>"2",
+    #  :primary_status=>"1",
+    #  :rollup_status=>"1",
+    #  :sdcard_rollup_status=>nil,
+    #  :server_allocation=>nil,
+    #  :service_tag=>"7M1YP22",
+    #  :storage_rollup_status=>"1",
+    #  :sys_mem_error_methodology=>"6",
+    #  :sys_mem_fail_over_state=>"NotInUse",
+    #  :sys_mem_location=>"3",
+    #  :sys_mem_max_capacity_size=>"3145728",
+    #  :sys_mem_primary_status=>"1",
+    #  :sys_mem_total_size=>"32768",
+    #  :system_generation=>"13G Monolithic",
+    #  :system_id=>"1536",
+    #  :system_revision=>"0",
+    #  :temp_rollup_status=>"1",
+    #  :temp_statistics_rollup_status=>"1",
+    #  :uuid=>"4c4c4544-004d-3110-8059-b7c04f503232",
+    #  :volt_rollup_status=>"1",
+    #  :smbios_guid=>"44454c4c-4d00-1031-8059-b7c04f999456"}
+    def system_view
+      client.get("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemView", "System.Embedded.1")
+    end
+
     # Retrieve FC NIC information
     #
     # @return [Array<Hash>]
