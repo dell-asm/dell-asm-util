@@ -4,5 +4,3 @@ rvm:
   - jruby-1.7.27
   - jruby-9.1.15.0
   - 2.4.3
-before_install:
-  - gem install bundler -v '< 2'
