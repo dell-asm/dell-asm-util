@@ -237,6 +237,199 @@ EOF
     end
   end
 
+  describe "#write_ansible_yaml" do
+    it "should write a provided hash to file location" do
+      outfile = Tempfile.new("ansible_out.yaml")
+      yaml_hash = {"rhvm" =>
+                       {"hosts" =>
+                            {"100.68.106.94" =>
+                                 {"ansible_ssh_pass" => "!vault |\n         " \
+                                              "$ANSIBLE_VAULT;1.1;AES256\n          " \
+                                              "63646239656565393165663132303561656331313063643235383736633732343530666539343034\n" \
+                                              "          6638393531323732663937363731653766623264333034370a343435316265636631646463303931\n" \
+                                              "          33623562623537623964353464356435393537306338306430343466643230313436316639393835\n" \
+                                              "          3136633862343232650a623931393335623034356138333362646331303864656366323062313630\n" \
+                                              "          6562\n"}},
+                        "vars" =>
+                            {"rhn_satellite" => "https://rsatnew.asm.delllabs.net",
+                             "katello_rpm" => "katello-ca-consumer-latest.noarch.rpm",
+                             "rhn_org" => "dellemc",
+                             "rhv_key" => "RHV",
+                             "rhvurl" => "http://arhvm.asm.delllabs.net"}}}
+      ASM::Util.write_ansible_yaml(yaml_hash, outfile)
+      expected_output = File.join(SpecHelper::FIXTURE_PATH + "/write_ansible.yaml")
+      expect(File.readlines(outfile)).to match_array(File.readlines(expected_output))
+    end
+  end
+
+  describe "#encyrpt_string_with_vault" do
+    it "should return a vault encrypted string" do
+      expected_out = "!vault |\n          " \
+                     "$ANSIBLE_VAULT;1.1;AES256\n     " \
+                     "32636662643664376338336239356435393462343761613064326432663066313662316637316265\n"\
+                     "          3366646564386236373833333562393538396462353730300a646337643036393435343830653431\n" \
+                     "          30346563343364396333343436636562613261373962613163616235613631666131636333643161\n" \
+                     "          3734666238313330300a323563626330373235373035616633396234383962623939663236313832\n" \
+                     "          3061\n"
+      input = mock("input")
+      input.stubs(:write)
+      input.stubs(:close)
+      output = mock("output")
+      output.stubs(:read).returns(expected_out)
+      err = mock("err")
+      err.stubs(:read)
+      val = mock("value")
+      val.stubs(:exitstatus).returns(0)
+      wait_thru = mock(:[] => 101)
+      wait_thru.stubs(:value).returns(val)
+      Open3.expects(:popen3).yields(input, output, err, wait_thru).returns("stdout" => expected_out, "exit_status" => 0)
+      expect(ASM::Util.encrypt_string_with_vault("ff808081656d80c701656d80d8e40003", "P@ssw0rd", "/opt/dell/asm-deployer/scripts/vault.py")).to eq(expected_out)
+    end
+
+    it "should raise error if command fails" do
+      expected_out = "error"
+      input = mock("input")
+      input.stubs(:write)
+      input.stubs(:close)
+      output = mock("output")
+      output.stubs(:read).returns(expected_out)
+      err = mock("err")
+      err.stubs(:read)
+      val = mock("value")
+      val.stubs(:exitstatus).returns(1)
+      wait_thru = mock(:[] => 101)
+      wait_thru.stubs(:value).returns(val)
+      Open3.expects(:popen3).yields(input, output, err, wait_thru)
+      expect {ASM::Util.encrypt_string_with_vault("ff808081656d80c701656d80d8e40003", "P@ssw0rd", "/opt/dell/asm-deployer/scripts/vault.py")}
+        .to raise_error("Error getting vault value: ")
+    end
+
+    it "should raise error if no vault password id provided" do
+      expect {ASM::Util.encrypt_string_with_vault(nil, "P@ssw0rd", "/opt/dell/asm-deployer/scripts/vault.py")}
+        .to raise_error("Error vault password id required")
+    end
+
+    it "should raise error if no vault password file provided" do
+      expect {ASM::Util.encrypt_string_with_vault("ff808081656d80c701656d80d8e40003", "P@ssw0rd", nil)}
+        .to raise_error("Error vault password file required")
+    end
+
+    it "should raise error if no value to encrypt provided" do
+      expect {ASM::Util.encrypt_string_with_vault("ff808081656d80c701656d80d8e40003", nil, "/opt/dell/asm-deployer/scripts/vault.py")}
+        .to raise_error("Error no value to encrypt provided")
+    end
+  end
+
+  describe "parse ansible log" do
+    it "should return json result of run" do
+      output_location = File.join(SpecHelper::FIXTURE_PATH + "/testdevice.out")
+      expected_out = {"stats" =>
+                          {"100.68.106.92" =>
+                               {"changed" => 4,
+                                "failures" => 0,
+                                "ok" => 8,
+                                "skipped" => 0,
+                                "unreachable" => 0},
+                           "100.68.106.93" =>
+                               {"changed" => 4,
+                                "failures" => 0,
+                                "ok" => 8,
+                                "skipped" => 0,
+                                "unreachable" => 0},
+                           "100.68.106.94" =>
+                               {"changed" => 4,
+                                "failures" => 0,
+                                "ok" => 8,
+                                "skipped" => 0,
+                                "unreachable" => 0}}}
+      expect(ASM::Util.parse_ansible_log(output_location)).to eq(expected_out)
+    end
+
+    it "should return json result of run even if there is a failure" do
+      output_location = File.join(SpecHelper::FIXTURE_PATH + "/testdevice2.out")
+      expected_out = {"stats" =>
+                          {"100.68.106.96" =>
+                               {"changed" => 0,
+                                "failures" => 1,
+                                "ok" => 0,
+                                "skipped" => 0,
+                                "unreachable" => 0}}}
+      expect(ASM::Util.parse_ansible_log(output_location)).to eq(expected_out)
+    end
+  end
+
+  describe "run_ansible_playbook_with_inventory" do
+    before(:each) do
+      @play = "/tmp/testplay.yaml"
+      @inventory = "/tmp/testinventory.yaml"
+      @output_file = "/tmp/output.out"
+      @arg1 = "ansible-playbook"
+      @arg2 = "-i"
+      @arg3 = "/tmp/testinventory.yaml"
+      @arg4 = "/tmp/testplay.yaml"
+      @arg5 = "--vault-password-file"
+      @arg6 = "/tmp/script.sh"
+      @input = mock("input")
+      @input.stubs(:write)
+      @input.stubs(:close)
+      @output = mock("output")
+      @output.stubs(:read).returns("test")
+      @err = mock("err")
+      @err.stubs(:read)
+      @val = mock("value")
+      @val.stubs(:exitstatus).returns(0)
+      @wait_thru = mock("waitthr")
+      @wait_thru.stubs(:[]).returns(101)
+      @wait_thru.stubs(:value).returns(@val)
+    end
+
+    it "should run ansible with the provided playbook and inventory files without verbose" do
+      Open3.stubs(:popen3)
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4)
+           .yields(@input, @output, @err, @wait_thru)
+           .returns(nil)
+      expect(ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, @output_file)).to eq(nil)
+    end
+
+    it "should run ansible with the provided playbook and inventory files" do
+      Open3.stubs(:popen3)
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4)
+           .yields(@input, @output, @err, @wait_thru)
+           .returns(nil)
+      expect(ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, @output_file)).to eq(nil)
+    end
+
+    it "should raise error if no playbook provided" do
+      expect {ASM::Util.run_ansible_playbook_with_inventory(nil, @inventory, @output_file)}.to raise_error("No playbook file provided")
+    end
+
+    it "should raise error if no inventory provided" do
+      expect {ASM::Util.run_ansible_playbook_with_inventory(@play, nil, @output_file)}.to raise_error("No inventory file provided")
+    end
+
+    it "should raise error if output file provided" do
+      expect {ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, nil)}.to raise_error("No output file provided")
+    end
+
+    it "should raise error if vault password id provided with no vault password file" do
+      expect {ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, @output_file, :vault_password_id => "ff808081656d80c701656d80d8e40003")}
+        .to raise_error("Vault password id requires vault password file")
+    end
+
+    it "should pass in options as environment variables" do
+      Open3.expects(:popen3)
+           .with({"VAULT" => "test", "ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4, @arg5, @arg6)
+           .yields(@input, @output, @err, @wait_thru)
+           .returns(nil)
+      expect(ASM::Util.run_ansible_playbook_with_inventory(@play,
+                                                           @inventory,
+                                                           @output_file,
+                                                           :vault_password_id => "test",
+                                                           :stdout_callback => "json",
+                                                           :vault_password_file => "/tmp/script.sh")).to eq(nil)
+    end
+  end
+
   describe "#execute_script_via_ssh" do
     it "it should run ssh command" do
       Net::SSH::Verifiers::Null = mock("Null")

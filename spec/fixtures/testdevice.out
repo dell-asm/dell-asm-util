@@ -1,0 +1,25 @@
+{
+    "stats": {
+        "100.68.106.92": {
+            "changed": 4, 
+            "failures": 0, 
+            "ok": 8, 
+            "skipped": 0, 
+            "unreachable": 0
+        }, 
+        "100.68.106.93": {
+            "changed": 4, 
+            "failures": 0, 
+            "ok": 8, 
+            "skipped": 0, 
+            "unreachable": 0
+        }, 
+        "100.68.106.94": {
+            "changed": 4, 
+            "failures": 0, 
+            "ok": 8, 
+            "skipped": 0, 
+            "unreachable": 0
+        }
+    }
+}

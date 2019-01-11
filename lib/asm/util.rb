@@ -283,9 +283,9 @@ module ASM
 
     # Run cmd by passing it to the shell and stream stdout and stderr
     # to the specified outfile
-    def self.run_command_streaming(cmd, outfile)
+    def self.run_command_streaming(cmd, outfile, env={})
       File.open(outfile, "a") do |fh|
-        Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
           stdin.close
 
           files = [stdout, stderr]
@@ -362,6 +362,126 @@ module ASM
       end
 
       {:exit_code => exit_code, :stdout => stdout, :stderr => stderr}
+    end
+
+    # Run ansible against the provided playbook and inventory yaml
+    #
+    # Provide the path to a playbook and inventory file, run the
+    # ansible-playbook against the provided file paths and write
+    # the output to the provided output file location.
+    #
+    # @param playbook_file [String] Path to the ansible playbook
+    # @param inventory_file [String] Path to the ansible inventory
+    # @param output_file [String] Path to output file
+    # @param options [Hash] Provide the verbose parameter to ansible run
+    # @option options [String] :vault_password_id credential id to be decrypted by vault password file
+    # @option options [String] :vault_password_file path to python script to return vault password
+    # @options options [String] :verbose run ansible playbook in verbose mode
+    # @options options [String] :host_key_check turn on or off ansible host key check
+    # @options options [stdout_callback] : stdout_callback set output format, must be json to be parsed
+    #                                      by method parse_ansible_log
+    #
+    # @return [void]
+    def self.run_ansible_playbook_with_inventory(playbook_file, inventory_file, output_file, options={})
+      raise("No playbook file provided") unless playbook_file
+      raise("No inventory file provided") unless inventory_file
+      raise("No output file provided") unless output_file
+      raise("Vault password id requires vault password file") if options[:vault_password_id] && options[:vault_password_file].nil?
+      options = {:verbose => false,
+                 :host_key_check => false,
+                 :stdout_callback => "json"}.merge(options)
+      env = {}
+      env["VAULT"] = options[:vault_password_id] if options[:vault_password_id]
+      env["ANSIBLE_STDOUT_CALLBACK"] = options[:stdout_callback]
+      env["ANSIBLE_HOST_KEY_CHECKING"] = "False" unless options[:host_key_check]
+      args = ["ansible-playbook"]
+      args.push("-v") if options[:verbose]
+      args += ["-i", inventory_file, playbook_file]
+      args.push("--vault-password-file") if options[:vault_password_file]
+      args.push(options[:vault_password_file]) if options[:vault_password_file]
+      result = Hashie::Mash.new
+      begin
+        Open3.popen3(env, *args) do |stdin, stdout, stderr, wait_thr|
+          stdin.close
+          result.stdout      = stdout.read
+          result.stderr      = stderr.read
+          result.pid         = wait_thr[:pid]
+          result.exit_status = wait_thr.value.exitstatus
+        end
+
+        File.open(output_file, "w") do |fh|
+          fh.write(result.stdout)
+          fh.close
+        end
+      rescue
+        raise("Ansible run failed; Error: %s" % $!.to_s)
+      end
+
+      raise("Ansible run failed; output in #{output_file}") unless result["exit_status"] == 0
+
+      nil
+    end
+
+    # Write a yaml file from which can be interpreted by ansible
+    #
+    # Provide a valid hash, and write the yaml output to the
+    # provided yaml_file_path
+    #
+    # @param yaml_hash [String] Hash formatted for ansible
+    # @param yaml_file_path [String] Path on where to write ansible yaml
+    #
+    # @return [void]
+    def self.write_ansible_yaml(yaml_hash, yaml_file_path)
+      File.write(yaml_file_path, yaml_hash.to_yaml.gsub(/: \|\n        !vault/, ":  !vault"))
+
+      nil
+    end
+
+    # Use ansible vault to encrypt input string
+    #
+    # @param vault_password_id [String] credential id to be decrypted by vault password script
+    # @param input_string [String] String to be encrypted using ansible-vault
+    # @param vault_password_file [String] Path to python script for vault password
+    #
+    # @return [String] vault encryption string
+    def self.encrypt_string_with_vault(vault_password_id, input_string, vault_password_file)
+      raise("Error vault password id required") unless vault_password_id
+      raise("Error vault password file required") unless vault_password_file
+      raise("Error no value to encrypt provided") unless input_string
+      env = {"VAULT" => vault_password_id}
+      args = ["ansible-vault", "encrypt_string", "--vault-password-file", vault_password_file]
+      result = Hashie::Mash.new
+
+      begin
+        Open3.popen3(env, *args) do |stdin, stdout, stderr, wait_thr|
+          stdin.write(input_string)
+          stdin.close
+          result.stdout      = stdout.read
+          result.stderr      = stderr.read
+          result.pid         = wait_thr[:pid]
+          result.exit_status = wait_thr.value.exitstatus
+        end
+      rescue
+        raise("Error getting vault value: %s" % $!.to_s)
+      end
+      raise("Error getting vault value: %s" % result["stderr"]) if result["exit_status"] != 0
+
+      result["stdout"]
+    end
+
+    # Parse ansible output file and return results
+    #
+    # @param ansible_out [String] Path to ansible output file to parse
+    #
+    # @return [String] Results of run in json format
+    def self.parse_ansible_log(ansible_out)
+      # Check results from output of ansible run
+      out_file = ""
+      File.readlines(ansible_out).each do |line|
+        # Throw out ansible non-json output when a failure occurs.
+        out_file += line unless line =~ /to retry(.*)retry/
+      end
+      JSON.parse(out_file)
     end
 
     def self.block_and_retry_until_ready(timeout, exceptions=nil, max_sleep=nil, logger=nil, &block)
