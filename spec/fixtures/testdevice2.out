@@ -1,0 +1,12 @@
+to retry, use: --limit @/etc/puppetlabs/puppet/modules/asm/playbooks/rhvm/rhvm_facts.retry
+{
+   "stats": {
+       "100.68.106.96": {
+           "changed": 0,
+           "failures": 1,
+           "ok": 0,
+           "skipped": 0,
+           "unreachable": 0
+       }
+   }
+}

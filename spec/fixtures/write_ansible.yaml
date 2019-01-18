@@ -1,0 +1,17 @@
+---
+rhvm:
+  hosts:
+    100.68.106.94:
+      ansible_ssh_pass:  !vault |
+                 $ANSIBLE_VAULT;1.1;AES256
+                  63646239656565393165663132303561656331313063643235383736633732343530666539343034
+                  6638393531323732663937363731653766623264333034370a343435316265636631646463303931
+                  33623562623537623964353464356435393537306338306430343466643230313436316639393835
+                  3136633862343232650a623931393335623034356138333362646331303864656366323062313630
+                  6562
+  vars:
+    rhn_satellite: https://rsatnew.asm.delllabs.net
+    katello_rpm: katello-ca-consumer-latest.noarch.rpm
+    rhn_org: dellemc
+    rhv_key: RHV
+    rhvurl: http://arhvm.asm.delllabs.net
