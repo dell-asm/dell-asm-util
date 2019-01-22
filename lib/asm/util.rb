@@ -283,9 +283,9 @@ module ASM
 
     # Run cmd by passing it to the shell and stream stdout and stderr
     # to the specified outfile
-    def self.run_command_streaming(cmd, outfile, env={})
+    def self.run_command_streaming(cmd, outfile)
       File.open(outfile, "a") do |fh|
-        Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
           stdin.close
 
           files = [stdout, stderr]
