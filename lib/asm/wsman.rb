@@ -22,6 +22,7 @@ module ASM
     IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_iDRACCardService&SystemName=DCIM:ComputerSystem&Name=DCIM:iDRACCardService".freeze
     SYSTEM_MANAGEMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemManagementService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_SystemManagementService&SystemName=srv:system&Name=DCIM:SystemManagementService".freeze
+    RAID_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_RAIDService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_RAIDService&SystemName=DCIM:ComputerSystem&Name=DCIM:RAIDService".freeze
 
     # rubocop:enable Metrics/LineLength
 
@@ -1608,6 +1609,42 @@ module ASM
 
     def self.sleep_time
       60
+    end
+
+    # Turn on the identifying LED on a disk front panel
+    #
+    # This method implements a call to iDRAC, through WsMan, to turn on the LED blinker on a disk in a server.
+    #
+    # @param options [Hash]
+    # @option options [String] :target The disk FQDD. Example: "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"
+    #
+    # @return [Hash]
+    # @raise [RuntimeError] when invalid parameter option(s) are passed
+    # @raise [ResponseError] when it fails to turn on the LED
+    def blink_target(options={})
+      client.invoke("BlinkTarget",
+                    RAID_SERVICE,
+                    :params => options,
+                    :required_params => [:target],
+                    :return_value => "0")
+    end
+
+    # Turn off the identifying LED on a disk front panel
+    #
+    # This method implements a call to iDRAC, through WsMan, to turn off the LED blinker on a disk in a server.
+    #
+    # @param options [Hash]
+    # @option options [String] :target The disk FQDD. Example: "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"
+    #
+    # @return [Hash]
+    # @raise [RuntimeError] when invalid parameter option(s) are passed
+    # @raise [ResponseError] when it fails to turn off the LED
+    def unblink_target(options={})
+      client.invoke("UnBlinkTarget",
+                    RAID_SERVICE,
+                    :params => options,
+                    :required_params => [:target],
+                    :return_value => "0")
     end
 
     # Turn on/off the identifying LED on the iDRAC front panel
