@@ -839,4 +839,26 @@ describe ASM::WsMan do
       wsman.identify_chassis(:identify_state => 2, :duration_limit => 30)
     end
   end
+
+  describe "#blink_target" do
+    it "should turn on disk LED using BlinkTarget method" do
+      client.expects(:invoke).with("BlinkTarget",
+                                   ASM::WsMan::RAID_SERVICE,
+                                   :params => {:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"},
+                                   :required_params => [:target],
+                                   :return_value => "0")
+      wsman.blink_target(:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1")
+    end
+  end
+
+  describe "#unblink_target" do
+    it "should turn on disk LED using BlinkTarget method" do
+      client.expects(:invoke).with("UnBlinkTarget",
+                                   ASM::WsMan::RAID_SERVICE,
+                                   :params => {:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"},
+                                   :required_params => [:target],
+                                   :return_value => "0")
+      wsman.unblink_target(:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1")
+    end
+  end
 end
