@@ -161,6 +161,13 @@ describe ASM::WsMan do
     end
   end
 
+  describe "#memory_views" do
+    it "should enumerate DCIM_Memory_View" do
+      client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_MemoryView").returns("rspec-result")
+      expect(wsman.memory_views).to eq("rspec-result")
+    end
+  end
+
   describe "#bios_enumerations" do
     it "should enumerate DCIM_BIOSEnumeration" do
       client.expects(:enumerate).with("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSEnumeration").returns("rspec-result")
