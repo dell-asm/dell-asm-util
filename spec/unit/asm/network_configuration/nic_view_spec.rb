@@ -137,6 +137,20 @@ describe ASM::NetworkConfiguration::NicView do
     end
   end
 
+  describe "#nic_slot_id" do
+    it "should return correct slot" do
+      expect(nic_view("NIC.Slot.2-1-1").nic_slot_id).to eq("2")
+    end
+
+    it "should return slot id as 0 for Integrated nic type" do
+      expect(nic_view("NIC.Integrated.1-1-1").nic_slot_id).to eq("0")
+    end
+
+    it "should return slot id as 0 for Embedded nic type" do
+      expect(nic_view("NIC.Embedded.1-1-1").nic_slot_id).to eq("0")
+    end
+  end
+
   describe "#<=>" do
     it "should show same FQDDs as equal" do
       fqdd1 = "NIC.Integrated.1-1-1"

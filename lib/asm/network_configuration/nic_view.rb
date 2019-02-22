@@ -5,7 +5,7 @@ module ASM
     class NicView
       include Comparable
 
-      attr_reader :fqdd, :type, :card, :port, :partition_no, :fabric
+      attr_reader :fqdd, :type, :card, :port, :partition_no, :fabric, :slot
 
       def initialize(fqdd, logger=nil)
         if fqdd.is_a?(Hash)
@@ -42,6 +42,7 @@ module ASM
         @port = $3
         @partition_no = $5
         @partition_no = "1" if @partition_no.nil?
+        @slot = nic_slot_id
         if @card =~ /([0-9])([A-Z])/
           orig_card = @card
           @card = $1
@@ -100,6 +101,19 @@ module ASM
 
       def card_prefix
         "NIC.%s.%s%s" % [type, card, fabric]
+      end
+
+      # Returns the nic slot id based on fqdd
+      #
+      # returns 0 for Integrated and Embedded nic types
+      #
+      # @return [String]
+      def nic_slot_id
+        if fqdd.include?("NIC.Integrated") || fqdd.include?("NIC.Embedded")
+          return "0"
+        end
+
+        fqdd.scan(/NIC.Slot.(\d+).*/).flatten.first
       end
 
       def to_s
