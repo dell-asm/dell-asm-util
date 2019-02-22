@@ -8,7 +8,7 @@ module ASM
       # The iDrac NICView LinkSpeed values
       LINK_SPEEDS = ["Unknown", "10 Mbps", "100 Mbps", "1000 Mbps", "2.5 Gbps", "10 Gbps", "20 Gbps", "40 Gbps", "100 Gbps"].freeze
 
-      attr_reader :link_speed, :n_ports, :partitions, :logger
+      attr_reader :link_speed, :n_ports, :partitions, :logger, :model
 
       # Create a NicPort
       #
