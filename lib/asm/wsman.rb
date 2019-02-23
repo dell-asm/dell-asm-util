@@ -1398,16 +1398,28 @@ module ASM
 
     # Find the specified boot device in {#boot_source_settings}
     #
-    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device FQDD such as
+    # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive",
+    #                         :virtual_floppy for "Virtual Floppy Drive" or the device FQDD such as
     #                        HardDisk.List.1-1, Optical.iDRACVirtual.1-1 or NIC.Slot.2-2-1
     # @return [Hash] the boot device, or nil if not found
     # @raise [ResponseError] if a command fails
     def find_boot_device(boot_device)
       boot_settings = boot_source_settings
-      boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1"}
+      boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1", :virtual_floppy => "Floppy.iDRACVirtual.1-1"}
       boot_device = Parser.enum_value("BootDevice", boot_order_map,
                                       boot_device, :strict => false)
       boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
+    end
+
+    # Return the boot source type corresponding to the requested boot mode
+    #
+    # @param [Symbol] :bios or :uefi
+    # @return [String] the boot source type string, such as UEFI or IPL
+    # @raise [ArgumentError] for an invalid boot mode
+    def boot_source_type(boot_mode)
+      raise(ArgumentError, "Unsupported boot mode: %s" % boot_mode) unless [:bios, :uefi].include?(boot_mode)
+
+      boot_mode == :uefi ? "UEFI" : "IPL"
     end
 
     # Set the boot device first in boot order and await completion.
@@ -1417,6 +1429,7 @@ module ASM
     #
     # @param [Symbol|String] :hdd for "Hard drive C", :virtual_cd for "Virtual Optical Drive" or the device name itself
     # @param options [Hash]
+    # @option params [String] :boot_mode :bios (default) or :uefi
     # @option params [String] :reboot_job_type "1" or :power_cycle, "2" or :graceful, or "3" or :graceful_with_forced_shutdown
     # @option params [String] :scheduled_start_time Schedules the "configuration job" and the optional "reboot job"
     #                         at the specified start time in the format: yyyymmddhhmmss. A special value of
@@ -1424,20 +1437,24 @@ module ASM
     # @return [void]
     # @raise [ResponseError] if a command fails
     def set_boot_order(boot_device, options={})
-      options = {:scheduled_start_time => "TIME_NOW",
+      options = {:boot_mode => :bios,
+                 :scheduled_start_time => "TIME_NOW",
                  :reboot_job_type => :graceful_with_forced_shutdown}.merge(options)
+
+      raise(ArgumentError, "Invalid boot mode: %s" % options[:boot_mode]) unless [:bios, :uefi].include?(options[:boot_mode])
 
       logger.info("Waiting for LC ready on %s" % host)
       poll_for_lc_ready
       boot_mode = bios_enumerations.find { |e| e[:attribute_name] == "BootMode" }
       raise("BootMode not found") unless boot_mode
 
-      unless boot_mode[:current_value] == "Bios"
-        # Set back to bios boot mode
-        logger.info("Current boot mode on %s is %s, resetting to Bios BootMode" %
-                        [host, boot_mode[:current_value]])
+      desired_mode = options[:boot_mode].to_s.capitalize
+      unless boot_mode[:current_value] == desired_mode
+        # Set back to requested boot mode
+        logger.info("Current boot mode on %s is %s, resetting to %s BootMode" %
+                        [host, boot_mode[:current_value], desired_mode])
         set_bios_attributes(:target => boot_mode[:fqdd], :attribute_name => "BootMode",
-                            :attribute_value => "Bios")
+                            :attribute_value => desired_mode)
       end
 
       target = find_boot_device(boot_device)
@@ -1451,12 +1468,13 @@ module ASM
         return
       end
 
-      change_boot_order_by_instance_id(:instance_id => "IPL",
+      boot_source_type = boot_source_type(options[:boot_mode])
+      change_boot_order_by_instance_id(:instance_id => boot_source_type,
                                        :source => target[:instance_id])
 
       unless target[:current_enabled_status] == "1"
         logger.info("Enabling boot device %s on %s" % [target[:instance_id], host])
-        change_boot_source_state(:instance_id => "IPL", :enabled_state => "1",
+        change_boot_source_state(:instance_id => boot_source_type, :enabled_state => "1",
                                  :source => target[:instance_id])
       end
 
@@ -1497,6 +1515,21 @@ module ASM
       end
     end
 
+    # Determine whether the requested image is for virtual CD or floppy
+    #
+    # @param (see #boot_rfs_iso_imgae)
+    # @return [Symbol] :virtual_cd or :virtual_floppy
+    # @raise [ArgumentError] if the image type could not be determined
+    def boot_device_from_rfs_options(options)
+      image = (options[:image_name] || options[:uri] || "").upcase
+
+      return :virtual_cd if image.end_with?("ISO")
+
+      return :virtual_floppy if image.end_with?("IMG")
+
+      raise(ArgumentError, "Could not determine RFS image type for %s" % image.downcase)
+    end
+
     # Connect the remote file system ISO and boot it
     #
     # After successful execution of the command, the server will boot the ISO.
@@ -1520,6 +1553,8 @@ module ASM
     # @option options [String] :hash_type type of hash algorithm used to compute checksum: 1 or :md5 for MD5 and 2 or :sha1 for SHA1
     # @option options [String] :hash_value checksum value in string format computed using HashType algorithm
     # @option options [String] :auto_connect auto-connect to ISO image up on iDRAC reset
+    # @option params [String] :boot_device :virtual_cd (default) or :virtual_floppy
+    # @option params [String] :boot_mode :bios (default) or :uefi
     # @option params [String] :reboot_job_type "1" or :power_cycle, "2" or :graceful, or "3" or :graceful_with_forced_shutdown
     # @option params [String] :reboot_start_time Schedules the "reboot job" at the specified start time in the
     #                         format: yyyymmddhhmmss. A special value of "TIME_NOW" schedules the job(s) immediately.
@@ -1528,34 +1563,41 @@ module ASM
     # @return [void]
     # @raise [ResponseError] if a command fails
     def boot_rfs_iso_image(options={})
-      options = {:reboot_job_type => :graceful_with_forced_shutdown,
+      options = {:boot_mode => :bios,
+                 :reboot_job_type => :graceful_with_forced_shutdown,
                  :reboot_start_time => "TIME_NOW",
                  :attach_state => :attached,
                  :timeout => 10 * 60}.merge(options)
+
+      options[:boot_device] ||= boot_device_from_rfs_options(options)
+
       # Virtual Media needs to be in attach state
       set_virtual_media_attach_state(options.delete(:attach_state))
 
       connect_rfs_iso_image(options)
 
       # In auto-attach mode have to reboot in order for virtual CD to show up in boot source settings.
-      boot_device = find_boot_device(:virtual_cd)
+      boot_device = find_boot_device(options[:boot_device])
       unless boot_device
-        logger.info("Virtual CD not seen for %s, rebooting" % host)
+        logger.info("Boot device %s not seen for %s, rebooting" % [options[:boot_device], host])
         reboot(options)
 
         # Wait for virtual cd to show up in boot source settings
         max_sleep = 60
         ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep) do
-          find_boot_device(:virtual_cd) || raise(RetryException)
+          find_boot_device(options[:boot_device]) || raise(RetryException)
         end
       end
 
-      if boot_device && boot_device[:current_enabled_status] == "1" && boot_device[:current_assigned_sequence] == "0"
+      if boot_device &&
+         boot_device[:boot_source_type] == boot_source_type(options[:boot_mode]) &&
+         boot_device[:current_enabled_status] == "1" &&
+         boot_device[:current_assigned_sequence] == "0"
         # Virtual CD is already first in boot order, but we need to boot into the ISO
         reboot(options)
       else
         # Set virtual CD first in boot order (will have the side-effect of rebooting)
-        set_boot_order(:virtual_cd, options)
+        set_boot_order(options[:boot_device], options)
       end
     rescue Timeout::Error
       raise(Error, "Timed out waiting for virtual CD to become available on %s" % host)

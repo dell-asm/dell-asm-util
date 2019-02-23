@@ -599,6 +599,18 @@ describe ASM::WsMan do
       expect(wsman.find_boot_device(:hdd)).to eq(boot_devices.first)
     end
 
+    it "should find boot device by :virtual_cd alias" do
+      boot_devices = [{:instance_id => "#Optical.iDRACVirtual.1-1#"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device(:virtual_cd)).to eq(boot_devices.first)
+    end
+
+    it "should find boot device by :virtual_floppy alias" do
+      boot_devices = [{:instance_id => "#Floppy.iDRACVirtual.1-1#"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device(:virtual_floppy)).to eq(boot_devices.first)
+    end
+
     it "should not find boot device if it doesn't exist" do
       wsman.expects(:boot_source_settings).returns([])
       expect(wsman.find_boot_device(:hdd)).to be_nil
@@ -607,6 +619,10 @@ describe ASM::WsMan do
 
   describe "#set_boot_order" do
     let(:opts) {{:scheduled_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle}}
+
+    it "should fail for unknown :boot_mode" do
+      expect {wsman.set_boot_order(:virtual_cd, opts.merge(:boot_mode => :unknown))}.to raise_error(ArgumentError, "Invalid boot mode: unknown")
+    end
 
     it "should fail if BootMode not found" do
       wsman.expects(:poll_for_lc_ready)
@@ -623,6 +639,17 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.set_boot_order(:virtual_cd, opts)
+    end
+
+    it "should set uefi boot mode if uefi requested" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Uefi")
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
+      wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "UEFI", :source => "rspec-id")
+      wsman.expects(:change_boot_source_state).with(:instance_id => "UEFI", :enabled_state => "1", :source => "rspec-id")
+      wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.set_boot_order(:virtual_cd, opts.merge(:boot_mode => :uefi))
     end
 
     it "should fail if boot target cannot be found" do
@@ -699,7 +726,14 @@ describe ASM::WsMan do
   end
 
   describe "#boot_rfs_iso_image" do
-    let(:opts) {{:reboot_start_time => "yyyymmddhhmmss", :reboot_job_type => :power_cycle, :timeout => 600}}
+    let(:opts) do
+      {:reboot_start_time => "yyyymmddhhmmss",
+       :boot_mode => :bios,
+       :boot_device => :virtual_cd,
+       :image_name => "rspec.iso",
+       :reboot_job_type => :power_cycle,
+       :timeout => 600}
+    end
 
     it "should connect iso, reboot if target device not found, wait and set boot order" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
@@ -740,10 +774,21 @@ describe ASM::WsMan do
     it "should connect iso and reboot if virtual CD already first in boot order" do
       wsman.expects(:connect_rfs_iso_image).with(opts)
       wsman.expects(:set_virtual_media_attach_state).with(:attached)
-      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:current_enabled_status => "1", :current_assigned_sequence => "0")
+
+      boot_device = {:boot_source_type => "IPL", :current_enabled_status => "1", :current_assigned_sequence => "0"}
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(boot_device)
+
       wsman.expects(:set_boot_order).with(:virtual_cd, opts).never
       wsman.expects(:reboot).with(opts)
       wsman.boot_rfs_iso_image(opts)
+    end
+
+    it "should figure out the boot_device if not specified" do
+      wsman.expects(:connect_rfs_iso_image).with(opts)
+      wsman.expects(:set_virtual_media_attach_state).with(:attached)
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns({})
+      wsman.expects(:set_boot_order).with(:virtual_cd, opts)
+      wsman.boot_rfs_iso_image(opts.reject {|k, _| k == :boot_device})
     end
   end
 
