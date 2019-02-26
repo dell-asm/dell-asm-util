@@ -1,8 +1,12 @@
+# frozen_string_literal: true
+
 require "net/ssh"
 
 module ASM
   class Transport
     class IdracResetError < StandardError; end
+
+    # Utility class for interacting with Dell servers via RACADM
     class Racadm
       attr_reader :endpoint, :logger
 

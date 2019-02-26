@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "asm/network_configuration"
 
@@ -48,9 +50,7 @@ describe ASM::NetworkConfiguration do
 
     it "should not include ipRanges in networkObjects" do
       net_config.get_all_partitions.each do |partition|
-        if partition.static
-          expect(partition.staticNetworkConfiguration.ipRange).to be_nil
-        end
+        expect(partition.staticNetworkConfiguration.ipRange).to be_nil if partition.static
       end
     end
 
@@ -721,13 +721,8 @@ describe ASM::NetworkConfiguration do
                      "NIC.Integrated.1-4-1" => "00:0A:F9:06:88:56"}
 
       nic_views = build_nic_views(fqdd_to_mac) do |nic_view|
-        if nic_view["FQDD"] =~ /Integrated/
-          nic_view["VendorName"] = "Broadcom"
-          nic_view["ProductName"] = "57800"
-        else
-          nic_view["VendorName"] = "Broadcom"
-          nic_view["ProductName"] = "57810"
-        end
+        nic_view["VendorName"] = "Broadcom"
+        nic_view["ProductName"] = nic_view["FQDD"] =~ /Integrated/ ? "57800" : "57810"
       end
       ASM::WsMan.stubs(:get_nic_view).returns(nic_views)
       net_config.add_nics!(Hashie::Mash.new(:host => "127.0.0.1"))

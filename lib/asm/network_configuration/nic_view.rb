@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require "hashie"
 
 module ASM
   class NetworkConfiguration
+    # Wrapper class for DCIM_NICView
     class NicView
       include Comparable
 
@@ -36,6 +39,7 @@ module ASM
       def parse_fqdd(fqdd, logger)
         # Expected format: NIC.Mezzanine.2B-1-1
         raise(ArgumentError, "Invalid NIC FQDD: %s" % fqdd) unless fqdd =~ /^NIC[.]([^.]*)[.](\d+[A-Z]?)-(\d+)(-([\d+]))?$/
+
         @fqdd = fqdd
         @type = $1
         @card = $2
@@ -48,9 +52,7 @@ module ASM
           @card = $1
           @fabric = $2
           expected_fabric = card_to_fabric(orig_card)
-          if @fabric != expected_fabric
-            logger.warn("Mismatched fabric information for #{orig_card}: #{@fabric} versus #{expected_fabric}") if logger
-          end
+          logger&.warn("Mismatched fabric information for #{orig_card}: #{@fabric} versus #{expected_fabric}") if @fabric != expected_fabric
         elsif @type == "Embedded"
           @port = @card
           @card = "1"
@@ -85,6 +87,7 @@ module ASM
         return :mellanox if self["PCIVendorID"] == "15b3"
 
         return :intel if self["VendorName"] =~ /intel/i
+
         :intel if self["PCIVendorID"] == "8086" # have seen cases where VendorName not populated
       end
 
@@ -109,9 +112,7 @@ module ASM
       #
       # @return [String]
       def nic_slot_id
-        if fqdd.include?("NIC.Integrated") || fqdd.include?("NIC.Embedded")
-          return "0"
-        end
+        return "0" if fqdd.include?("NIC.Integrated") || fqdd.include?("NIC.Embedded")
 
         fqdd.scan(/NIC.Slot.(\d+).*/).flatten.first
       end
@@ -121,12 +122,12 @@ module ASM
       end
 
       def <=>(other)
-        [:type, :card, :fabric, :port, :partition_no].each do |method|
+        %i[type card fabric port partition_no].each do |method|
           this = send(method)
-          this = Integer(this) if [:card, :port, :partition_no].include?(method)
+          this = Integer(this) if %i[card port partition_no].include?(method)
           that = other.send(method)
-          that = Integer(that) if [:card, :port, :partition_no].include?(method)
-          return this <=> that unless (this <=> that) == 0
+          that = Integer(that) if %i[card port partition_no].include?(method)
+          return this <=> that unless (this <=> that).zero?
         end
         0
       end

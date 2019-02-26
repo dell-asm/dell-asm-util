@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "asm/network_configuration"
 
@@ -143,7 +145,7 @@ describe ASM::NetworkConfiguration::NicInfo do
 
     describe "#validate_nic_views" do
       it "should fail if nic views from different nic cards" do
-        fqdds = %w(NIC.Integrated.1-1-1 NIC.Slot.8-1-1)
+        fqdds = %w[NIC.Integrated.1-1-1 NIC.Slot.8-1-1]
         views = fqdds.map { |fqdd| ASM::NetworkConfiguration::NicView.new(fqdd) }
         expect do
           ASM::NetworkConfiguration::NicInfo.validate_nic_views(views)

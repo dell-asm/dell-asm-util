@@ -1,5 +1,6 @@
-dir = File.expand_path(File.dirname(__FILE__))
-$LOAD_PATH.unshift File.join(dir, "lib")
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift File.join(__dir__, "lib")
 
 # Don't want puppet getting the command line arguments for rake or autotest
 ARGV.clear

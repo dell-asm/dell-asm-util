@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "asm/network_configuration/nic_view"
 require "asm/network_configuration/nic_port"

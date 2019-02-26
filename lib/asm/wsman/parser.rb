@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require "nokogiri"
 
 module ASM
   class WsMan
+    # WS-Man parser
     class Parser
       # Parse a ws-man response element into a value
       #
@@ -12,7 +15,7 @@ module ASM
       # @param elem [Nokogiri::XML::Element]
       # @return [String]
       def self.parse_element(elem)
-        if elem.namespaces.keys.include?("xmlns:wsman") && !(params = elem.xpath(".//wsman:Selector[@Name='InstanceID']")).empty?
+        if elem.namespaces.key?("xmlns:wsman") && !(params = elem.xpath(".//wsman:Selector[@Name='InstanceID']")).empty?
           params.first.text
         elsif !(params = elem.xpath(".//s:Subcode")).empty? && !params.children.empty?
           params.children.map(&:text).join(", ")
@@ -33,8 +36,10 @@ module ASM
         body = doc.search("//s:Body")
         unless body.children.size == 1
           raise("Unexpected WS-Man Body: %s" % body.children) if require_body
+
           return nil
         end
+
         ret = {}
         response = body.children.first
         response.children.each do |e|
@@ -63,6 +68,7 @@ module ASM
           doc = Nokogiri::XML.parse(xml, &:noblanks)
           body = doc.search("//wsen:Items")
           next if body.children.empty?
+
           body.children.map do |elem|
             elem.children.inject({}) do |acc, e|
               key = snake_case(e.name).to_sym
@@ -108,8 +114,9 @@ module ASM
       def self.enum_value(key, enum, value, options={})
         options = {:strict => true}.merge(options)
         return enum[value] if enum[value]
-        return value.to_s if enum.values.include?(value.to_s)
+        return value.to_s if enum.value?(value.to_s)
         return value unless options[:strict]
+
         allowed = enum.keys.map { |k| "%s (%s)" % [k.inspect, enum[k]]}.join(", ")
         raise("Invalid %s value: %s; allowed values are: %s" % [key.to_s, value, allowed])
       end
@@ -198,9 +205,11 @@ module ASM
       # @return [String]
       def self.response_string(response)
         copy = response.dup
+
         message = copy.delete(:message)
-        message = copy.delete(:reason) unless message
-        message = copy.delete(:job_status) unless message
+        message ||= copy.delete(:reason)
+        message ||= copy.delete(:job_status)
+
         ret = copy.keys.map { |k| "%s: %s" % [k, copy[k]]}.join(", ")
         ret = "%s [%s]" % [message, ret] if message
         ret

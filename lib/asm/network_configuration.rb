@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/errors"
 require "asm/wsman"
 require "asm/translatable"
@@ -48,7 +50,6 @@ module ASM
 
     attr_reader(:logger)
     attr_reader(:cards)
-    attr_reader(:teams)
 
     def initialize(network_config_hash, logger=nil)
       @logger = logger
@@ -98,7 +99,7 @@ module ASM
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
           port.partitions.find_all do |partition|
-            partition.networkObjects && partition.networkObjects.find do |network|
+            partition.networkObjects&.find do |network|
               network_types.include?(network.type)
             end
           end
@@ -118,7 +119,7 @@ module ASM
       end.flatten.compact
     end
 
-    def get_all_partitions # rubocop:disable Style/AccessorMethodName
+    def get_all_partitions # rubocop:disable Naming/AccessorMethodName
       cards.collect do |fabric|
         fabric.interfaces.collect do |port|
           port.partitions.find_all do |partition|
@@ -138,7 +139,7 @@ module ASM
       end
     end
 
-    def get_all_fqdds # rubocop:disable Style/AccessorMethodName
+    def get_all_fqdds # rubocop:disable Naming/AccessorMethodName
       collect_from_partitions(&:fqdd).flatten
     end
 
@@ -174,9 +175,7 @@ module ASM
 
     def get_static_ips(*network_types)
       get_networks(*network_types).collect do |network|
-        if ASM::Util.to_boolean(network.static)
-          network.staticNetworkConfiguration.ipAddress
-        end
+        network.staticNetworkConfiguration.ipAddress if ASM::Util.to_boolean(network.static)
       end.compact.uniq
     end
 
@@ -189,7 +188,7 @@ module ASM
       cards = []
       @has_fc = false
 
-      interfaces.each do |orig_card|
+      interfaces.each do |orig_card| # rubocop:disable Metrics/BlockLength
         # For now we are discarding FC interfaces!
         @has_fc ||= ASM::Util.to_boolean(orig_card.enabled) && orig_card.fabrictype == "fc"
 
@@ -198,7 +197,7 @@ module ASM
         card = Hashie::Mash.new(orig_card)
         card.interfaces = []
         card.nictype = NicType.new(card.nictype)
-        orig_card.interfaces.each do |orig_interface|
+        orig_card.interfaces.each do |orig_interface| # rubocop:disable Metrics/BlockLength
           interface = Hashie::Mash.new(orig_interface)
           interface.partitions = []
           port_no = name_to_port(orig_interface.name).to_i
@@ -260,8 +259,10 @@ module ASM
 
     def n_partitions(card)
       ns = card.interfaces.map { |i| i.partitions.size }.uniq
+
       return 1 if ns.empty?
       return ns.first if ns.size == 1
+
       raise("Different number of partitions requested for ports on %s: %s" %
                 [card.name, card.interfaces.map { |i| "Interface: %s # partitions: %d" % [i.name, i.partitions.size] }.join(", ")])
     end
@@ -283,7 +284,7 @@ module ASM
       @network_config_add_nic = true
 
       missing = []
-      cards.each do |card|
+      cards.each do |card| # rubocop:disable Metrics/BlockLength
         fqdd = card.interfaces.first.fqdd
         if fqdd
           # If FQDD passed through in config data, use that
@@ -357,6 +358,7 @@ module ASM
     def teams(opt={})
       @teams ||= begin
         raise("NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!") unless @network_config_add_nic
+
         networks = []
         mac_teams = {}
         partitions = get_all_partitions
@@ -366,6 +368,7 @@ module ASM
 
           # Need to find partitions which has same set of networks, for team
           next unless network_objects && !network_objects.empty?
+
           network_objects.each do |obj|
             networks.push(obj).uniq!
           end

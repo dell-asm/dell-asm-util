@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "io/wait"
 require "hashie"
 require "json"
@@ -9,6 +11,7 @@ require "yaml"
 require "time"
 require "resolv"
 
+# Top-level module
 module ASM
   # Use this instead of Thread.new, or your exceptions will disappear into the ether...
   def self.execute_async(logger, &block)
@@ -23,16 +26,17 @@ module ASM
     end
   end
 
+  # Various utility methods
   module Util
     # TODO: give razor user access to this directory
-    PUPPET_CONF_DIR = "/etc/puppetlabs/puppet".freeze
-    DEVICE_CONF_DIR = "#{PUPPET_CONF_DIR}/devices".freeze
-    NODE_DATA_DIR = "#{PUPPET_CONF_DIR}/node_data".freeze
-    DEVICE_SSL_DIR = "/var/opt/lib/pe-puppet/devices".freeze
-    DATABASE_CONF = "#{PUPPET_CONF_DIR}/database.yaml".freeze
-    DEVICE_MODULE_PATH = "/etc/puppetlabs/puppet/modules".freeze
-    INSTALLER_OPTS_DIR = "/opt/razor-server/tasks/".freeze
-    DEVICE_LOG_PATH = "/opt/Dell/ASM/device".freeze
+    PUPPET_CONF_DIR = "/etc/puppetlabs/puppet"
+    DEVICE_CONF_DIR = "#{PUPPET_CONF_DIR}/devices"
+    NODE_DATA_DIR = "#{PUPPET_CONF_DIR}/node_data"
+    DEVICE_SSL_DIR = "/var/opt/lib/pe-puppet/devices"
+    DATABASE_CONF = "#{PUPPET_CONF_DIR}/database.yaml"
+    DEVICE_MODULE_PATH = "/etc/puppetlabs/puppet/modules"
+    INSTALLER_OPTS_DIR = "/opt/razor-server/tasks/"
+    DEVICE_LOG_PATH = "/opt/Dell/ASM/device"
 
     # Extract a server serial number from the certname.
     # For Dell servers, the serial number will be the service tag
@@ -61,6 +65,7 @@ module ASM
     def self.vm_uuid_to_serial_number(uuid)
       without_dashes = uuid.delete("-")
       raise("Invalid uuid #{uuid}") unless without_dashes.length == 32
+
       first_half = []
       last_half = []
       (0..7).each do |i|
@@ -110,7 +115,7 @@ module ASM
           message = "failed to determine target route from routing table: \n%s" % `ip route`
 
           puts(message) unless logger
-          logger.debug(message) if logger
+          logger&.debug(message)
 
           sleep 1
         end
@@ -150,8 +155,7 @@ module ASM
       end
       args = [time_out.to_s, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
       args += ["-s", endpoint[:host],
-               "-u", endpoint[:user]
-      ]
+               "-u", endpoint[:user]]
       args += ["-d", endpoint[:thumbprint]] if endpoint[:thumbprint]
       args += cmd_array.map(&:to_s)
 
@@ -164,7 +168,7 @@ module ASM
 
       if result["exit_status"] != 0 && !cmd_array.empty?
         msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
-        logger.error(msg) if logger
+        logger&.error(msg)
         args[2] = "VI_PASSWORD=******" # mask password
         raise("#{msg}: esxcli #{args.join(' ')}: #{result.inspect}")
       end
@@ -207,13 +211,9 @@ module ASM
     def self.get_fcoe_adapters(esx_endpoint, logger=nil)
       fcoe_adapters = []
       fcoe_adapter = esxcli("fcoe nic list".split, esx_endpoint, logger, true)
-      if fcoe_adapter
-        fcoe_adapter_match = fcoe_adapter.scan(/^(vmnic\d+)\s+/m)
-        if fcoe_adapter_match
-          fcoe_adapter_match.each do |matched|
-            fcoe_adapters.push(matched[0])
-          end
-        end
+      fcoe_adapter_match = fcoe_adapter&.scan(/^(vmnic\d+)\s+/m)
+      fcoe_adapter_match&.each do |matched|
+        fcoe_adapters.push(matched[0])
       end
       fcoe_adapters
     end
@@ -250,7 +250,7 @@ module ASM
     def self.run_with_clean_env(cmd, fail_on_error, *args)
       env_vars = args.last.is_a?(Hash) ? args.pop : {}
       new_args = []
-      %w(BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT).each do |e|
+      %w[BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT].each do |e|
         new_args.insert(0, "--unset=#{e}")
       end
       new_args.push(cmd)
@@ -264,7 +264,8 @@ module ASM
 
     def self.run_command_success(cmd, *args)
       result = run_command(cmd, *args)
-      raise("Command failed: #{cmd}\n#{result.stdout}\n#{result.stderr}") unless result.exit_status == 0
+      raise("Command failed: #{cmd}\n#{result.stdout}\n#{result.stderr}") unless result.exit_status.zero?
+
       result
     end
 
@@ -317,7 +318,7 @@ module ASM
           end
 
           fh.close
-          raise("#{cmd} failed; output in #{outfile}") unless wait_thr.value.exitstatus == 0
+          raise("#{cmd} failed; output in #{outfile}") unless wait_thr.value.exitstatus.zero?
         end
       end
     end
@@ -387,6 +388,7 @@ module ASM
       raise("No inventory file provided") unless inventory_file
       raise("No output file provided") unless output_file
       raise("Vault password id requires vault password file") if options[:vault_password_id] && options[:vault_password_file].nil?
+
       options = {:verbose => false,
                  :host_key_check => false,
                  :stdout_callback => "json"}.merge(options)
@@ -417,7 +419,7 @@ module ASM
         raise("Ansible run failed; Error: %s" % $!.to_s)
       end
 
-      raise("Ansible run failed; output in #{output_file}") unless result["exit_status"] == 0
+      raise("Ansible run failed; output in #{output_file}") unless result["exit_status"].zero?
 
       nil
     end
@@ -448,6 +450,7 @@ module ASM
       raise("Error vault password id required") unless vault_password_id
       raise("Error vault password file required") unless vault_password_file
       raise("Error no value to encrypt provided") unless input_string
+
       env = {"VAULT" => vault_password_id}
       args = ["ansible-vault", "encrypt_string", "--vault-password-file", vault_password_file]
       result = Hashie::Mash.new
@@ -490,15 +493,14 @@ module ASM
       Timeout.timeout(timeout) do
         begin
           yield
-        rescue => e
-
+        rescue
           exceptions = Array(exceptions)
           if !exceptions.empty? && (
-            exceptions.include?(key = e.class) ||
+            exceptions.include?(key = $!.class) ||
             exceptions.include?(key = key.name.to_s) ||
             exceptions.include?(key = key.to_sym)
           )
-            logger.info("Caught exception #{e.class}: #{e}") if logger
+            logger&.info("Caught exception %s: %s" % [$!.class, $!.to_s])
             failures += 1
             sleep_time = (((2**failures) - 1) * 0.1)
             sleep_time = max_sleep if max_sleep && (sleep_time > max_sleep)
@@ -506,7 +508,7 @@ module ASM
             retry
           else
             # If the exceptions is not in the list of retry_exceptions re-raise.
-            raise e
+            raise
           end
         end
       end
@@ -522,11 +524,11 @@ module ASM
       end
     end
 
-    def self.to_boolean(b)
-      if b.is_a?(String)
-        b.downcase == "true"
+    def self.to_boolean(bool)
+      if bool.is_a?(String)
+        bool.downcase == "true"
       else
-        b
+        bool
       end
     end
 

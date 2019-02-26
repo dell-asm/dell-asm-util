@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/ipmi/client"
 
 module ASM
@@ -52,13 +54,11 @@ module ASM
     # @return [Symbol] :on or :off
     def power_state
       response = client.exec("power status")
-      unless response =~ /Chassis Power is\s+(\S+)/m
-        raise(ASM::Error, "Invalid IPMI power status response: %s" % response)
-      end
+      raise(ASM::Error, "Invalid IPMI power status response: %s" % response) unless response =~ /Chassis Power is\s+(\S+)/m
+
       state = $1.downcase
-      unless %w(on off).include?(state)
-        raise(ASM::Error, "Invalid IPMI power state %s; full response: %s" % [state, response])
-      end
+      raise(ASM::Error, "Invalid IPMI power state %s; full response: %s" % [state, response]) unless %w[on off].include?(state)
+
       logger.debug("Current power status: #{response}")
       state.to_sym
     end
