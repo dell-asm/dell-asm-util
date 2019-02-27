@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "logger"
 
 module ASM
@@ -17,6 +19,7 @@ module ASM
       # @return [NicPort]
       def initialize(partitions, n_ports, logger=nil)
         raise(ArgumentError, "At least one NicView required to create a NicPort") if partitions.empty?
+
         @partitions = partitions
         @n_ports = n_ports
         @logger = logger || Logger.new(nil)
@@ -148,6 +151,7 @@ module ASM
         return 4 if is_qlogic_57810?
         return 2 if is_qlogic_57840?
         return 2 if is_qlogic_57800? && port.between?(1, 2)
+
         1
       end
 

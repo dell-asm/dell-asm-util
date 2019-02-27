@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/util"
 require "asm/errors"
 require "spec_helper"
@@ -65,26 +67,28 @@ describe ASM::Util do
   end
 
   it "should parse esxcli thumbprint and output" do
-    esxcli_thumbprint_msg = <<-eos
-Connect to 100.1.1.100 failed. Server SHA-1 thumbprint: 28:C6:8D:54:1B:08:A1:08:7A:0B:50:6D:B7:73:06:96:71:A1:6D:03 (not trusted).
-    eos
+    esxcli_thumbprint_msg = <<~OUTPUT
+      Connect to 100.1.1.100 failed. Server SHA-1 thumbprint: 28:C6:8D:54:1B:08:A1:08:7A:0B:50:6D:B7:73:06:96:71:A1:6D:03 (not trusted).
+    OUTPUT
+
     err_result = {
       "exit_status" => 1,
       "stdout" => esxcli_thumbprint_msg
     }
 
-    stdout = <<-eos
-Name                    Virtual Switch  Active Clients  VLAN ID
-----------------------  --------------  --------------  -------
-ISCSI0                  vSwitch3                     1       16
-ISCSI1                  vSwitch3                     1       16
-Management Network      vSwitch0                     1        0
-Management Network (1)  vSwitch0                     1       28
-VM Network              vSwitch0                     1        0
-Workload Network        vSwitch2                     0       20
-vMotion                 vSwitch1                     1       23
+    stdout = <<~OUTPUT
+      Name                    Virtual Switch  Active Clients  VLAN ID
+      ----------------------  --------------  --------------  -------
+      ISCSI0                  vSwitch3                     1       16
+      ISCSI1                  vSwitch3                     1       16
+      Management Network      vSwitch0                     1        0
+      Management Network (1)  vSwitch0                     1       28
+      VM Network              vSwitch0                     1        0
+      Workload Network        vSwitch2                     0       20
+      vMotion                 vSwitch1                     1       23
 
-    eos
+    OUTPUT
+
     result = {
       "exit_status" => 0,
       "stdout" => stdout
@@ -100,18 +104,19 @@ vMotion                 vSwitch1                     1       23
   end
 
   it "should parse esxcli output and use provided thumbprint" do
-    stdout = <<-eos
-Name                    Virtual Switch  Active Clients  VLAN ID
-----------------------  --------------  --------------  -------
-ISCSI0                  vSwitch3                     1       16
-ISCSI1                  vSwitch3                     1       16
-Management Network      vSwitch0                     1        0
-Management Network (1)  vSwitch0                     1       28
-VM Network              vSwitch0                     1        0
-Workload Network        vSwitch2                     0       20
-vMotion                 vSwitch1                     1       23
+    stdout = <<~OUTPUT
+      Name                    Virtual Switch  Active Clients  VLAN ID
+      ----------------------  --------------  --------------  -------
+      ISCSI0                  vSwitch3                     1       16
+      ISCSI1                  vSwitch3                     1       16
+      Management Network      vSwitch0                     1        0
+      Management Network (1)  vSwitch0                     1       28
+      VM Network              vSwitch0                     1        0
+      Workload Network        vSwitch2                     0       20
+      vMotion                 vSwitch1                     1       23
 
-    eos
+    OUTPUT
+
     result = {
       "exit_status" => 0,
       "stdout" => stdout
@@ -139,7 +144,7 @@ vMotion                 vSwitch1                     1       23
     end
   end
 
-  describe '#hostname_to_certname' do
+  describe "#hostname_to_certname" do
     it "should generate a certname and not clobber the original hostname" do
       certname = "CrAzY_NaMe1234"
       expect(ASM::Util.hostname_to_certname(certname)).to eq("agent-crazyname1234")
@@ -177,11 +182,11 @@ vMotion                 vSwitch1                     1       23
 
       ASM::Util.expects(:`)
                .with("ip route get 192.168.253.100")
-               .returns(<<EOF
-192.168.253.100 dev ens192 src 192.168.253.1
-    cache
+               .returns(<<~OUTPUT
+                 192.168.253.100 dev ens192 src 192.168.253.1
+                     cache
 
-EOF
+               OUTPUT
                        )
 
       expect(ASM::Util.get_preferred_ip("host-foo", logger)).to eq("192.168.253.1")
@@ -196,12 +201,12 @@ EOF
       ASM::Util.expects(:`)
                .at_least_once
                .with("ip route")
-               .returns(<<EOF
-default via 100.68.107.190 dev ens160 proto static metric 100
-100.68.107.128/26 dev ens160 proto kernel scope link src 100.68.107.160 metric 100
-192.168.253.0/24 dev ens192 proto kernel scope link src 192.168.253.1 metric 100
+               .returns(<<~OUTPUT
+                 default via 100.68.107.190 dev ens160 proto static metric 100
+                 100.68.107.128/26 dev ens160 proto kernel scope link src 100.68.107.160 metric 100
+                 192.168.253.0/24 dev ens192 proto kernel scope link src 192.168.253.1 metric 100
 
-EOF
+               OUTPUT
                        )
 
       expect {ASM::Util.get_preferred_ip("192.168.253.100", logger)}.to raise_error("Failed to find preferred route to 192.168.253.100 after 10 tries")

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "asm/firmware"
 
@@ -15,31 +17,22 @@ describe ASM::Firmware do
          {"rackserver-5xclw12" =>
               {"asm_hostname" => "172.25.5.100",
                "path" => "/var/nfs/firmware/ff808081578bd88601578d525d4e004e/ASMCatalog.xml",
-               "server_firmware" => "Firmware_path"
-              }
-         }
-    }
+               "server_firmware" => "Firmware_path"}}}
   end
 
   let(:resource_hash) do
     [{"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-      "uri_path" => "rspec-nfs-path"
-     },
+      "uri_path" => "rspec-nfs-path"},
      {"instance_id" => "DCIM:INSTALLED#iDRAC.Embedded.1-1#IDRACinfo",
       "component_id" => "25227",
-      "uri_path" => "rspec-nfs-path"
-     }
-    ]
+      "uri_path" => "rspec-nfs-path"}]
   end
 
   let(:resource_hash2) do
     [{"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-      "uri_path" => "rspec-nfs-path"
-     },
+      "uri_path" => "rspec-nfs-path"},
      {"instance_id" => "DCIM:INSTALLED#701__NIC.Embedded.1-1-1",
-      "uri_path" => "rspec-nfs-path"
-     }
-    ]
+      "uri_path" => "rspec-nfs-path"}]
   end
 
   let(:device_config) do
@@ -51,21 +44,16 @@ describe ASM::Firmware do
      "arguments" => {"credential_id" => "ff80808157bfd05a0157bfd13392000d"},
      "user" => "rspec-user",
      "enc_password" => nil,
-     "password" => "rspec-password"
-    }
+     "password" => "rspec-password"}
   end
 
   let(:firmware_list) do
     [{"instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-      "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-     }
-    ]
+      "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"}]
   end
   let(:firmware_list2) do
     [{"instance_id" => "DCIM:INSTALLED#701__NIC.Embedded.1-1-1",
-      "uri_path" => "nfs://172.25.5.100/FOLDER03287319M/3/Network_Firmware_0MT4K_WN64_7.10.64.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
-     }
-    ]
+      "uri_path" => "nfs://172.25.5.100/FOLDER03287319M/3/Network_Firmware_0MT4K_WN64_7.10.64.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"}]
   end
   let(:status) do
     {
@@ -73,7 +61,7 @@ describe ASM::Firmware do
       :status => "new",
       :firmware => {
         "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
       },
       :start_time => Time.now
     }
@@ -85,7 +73,7 @@ describe ASM::Firmware do
       :status => "Scheduled",
       :firmware => {
         "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
       },
       :start_time => Time.now
     }
@@ -97,7 +85,7 @@ describe ASM::Firmware do
       :status => "Completed",
       :firmware => {
         "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
       },
       :start_time => Time.now
     }
@@ -109,7 +97,7 @@ describe ASM::Firmware do
       :status => "new",
       :firmware => {
         "instance_id" => "DCIM:INSTALLED#701__NIC.Slot.2-2-1",
-        "uri_path"    => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
+        "uri_path" => "nfs://172.25.5.100/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE;mountpoint=/var/nfs/firmware/ff808081578bd88601578d525d4e004e"
       },
       :start_time => Time.now,
       :reboot_required => true,

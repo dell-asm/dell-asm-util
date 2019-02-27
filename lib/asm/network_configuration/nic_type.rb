@@ -1,5 +1,13 @@
+# frozen_string_literal: true
+
 module ASM
   class NetworkConfiguration
+    # NicType provides overview information about a single logical NIC
+    #
+    # At the WS-Man level via DCIM_NicView, NIC information is
+    # reported from a per-port and/or per-partition point of
+    # view. This class ties the individual NIC views together into a
+    # single logical NIC.
     class NicType
       attr_accessor(:nictype)
       attr_accessor(:ports)
@@ -29,7 +37,7 @@ module ASM
       #
       # @return [Fixnum]
       def n_usable_ports
-        @n_10gb_ports ||= @ports.find_all { |port| port != "1Gb" }.size
+        @n_usable_ports ||= @ports.find_all { |port| port != "1Gb" }.size
       end
 
       # Return the number of ports
@@ -43,7 +51,7 @@ module ASM
       #
       # @return [Fixnum]
       def n_partitions
-        raise("NIC type %s does not support partitioning" % @nictype) unless n_usable_ports > 0
+        raise("NIC type %s does not support partitioning" % @nictype) unless n_usable_ports.positive?
 
         if n_usable_ports == 2 && n_ports == 2
           4

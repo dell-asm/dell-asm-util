@@ -1,15 +1,19 @@
+# frozen_string_literal: true
+
 require "asm/util"
 require "asm/errors"
 require "logger"
 
 module ASM
   class Ipmi
+    # IPMI client
     class Client
       attr_reader :endpoint, :logger
 
       def initialize(endpoint, options={})
-        missing_params = [:host, :user, :password].reject { |k| endpoint.include?(k) }
+        missing_params = %i[host user password].reject { |k| endpoint.include?(k) }
         raise("Missing required endpoint parameter(s): %s" % [missing_params.join(", ")]) unless missing_params.empty?
+
         @endpoint = endpoint
         @logger = augment_logger(options.delete(:logger) || Logger.new(nil))
 
@@ -18,9 +22,7 @@ module ASM
 
       # @api private
       def proxy_warn
-        if ENV.include?("http_proxy") || ENV.include?("https_proxy")
-          logger.warn("ipmi invocations will use the proxy set in http_proxy or https_proxy")
-        end
+        logger.warn("ipmi invocations will use the proxy set in http_proxy or https_proxy") if ENV.include?("http_proxy") || ENV.include?("https_proxy")
       end
 
       # @api private
@@ -60,7 +62,7 @@ module ASM
         result = ASM::Util.run_command_with_args("env", *args)
         logger.debug("Result = #{result}")
 
-        unless result.exit_status == 0 && result.stderr.empty?
+        unless result.exit_status.zero? && result.stderr.empty?
           if result["stdout"] =~ /Unable to establish IPMI/
             if options[:nth_attempt] < 2
               options[:nth_attempt] += 1

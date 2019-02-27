@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 require "asm/wsman"
 
@@ -192,7 +194,7 @@ describe ASM::WsMan do
     it "should invoke SetAttributes" do
       client.expects(:invoke).with("SetAttributes", ASM::WsMan::BIOS_SERVICE,
                                    :params => {},
-                                   :required_params => [:target, :attribute_name, :attribute_value],
+                                   :required_params => %i[target attribute_name attribute_value],
                                    :return_value => "0")
       wsman.set_attributes
     end
@@ -203,7 +205,7 @@ describe ASM::WsMan do
       client.expects(:invoke).with("ChangeBootSourceState",
                                    "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting",
                                    :params => {},
-                                   :required_params => [:enabled_state, :source],
+                                   :required_params => %i[enabled_state source],
                                    :url_params => :instance_id,
                                    :return_value => "0")
       wsman.change_boot_source_state
@@ -225,8 +227,8 @@ describe ASM::WsMan do
     it "should invoke ImportSystemConfiguration" do
       client.expects(:invoke).with("ImportSystemConfiguration", ASM::WsMan::LC_SERVICE,
                                    :params => {},
-                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                                   :optional_params => [:target, :shutdown_type, :end_host_power_state, :username, :password],
+                                   :required_params => %i[ip_address share_name file_name share_type],
+                                   :optional_params => %i[target shutdown_type end_host_power_state username password],
                                    :return_value => "4096")
       wsman.import_system_configuration_command
     end
@@ -236,8 +238,8 @@ describe ASM::WsMan do
     it "should invoke ExportSystemConfiguration" do
       client.expects(:invoke).with("ExportSystemConfiguration", ASM::WsMan::LC_SERVICE,
                                    :params => {},
-                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                                   :optional_params => [:username, :password, :workgroup, :target, :export_use, :include_in_export],
+                                   :required_params => %i[ip_address share_name file_name share_type],
+                                   :optional_params => %i[username password workgroup target export_use include_in_export],
                                    :return_value => "4096")
       wsman.export_system_configuration_command
     end
@@ -247,8 +249,8 @@ describe ASM::WsMan do
     it "should invoke ExportCompleteLCLog" do
       client.expects(:invoke).with("ExportCompleteLCLog", ASM::WsMan::LC_SERVICE,
                                    :params => {},
-                                   :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                                   :optional_params => [:username, :password, :workgroup],
+                                   :required_params => %i[ip_address share_name file_name share_type],
+                                   :optional_params => %i[username password workgroup],
                                    :return_value => "4096")
       wsman.export_complete_lc_log
     end
@@ -258,7 +260,7 @@ describe ASM::WsMan do
     it "should invoke GetConfigResults" do
       client.expects(:invoke).with("GetConfigResults", ASM::WsMan::LC_RECORD_LOG_SERVICE,
                                    :params => {},
-                                   :optional_params => [:instance_id, :job_id],
+                                   :optional_params => %i[instance_id job_id],
                                    :return_value => "0").returns("rspec-result")
       expect(wsman.get_config_results).to eq("rspec-result")
     end
@@ -268,7 +270,7 @@ describe ASM::WsMan do
     it "should invoke CreateRebootJob" do
       client.expects(:invoke).with("CreateRebootJob", ASM::WsMan::SOFTWARE_INSTALLATION_SERVICE,
                                    :params => {},
-                                   :optional_params => [:reboot_start_time, :reboot_job_type],
+                                   :optional_params => %i[reboot_start_time reboot_job_type],
                                    :return_value => "4096").returns("rspec-result")
       expect(wsman.create_reboot_job).to eq("rspec-result")
     end
@@ -278,7 +280,7 @@ describe ASM::WsMan do
     it "should invoke SetupJobQueue" do
       client.expects(:invoke).with("SetupJobQueue", ASM::WsMan::JOB_SERVICE,
                                    :params => {},
-                                   :optional_params => [:job_array, :start_time_interval, :until_time],
+                                   :optional_params => %i[job_array start_time_interval until_time],
                                    :return_value => "0").returns("rspec-result")
       expect(wsman.setup_job_queue).to eq("rspec-result")
     end
@@ -297,7 +299,7 @@ describe ASM::WsMan do
     it "should invoke DeleteJobQueue" do
       client.expects(:invoke).with("DeleteJobQueue", ASM::WsMan::JOB_SERVICE,
                                    :params => {},
-                                   :optional_params => [:job_id],
+                                   :optional_params => %i[job_id],
                                    :return_value => "0").returns("rspec-result")
       expect(wsman.delete_job_queue).to eq("rspec-result")
     end
@@ -362,8 +364,8 @@ describe ASM::WsMan do
       client.expects(:invoke)
             .with("BootToNetworkISO", ASM::WsMan::DEPLOYMENT_SERVICE,
                   :params => {},
-                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :required_params => %i[ip_address share_name share_type image_name],
+                  :optional_params => %i[workgroup user_name password hash_type hash_value auto_connect],
                   :return_value => "4096")
             .returns("rspec-result")
       expect(wsman.boot_to_network_iso_command).to eq("rspec-result")
@@ -375,8 +377,8 @@ describe ASM::WsMan do
       client.expects(:invoke)
             .with("ConnectNetworkISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
                   :params => {},
-                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                  :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                  :required_params => %i[ip_address share_name share_type image_name],
+                  :optional_params => %i[workgroup user_name password hash_type hash_value auto_connect],
                   :return_value => "4096")
             .returns("rspec-result")
       wsman.expects(:parse_iso_uri).with("nfs://localhost/ipxe.iso").returns({})
@@ -389,8 +391,8 @@ describe ASM::WsMan do
       client.expects(:invoke)
             .with("ConnectRFSISOImage", ASM::WsMan::DEPLOYMENT_SERVICE,
                   :params => {},
-                  :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                  :optional_params => [:workgroup, :username, :password, :hash_type, :hash_value, :auto_connect],
+                  :required_params => %i[ip_address share_name share_type image_name],
+                  :optional_params => %i[workgroup username password hash_type hash_value auto_connect],
                   :return_value => "4096")
             .returns("rspec-result")
       wsman.expects(:parse_iso_uri).with("nfs://localhost/ipxe.iso").returns({})
@@ -657,7 +659,7 @@ describe ASM::WsMan do
       wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Uefi"}])
       wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
-      wsman.expects(:boot_source_settings).returns(%w(Hdd VirtualCd Nic).map { |e| {:element_name => e}})
+      wsman.expects(:boot_source_settings).returns(%w[Hdd VirtualCd Nic].map { |e| {:element_name => e}})
       message = "Could not find virtual_cd boot device in current list: Hdd, VirtualCd, Nic"
       expect {wsman.set_boot_order(:virtual_cd, opts)}.to raise_error(message)
     end
@@ -890,7 +892,7 @@ describe ASM::WsMan do
       client.expects(:invoke).with("BlinkTarget",
                                    ASM::WsMan::RAID_SERVICE,
                                    :params => {:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"},
-                                   :required_params => [:target],
+                                   :required_params => %i[target],
                                    :return_value => "0")
       wsman.blink_target(:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1")
     end
@@ -901,7 +903,7 @@ describe ASM::WsMan do
       client.expects(:invoke).with("UnBlinkTarget",
                                    ASM::WsMan::RAID_SERVICE,
                                    :params => {:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"},
-                                   :required_params => [:target],
+                                   :required_params => %i[target],
                                    :return_value => "0")
       wsman.unblink_target(:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1")
     end

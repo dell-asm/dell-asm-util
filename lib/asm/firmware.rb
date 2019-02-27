@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/wsman"
 require "asm/wsman/client"
 require "erb"
@@ -5,6 +7,7 @@ require "tempfile"
 require "asm/transport/racadm"
 
 module ASM
+  #  Class for handling server firmware update via WS-Man and RACADM
   class Firmware
     IDRAC_ID = 252_27
     LC_ID = 288_97
@@ -126,10 +129,10 @@ module ASM
         ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
           wsman.poll_for_lc_ready
         end
-      rescue StandardError => e
+      rescue
         logger.debug("Job queue cannot be cleared.") if attempts > 1
         logger.debug("Job queue still shows jobs exist after attempting to clear the job queue.")
-        logger.debug("Caught exception in clearing job queue %s : %s" % [e, e.class])
+        logger.debug("Caught exception in clearing job queue %s: %s" % [$!.class, $!.to_s])
         logger.debug("Resetting the Idrac ...")
 
         # Resets two times
@@ -159,6 +162,7 @@ module ASM
         logger.debug(fw)
         job_id = gets_install_uri_job(fw, wsman)
         raise("Failed to initiate the firmware job for %s" % fw) unless job_id
+
         statuses << block_until_downloaded(job_id, fw, wsman)
       end
 
@@ -258,9 +262,9 @@ module ASM
         begin
           lc_status = wsman.get_lc_job(job_id)
           status[:status] = lc_status[:job_status]
-        rescue StandardError => e
+        rescue
           status[:status] = "TemporaryFailure"
-          logger.warn("Look up job status #{job_id} failed: #{e}")
+          logger.warn("Look up job status %s failed: %s" % [job_id, $!.to_s])
         end
         logger.debug("Job Status: #{status[:status]}")
 
@@ -350,15 +354,16 @@ module ASM
     # @param reboot_id [String] the reboot job
     # @return [Tempfile] the xml file object
     def create_job_queue_config(job_ids, reboot_id=nil)
-      template = <<-EOF
-<p:SetupJobQueue_INPUT xmlns:p="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"><% job_ids.each do |job_id| %>
-<p:JobArray><%= job_id %></p:JobArray><% end %><% if reboot_id %>
-<p:JobArray><%= reboot_id %></p:JobArray><% end %>
-<p:RunMonth>6</p:RunMonth>
-  <p:RunDay>18</p:RunDay>
-<p:StartTimeInterval>TIME_NOW</p:StartTimeInterval>
-</p:SetupJobQueue_INPUT>
-      EOF
+      template = <<~XML
+        <p:SetupJobQueue_INPUT xmlns:p="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"><% job_ids.each do |job_id| %>
+        <p:JobArray><%= job_id %></p:JobArray><% end %><% if reboot_id %>
+        <p:JobArray><%= reboot_id %></p:JobArray><% end %>
+        <p:RunMonth>6</p:RunMonth>
+          <p:RunDay>18</p:RunDay>
+        <p:StartTimeInterval>TIME_NOW</p:StartTimeInterval>
+        </p:SetupJobQueue_INPUT>
+      XML
+
       xmlout = ERB.new(template)
       temp_file = Tempfile.new("jq_config")
       temp_file.write(xmlout.result(binding))
@@ -372,17 +377,18 @@ module ASM
     # @param path [String] specifies moount path
     # @return [Tempfile]
     def create_xml_config_file(instance_id, path)
-      template = <<-EOF
-<p:InstallFromURI_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService">
-<p:URI><%= path %></p:URI>
-<p:Target xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
-<a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
-<a:ReferenceParameters>
-<w:ResourceURI>http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_SoftwareIdentity</w:ResourceURI>
-<w:SelectorSet>
-<w:Selector Name="InstanceID"><%= instance_id %></w:Selector>
-</w:SelectorSet> </a:ReferenceParameters> </p:Target> </p:InstallFromURI_INPUT>
-      EOF
+      template = <<~XML
+        <p:InstallFromURI_INPUT xmlns:p="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService">
+        <p:URI><%= path %></p:URI>
+        <p:Target xmlns:a="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:w="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+        <a:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address>
+        <a:ReferenceParameters>
+        <w:ResourceURI>http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_SoftwareIdentity</w:ResourceURI>
+        <w:SelectorSet>
+        <w:Selector Name="InstanceID"><%= instance_id %></w:Selector>
+        </w:SelectorSet> </a:ReferenceParameters> </p:Target> </p:InstallFromURI_INPUT>
+      XML
+
       xmlout = ERB.new(template)
       temp_file = Tempfile.new("xml_config")
       temp_file.write(xmlout.result(binding))

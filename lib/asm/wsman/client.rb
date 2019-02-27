@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/util"
 require "asm/wsman/response_error"
 require "asm/wsman/parser"
@@ -6,11 +8,12 @@ require "logger"
 
 module ASM
   class WsMan
+    # WS-Man client
     class Client
       attr_reader :endpoint, :logger
 
       def initialize(endpoint, options={})
-        missing_params = [:host, :user, :password].reject { |k| endpoint.include?(k) }
+        missing_params = %i[host user password].reject { |k| endpoint.include?(k) }
 
         raise("Missing required endpoint parameter(s): %s" % [missing_params.join(", ")]) unless missing_params.empty?
 
@@ -30,9 +33,7 @@ module ASM
 
       # @api private
       def proxy_warn
-        if ENV.include?("http_proxy") || ENV.include?("https_proxy")
-          logger.warn("wsman invocations will use the proxy set in http_proxy or https_proxy")
-        end
+        logger.warn("wsman invocations will use the proxy set in http_proxy or https_proxy") if ENV.include?("http_proxy") || ENV.include?("https_proxy")
       end
 
       # @api private
@@ -73,7 +74,7 @@ module ASM
       def exec(method, schema, options={})
         options = @default_options.merge(options)
 
-        if %w(enumerate get identify).include?(method)
+        if %w[enumerate get identify].include?(method)
           args = [method]
           args << schema if schema && !schema.empty?
         else
@@ -96,7 +97,7 @@ module ASM
 
         # The wsman cli does not set exit_status properly on failure, so we
         # have to check stderr as well...
-        unless result.exit_status == 0 && result.stderr.empty?
+        unless result.exit_status.zero? && result.stderr.empty?
           if result["stdout"] =~ /Authentication failed/
             if options[:nth_attempt] < 2 && options[:retry_on_error]
               # We have seen sporadic authentication failed errors from idrac. Retry a couple times
@@ -156,6 +157,7 @@ module ASM
       def invoke(method, url, options={})
         params = options.delete(:params) || {}
         raise(ArgumentError, "Invalid parameters: %s" % params) unless params.is_a?(Hash)
+
         url_params = Array(options.delete(:url_params))
         required_params = Array(options.delete(:required_params))
         optional_params = Array(options.delete(:optional_params))
@@ -183,9 +185,8 @@ module ASM
 
         resp = exec(method, url, exec_options)
         ret = Parser.parse(resp)
-        if return_value && !Array(return_value).include?(ret[:return_value])
-          raise(ASM::WsMan::ResponseError.new("%s failed" % method, ret))
-        end
+        raise(ASM::WsMan::ResponseError.new("%s failed" % method, ret)) if return_value && !Array(return_value).include?(ret[:return_value])
+
         ret
       end
 

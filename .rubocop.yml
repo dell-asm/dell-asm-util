@@ -1,6 +1,19 @@
 AllCops:
   DisplayCopNames: true
   DisplayStyleGuide: true
+  TargetRubyVersion: 2.3.3
+
+Layout/SpaceAroundEqualsInParameterDefault:
+  EnforcedStyle: no_space
+
+Layout/SpaceInsideBlockBraces:
+  Enabled: false
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
+
+Naming/PredicateName:
+  Enabled: false
 
 Style/RegexpLiteral:
   Enabled: false
@@ -11,6 +24,9 @@ Style/StringLiterals:
 Style/FormatString:
   EnforcedStyle: percent
 
+Style/FormatStringToken:
+  Enabled: false
+
 Style/SpecialGlobalVars:
   Enabled: false
 
@@ -20,23 +36,14 @@ Style/HashSyntax:
 Style/WordArray:
   Enabled: false
 
-Style/SpaceAroundEqualsInParameterDefault:
-  EnforcedStyle: no_space
-
 Style/SignalException:
   EnforcedStyle: only_raise
 
 Style/RescueModifier:
   Enabled: false
 
-Style/SpaceInsideBlockBraces:
-  Enabled: false
-
-Style/SpaceInsideHashLiteralBraces:
-  EnforcedStyle: no_space
-
-Style/SpaceAroundEqualsInParameterDefault:
-  EnforcedStyle: no_space
+Style/RescueStandardError:
+  EnforcedStyle: implicit
 
 Style/Documentation:
   Severity: warning
@@ -47,13 +54,7 @@ Style/EachWithObject:
 Style/GuardClause:
   Enabled: false
 
-Style/PredicateName:
-  Enabled: false
-
 Style/DoubleNegation:
-  Enabled: false
-
-Style/Documentation:
   Enabled: false
 
 Style/PerlBackrefs:
@@ -73,6 +74,13 @@ Lint/UnusedMethodArgument:
 
 Lint/AssignmentInCondition:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'Gemfile'
+    - 'Rakefile'
+    - '*.gemspec'
+    - 'spec/**/*.rb'
 
 Metrics/LineLength:
   Max: 180

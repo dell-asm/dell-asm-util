@@ -1,4 +1,5 @@
-# coding: utf-8
+# frozen_string_literal: true
+
 require "pathname"
 require "asm/network_configuration/nic_info"
 require "asm/util"
@@ -9,22 +10,20 @@ require "rexml/document"
 require "uri"
 
 module ASM
+  # Utility class for interacting with Dell servers via WS-MAN
   class WsMan
-    # rubocop:disable Metrics/LineLength
-    BIOS_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_BIOSService&SystemName=DCIM:ComputerSystem&Name=DCIM:BIOSService".freeze
-    DEPLOYMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_OSDeploymentService&SystemName=DCIM:ComputerSystem&Name=DCIM:OSDeploymentService".freeze
-    JOB_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService?CreationClassName=DCIM_JobService&Name=JobService&SystemName=Idrac&SystemCreationClassName=DCIM_ComputerSystem&__cimnamespace=root/dcim".freeze
-    LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_LCService&SystemName=DCIM:ComputerSystem&Name=DCIM:LCService".freeze
-    LC_RECORD_LOG_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_LCRecordLog?__cimnamespace=root/dcim".freeze
-    POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem&Name=srv:system".freeze
-    POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem&SystemName=systemmc&CreationClassName=DCIM_CSPowerManagementService&Name=pwrmgtsvc:1".freeze
-    SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService&SystemCreationClassName=DCIM_ComputerSystem&SystemName=IDRAC:ID&Name=SoftwareUpdate".freeze
-    IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState".freeze
-    APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_iDRACCardService&SystemName=DCIM:ComputerSystem&Name=DCIM:iDRACCardService".freeze
-    SYSTEM_MANAGEMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemManagementService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_SystemManagementService&SystemName=srv:system&Name=DCIM:SystemManagementService".freeze
-    RAID_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_RAIDService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_RAIDService&SystemName=DCIM:ComputerSystem&Name=DCIM:RAIDService".freeze
-
-    # rubocop:enable Metrics/LineLength
+    BIOS_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_BIOSService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_BIOSService&SystemName=DCIM:ComputerSystem&Name=DCIM:BIOSService"
+    DEPLOYMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_OSDeploymentService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_OSDeploymentService&SystemName=DCIM:ComputerSystem&Name=DCIM:OSDeploymentService"
+    JOB_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService?CreationClassName=DCIM_JobService&Name=JobService&SystemName=Idrac&SystemCreationClassName=DCIM_ComputerSystem&__cimnamespace=root/dcim"
+    LC_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LCService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_LCService&SystemName=DCIM:ComputerSystem&Name=DCIM:LCService"
+    LC_RECORD_LOG_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_LCRecordLog?__cimnamespace=root/dcim"
+    POWER_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem?CreationClassName=DCIM_ComputerSystem&Name=srv:system"
+    POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem&SystemName=systemmc&CreationClassName=DCIM_CSPowerManagementService&Name=pwrmgtsvc:1"
+    SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService&SystemCreationClassName=DCIM_ComputerSystem&SystemName=IDRAC:ID&Name=SoftwareUpdate"
+    IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState"
+    APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_iDRACCardService&SystemName=DCIM:ComputerSystem&Name=DCIM:iDRACCardService"
+    SYSTEM_MANAGEMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemManagementService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_SystemManagementService&SystemName=srv:system&Name=DCIM:SystemManagementService"
+    RAID_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_RAIDService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_RAIDService&SystemName=DCIM:ComputerSystem&Name=DCIM:RAIDService"
 
     attr_reader :client
 
@@ -344,9 +343,11 @@ module ASM
       begin
         ret = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_CSAssociatedPowerManagementService")
         raise(Error, "No power management enumerations found") if ret.empty?
+
         power_state = ret.first[:power_state]
         return :on if power_state == "2"
         return :off if power_state == "13"
+
         raise(Error, "Invalid power state returned: %s" % power_state)
       rescue
         if retry_counter < 8
@@ -361,7 +362,7 @@ module ASM
 
     def self.reboot(endpoint, logger=nil)
       # Create the reboot job
-      logger.debug("Rebooting server #{endpoint[:host]}") if logger
+      logger&.debug("Rebooting server #{endpoint[:host]}")
       instanceid = invoke(endpoint,
                           "CreateRebootJob",
                           SOFTWARE_INSTALLATION_SERVICE,
@@ -379,7 +380,7 @@ module ASM
                             "StartTimeInterval" => "TIME_NOW"
                           },
                           :logger => logger)
-      logger.debug "Job Message #{jobmessage}" if logger
+      logger&.debug "Job Message #{jobmessage}"
       true
     end
 
@@ -460,12 +461,13 @@ module ASM
       nics.reject(&:disabled?).each do |nic|
         nic.ports.each do |port|
           next unless port.link_speed == "10 Gbps"
+
           port.partitions.each do |partition|
             ret[partition.fqdd] = partition.mac_address
           end
         end
       end
-      logger.debug("********* MAC Address List is #{ret.inspect} **************") if logger
+      logger&.debug("********* MAC Address List is #{ret.inspect} **************")
       ret
     end
 
@@ -479,12 +481,13 @@ module ASM
       nics.reject(&:disabled?).each do |nic|
         nic.ports.each do |port|
           next unless port.link_speed == "10 Gbps"
+
           port.partitions.each do |partition|
             ret[partition.fqdd] = partition["PermanentMACAddress"]
           end
         end
       end
-      logger.debug("********* MAC Address List is #{ret.inspect} **************") if logger
+      logger&.debug("********* MAC Address List is #{ret.inspect} **************")
       ret
     end
 
@@ -507,9 +510,8 @@ module ASM
       end
 
       # Apparently we sometimes see a spurious empty return value...
-      if ret.empty? && tries == 0
-        ret = get_nic_view(endpoint, logger, tries + 1)
-      end
+      ret = get_nic_view(endpoint, logger, tries + 1) if ret.empty? && tries.zero?
+
       ret
     end
 
@@ -540,7 +542,7 @@ module ASM
                     :logger => logger)
       nic_views = resp.split("<n1:DCIM_NICView>")
       nic_views.shift
-      nic_views.each do |nic_view|
+      nic_views.each do |nic_view| # rubocop:disable Metrics/BlockLength
         nic_name = nil
         nic_view.split("\n").each do |line|
           if line =~ %r{<n1:FQDD>(\S+)</n1:FQDD>}
@@ -548,7 +550,8 @@ module ASM
             fcoe_info[nic_name] = {}
           end
         end
-        nic_view.split("\n").each do |line|
+
+        nic_view.split("\n").each do |line| # rubocop:disable Metrics/BlockLength
           if line =~ %r{<n1:FCoEWWNN>(\S+)</n1:FCoEWWNN>}
             fcoe_wwnn = $1
             fcoe_info[nic_name]["fcoe_wwnn"] = fcoe_wwnn
@@ -591,7 +594,7 @@ module ASM
         fcoe_info.delete(nic_name) if nic_name.include?("Embedded")
       end
 
-      logger.debug("FCoE info: #{fcoe_info.inspect} **************") if logger
+      logger&.debug("FCoE info: #{fcoe_info.inspect} **************")
       fcoe_info
     end
 
@@ -611,7 +614,7 @@ module ASM
     def create_reboot_job(params={})
       client.invoke("CreateRebootJob", SOFTWARE_INSTALLATION_SERVICE,
                     :params => params,
-                    :optional_params => [:reboot_start_time, :reboot_job_type],
+                    :optional_params => %i[reboot_start_time reboot_job_type],
                     :return_value => "4096")
     end
 
@@ -646,7 +649,7 @@ module ASM
       input_file = params.delete(:input_file)
       options = {
         :params => params,
-        :optional_params => [:job_array, :start_time_interval, :until_time],
+        :optional_params => %i[job_array start_time_interval until_time],
         :return_value => "0"
       }
       options[:input_file] = input_file if input_file
@@ -664,7 +667,7 @@ module ASM
     def delete_job_queue(params={})
       client.invoke("DeleteJobQueue", JOB_SERVICE,
                     :params => params,
-                    :optional_params => [:job_id],
+                    :optional_params => %i[job_id],
                     :return_value => "0")
     end
 
@@ -749,8 +752,8 @@ module ASM
       end
       client.invoke("BootToNetworkISO", DEPLOYMENT_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                    :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                    :required_params => %i[ip_address share_name share_type image_name],
+                    :optional_params => %i[workgroup user_name password hash_type hash_value auto_connect],
                     :return_value => "4096")
     end
 
@@ -770,8 +773,8 @@ module ASM
       end
       client.invoke("ConnectNetworkISOImage", DEPLOYMENT_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                    :optional_params => [:workgroup, :user_name, :password, :hash_type, :hash_value, :auto_connect],
+                    :required_params => %i[ip_address share_name share_type image_name],
+                    :optional_params => %i[workgroup user_name password hash_type hash_value auto_connect],
                     :return_value => "4096")
     end
 
@@ -800,8 +803,8 @@ module ASM
 
       client.invoke("ConnectRFSISOImage", DEPLOYMENT_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :share_type, :image_name],
-                    :optional_params => [:workgroup, :username, :password, :hash_type, :hash_value, :auto_connect],
+                    :required_params => %i[ip_address share_name share_type image_name],
+                    :optional_params => %i[workgroup username password hash_type hash_value auto_connect],
                     :return_value => "4096")
     end
 
@@ -865,7 +868,7 @@ module ASM
     #
     # @example response
     #   {:drivers_attach_status=>"0", :iso_attach_status=>"1", :return_value=>"0"}
-    def get_attach_status # rubocop:disable Style/AccessorMethodName
+    def get_attach_status # rubocop:disable Naming/AccessorMethodName
       client.invoke("GetAttachStatus", DEPLOYMENT_SERVICE)
     end
 
@@ -883,7 +886,7 @@ module ASM
     #   {:host_attached_status=>"1", :host_booted_from_iso=>"1",
     #    :ipaddr=>"172.25.3.100", :iso_connection_status=>"1",
     #    :image_name=>"ipxe.iso", :return_value=>"0", :share_name=>"/var/nfs"}
-    def get_network_iso_image_connection_info # rubocop:disable Style/AccessorMethodName
+    def get_network_iso_image_connection_info # rubocop:disable Naming/AccessorMethodName
       client.invoke("GetNetworkISOImageConnectionInfo", DEPLOYMENT_SERVICE)
     end
 
@@ -900,17 +903,17 @@ module ASM
     # @option params [String] :attribute_value The attribute value(s) to set them to.
     # @return [Hash]
     # @raise [ResponseError] if the command fails
-    def set_attributes(params={}) # rubocop:disable Style/AccessorMethodName
+    def set_attributes(params={}) # rubocop:disable Naming/AccessorMethodName
       client.invoke("SetAttributes", BIOS_SERVICE,
                     :params => params,
-                    :required_params => [:target, :attribute_name, :attribute_value],
+                    :required_params => %i[target attribute_name attribute_value],
                     :return_value => "0")
     end
 
     def apply_idrac_attributes(params={})
       client.invoke("ApplyAttributes", APPLY_ATTRIBUTES,
                     :params => params,
-                    :required_params => [:target, :attribute_name, :attribute_value],
+                    :required_params => %i[target attribute_name attribute_value],
                     :return_value => "4096")
     end
 
@@ -936,8 +939,8 @@ module ASM
     def create_targeted_config_job(params={})
       client.invoke("CreateTargetedConfigJob", BIOS_SERVICE,
                     :params => params,
-                    :required_params => [:target],
-                    :optional_params => [:reboot_job_type, :scheduled_start_time, :until_time],
+                    :required_params => %i[target],
+                    :optional_params => %i[reboot_job_type scheduled_start_time until_time],
                     :return_value => "4096")
     end
 
@@ -953,7 +956,7 @@ module ASM
       client.invoke("ChangeBootSourceState",
                     "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_BootConfigSetting",
                     :params => params,
-                    :required_params => [:enabled_state, :source],
+                    :required_params => %i[enabled_state source],
                     :url_params => :instance_id,
                     :return_value => "0")
     end
@@ -1018,8 +1021,8 @@ module ASM
     def import_system_configuration_command(params={})
       client.invoke("ImportSystemConfiguration", LC_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                    :optional_params => [:target, :shutdown_type, :end_host_power_state, :username, :password],
+                    :required_params => %i[ip_address share_name file_name share_type],
+                    :optional_params => %i[target shutdown_type end_host_power_state username password],
                     :return_value => "4096")
     end
 
@@ -1049,8 +1052,8 @@ module ASM
     def export_system_configuration_command(params={})
       client.invoke("ExportSystemConfiguration", LC_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                    :optional_params => [:username, :password, :workgroup, :target, :export_use, :include_in_export],
+                    :required_params => %i[ip_address share_name file_name share_type],
+                    :optional_params => %i[username password workgroup target export_use include_in_export],
                     :return_value => "4096")
     end
 
@@ -1069,8 +1072,8 @@ module ASM
     def export_complete_lc_log(params={})
       client.invoke("ExportCompleteLCLog", LC_SERVICE,
                     :params => params,
-                    :required_params => [:ip_address, :share_name, :file_name, :share_type],
-                    :optional_params => [:username, :password, :workgroup],
+                    :required_params => %i[ip_address share_name file_name share_type],
+                    :optional_params => %i[username password workgroup],
                     :return_value => "4096")
     end
 
@@ -1090,7 +1093,7 @@ module ASM
     def get_config_results(params={})
       client.invoke("GetConfigResults", LC_RECORD_LOG_SERVICE,
                     :params => params,
-                    :optional_params => [:instance_id, :job_id],
+                    :optional_params => %i[instance_id job_id],
                     :return_value => "0")
     end
 
@@ -1138,7 +1141,7 @@ module ASM
     # @option options [Symbol|String] :requested_state :on / "2" or :off / "13"
     # @return [Hash]
     # @raise [ResponseError] if the command fails
-    def set_power_state(params={}) # rubocop:disable Style/AccessorMethodName
+    def set_power_state(params={}) # rubocop:disable Naming/AccessorMethodName
       client.invoke("RequestStateChange", POWER_SERVICE,
                     :params => params,
                     :required_params => :requested_state,
@@ -1188,7 +1191,8 @@ module ASM
         set_power_state(:requested_state => :off)
         (1..30).each do |wait_counter|
           break if power_state == :off
-          logger.debug "Server is not in power-off state. Retry counter %d" % wait_counter if logger
+
+          logger&.debug "Server is not in power-off state. Retry counter %d" % wait_counter
           sleep 10
         end
         logger.warn "Server is still not powered-off. Check the server console" if power_state != :off
@@ -1206,13 +1210,14 @@ module ASM
       max_sleep_secs = 60
       resp = ASM::Util.block_and_retry_until_ready(options[:timeout], RetryException, max_sleep_secs) do
         resp = get_deployment_job(job)
-        unless %w(Success Failed).include?(resp[:job_status])
+        unless %w[Success Failed].include?(resp[:job_status])
           logger.info("%s status on %s: %s" % [job, host, Parser.response_string(resp)])
           raise(RetryException)
         end
         resp
       end
       raise(ResponseError.new("Deployment job %s failed" % job, resp)) unless resp[:job_status] == "Success"
+
       resp
     rescue Timeout::Error
       raise(Error, "Timed out waiting for job %s to complete. Final status: %s" % [job, Parser.response_string(resp)])
@@ -1249,6 +1254,7 @@ module ASM
         resp
       end
       raise(ResponseError.new("LC job %s failed" % job, resp)) unless resp[:job_status] =~ /complete/i
+
       resp
     rescue Timeout::Error
       raise(Error, "Timed out waiting for job %s to complete. Final status: %s" % [job, Parser.response_string(resp)])
@@ -1391,7 +1397,7 @@ module ASM
     # @param (see {#set_attributes})
     # @return [void]
     # @raise [ResponseError] if a command fails or the BIOS configuration job fails
-    def set_bios_attributes(attributes={}) # rubocop:disable Style/AccessorMethodName
+    def set_bios_attributes(attributes={}) # rubocop:disable Naming/AccessorMethodName
       set_attributes(attributes)
       run_bios_config_job(attributes)
     end
@@ -1417,7 +1423,7 @@ module ASM
     # @return [String] the boot source type string, such as UEFI or IPL
     # @raise [ArgumentError] for an invalid boot mode
     def boot_source_type(boot_mode)
-      raise(ArgumentError, "Unsupported boot mode: %s" % boot_mode) unless [:bios, :uefi].include?(boot_mode)
+      raise(ArgumentError, "Unsupported boot mode: %s" % boot_mode) unless %i[bios uefi].include?(boot_mode)
 
       boot_mode == :uefi ? "UEFI" : "IPL"
     end
@@ -1441,7 +1447,7 @@ module ASM
                  :scheduled_start_time => "TIME_NOW",
                  :reboot_job_type => :graceful_with_forced_shutdown}.merge(options)
 
-      raise(ArgumentError, "Invalid boot mode: %s" % options[:boot_mode]) unless [:bios, :uefi].include?(options[:boot_mode])
+      raise(ArgumentError, "Invalid boot mode: %s" % options[:boot_mode]) unless %i[bios uefi].include?(options[:boot_mode])
 
       logger.info("Waiting for LC ready on %s" % host)
       poll_for_lc_ready
@@ -1495,7 +1501,7 @@ module ASM
     #
     # @param state [Symbol] :detach, :attach or :auto_attach
     # @return [void]
-    def set_virtual_media_attach_state(state) # rubocop:disable Style/AccessorMethodName
+    def set_virtual_media_attach_state(state) # rubocop:disable Naming/AccessorMethodName
       state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "AutoAttach"}
       state_string = Parser.enum_value(nil, state_map, state)
 
@@ -1609,10 +1615,10 @@ module ASM
         raise(Error, "Life cycle controller is busy")
       else
         status = lcstatus(endpoint, logger).to_i
-        if status == 0
+        if status.zero?
           return
         else
-          logger.debug "LC status is busy: status code #{status}. Waiting..." if logger
+          logger&.debug "LC status is busy: status code #{status}. Waiting..."
           sleep sleep_time
           wait_for_lc_ready(endpoint, logger, attempts + 1, max_attempts)
         end
@@ -1667,7 +1673,7 @@ module ASM
       client.invoke("BlinkTarget",
                     RAID_SERVICE,
                     :params => options,
-                    :required_params => [:target],
+                    :required_params => %i[target],
                     :return_value => "0")
     end
 
@@ -1685,7 +1691,7 @@ module ASM
       client.invoke("UnBlinkTarget",
                     RAID_SERVICE,
                     :params => options,
-                    :required_params => [:target],
+                    :required_params => %i[target],
                     :return_value => "0")
     end
 

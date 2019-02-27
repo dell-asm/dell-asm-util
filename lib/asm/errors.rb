@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ASM
   class Error < StandardError; end
   class CommandException < Error; end

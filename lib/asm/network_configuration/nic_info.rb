@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "asm/network_configuration/nic_port"
 require "asm/network_configuration/nic_view"
 
@@ -88,7 +90,7 @@ module ASM
         curr = []
         list.each_with_index do |val, index|
           if yield(val)
-            ret << curr unless index == 0
+            ret << curr unless index.zero?
             curr = []
           end
           curr << val
@@ -110,14 +112,14 @@ module ASM
         partition = nil
         prefixes = nic_views.map(&:card_prefix).uniq
         raise("No NIC information supplied") if nic_views.empty?
+
         card_prefix = prefixes.first
         raise("Cannot create single NicInfo for multiple cards: %s" % prefixes.join(", ")) if prefixes.size > 1
 
         prev_fqdd = nic_views.first.fqdd
         nic_views.each do |nic_view|
-          unless nic_view.card_prefix == card_prefix
-            raise("Card prefix should be %s but was %s" % [card_prefix, nic_view.card_prefix])
-          end
+          raise("Card prefix should be %s but was %s" % [card_prefix, nic_view.card_prefix]) unless nic_view.card_prefix == card_prefix
+
           next_port = Integer(nic_view.port)
           next_partition = Integer(nic_view.partition_no)
           if port.nil? && partition.nil?
@@ -125,13 +127,14 @@ module ASM
             partition = next_partition
           else
             port_diff = next_port - port
-            if port_diff == 0 && next_partition != partition + 1
+            if port_diff.zero? && next_partition != partition + 1
               raise("Partition out of order between %s and %s" % [prev_fqdd, nic_view.fqdd])
             elsif port_diff == 1 && next_partition != 1
               raise("First partition for %s should be 1 but got %d" % [nic_view.fqdd, next_partition])
             elsif !port_diff.between?(0, 1)
               raise("Port out of order between %s and %s" % [prev_fqdd, nic_view.fqdd])
             end
+
             port = next_port
             partition = next_partition
             prev_fqdd = nic_view.fqdd
@@ -181,8 +184,10 @@ module ASM
       def n_partitions
         ports_10gb = ports.find_all { |port| port.link_speed == "10 Gbps" }
         return 1 if ports_10gb.empty? # Only 10Gb NICs support NPAR
+
         ns = ports_10gb.map(&:n_partitions).uniq
         return ns.first if ns.size == 1
+
         raise("Different 10Gb NIC ports on %s reported different number of partitions: %s" %
                   [card_prefix, ports_10gb.map { |p| "NIC: %s # partitions: %s" % [p.product, p.n_partitions] }.join(", ")])
       end

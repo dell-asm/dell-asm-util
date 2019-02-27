@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ASM
   class WsMan
     class Error < StandardError; end
