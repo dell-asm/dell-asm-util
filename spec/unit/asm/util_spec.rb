@@ -368,12 +368,18 @@ describe ASM::Util do
       @play = "/tmp/testplay.yaml"
       @inventory = "/tmp/testinventory.yaml"
       @output_file = "/tmp/output.out"
-      @arg1 = "ansible-playbook"
-      @arg2 = "-i"
-      @arg3 = "/tmp/testinventory.yaml"
-      @arg4 = "/tmp/testplay.yaml"
-      @arg5 = "--vault-password-file"
-      @arg6 = "/tmp/script.sh"
+      @arg1 = "/bin/env"
+      @arg2 = "--unset=RUBYOPT"
+      @arg3 = "--unset=GEM_HOME"
+      @arg4 = "--unset=RUBYLIB"
+      @arg5 = "--unset=GEM_PATH"
+      @arg6 = "--unset=BUNDLE_BIN_PATH"
+      @arg7 = "ansible-playbook"
+      @arg8 = "-i"
+      @arg9 = "/tmp/testinventory.yaml"
+      @arg10 = "/tmp/testplay.yaml"
+      @arg11 = "--vault-password-file"
+      @arg12 = "/tmp/script.sh"
       @input = mock("input")
       @input.stubs(:write)
       @input.stubs(:close)
@@ -390,7 +396,17 @@ describe ASM::Util do
 
     it "should run ansible with the provided playbook and inventory files without verbose" do
       Open3.stubs(:popen3)
-           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4)
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+                 @arg1,
+                 @arg2,
+                 @arg3,
+                 @arg4,
+                 @arg5,
+                 @arg6,
+                 @arg7,
+                 @arg8,
+                 @arg9,
+                 @arg10)
            .yields(@input, @output, @err, @wait_thru)
            .returns(nil)
       expect(ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, @output_file)).to eq(nil)
@@ -398,7 +414,17 @@ describe ASM::Util do
 
     it "should run ansible with the provided playbook and inventory files" do
       Open3.stubs(:popen3)
-           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4)
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+                 @arg1,
+                 @arg2,
+                 @arg3,
+                 @arg4,
+                 @arg5,
+                 @arg6,
+                 @arg7,
+                 @arg8,
+                 @arg9,
+                 @arg10)
            .yields(@input, @output, @err, @wait_thru)
            .returns(nil)
       expect(ASM::Util.run_ansible_playbook_with_inventory(@play, @inventory, @output_file)).to eq(nil)
@@ -423,7 +449,19 @@ describe ASM::Util do
 
     it "should pass in options as environment variables" do
       Open3.expects(:popen3)
-           .with({"VAULT" => "test", "ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"}, @arg1, @arg2, @arg3, @arg4, @arg5, @arg6)
+           .with({"VAULT" => "test", "ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+                 @arg1,
+                 @arg2,
+                 @arg3,
+                 @arg4,
+                 @arg5,
+                 @arg6,
+                 @arg7,
+                 @arg8,
+                 @arg9,
+                 @arg10,
+                 @arg11,
+                 @arg12)
            .yields(@input, @output, @err, @wait_thru)
            .returns(nil)
       expect(ASM::Util.run_ansible_playbook_with_inventory(@play,

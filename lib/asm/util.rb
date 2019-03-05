@@ -396,14 +396,20 @@ module ASM
       env["VAULT"] = options[:vault_password_id] if options[:vault_password_id]
       env["ANSIBLE_STDOUT_CALLBACK"] = options[:stdout_callback]
       env["ANSIBLE_HOST_KEY_CHECKING"] = "False" unless options[:host_key_check]
-      args = ["ansible-playbook"]
+
+      args = []
+      %w[BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT].each do |e|
+        args.insert(0, "--unset=#{e}")
+      end
+
+      args.push("ansible-playbook")
       args.push("-v") if options[:verbose]
       args += ["-i", inventory_file, playbook_file]
       args.push("--vault-password-file") if options[:vault_password_file]
       args.push(options[:vault_password_file]) if options[:vault_password_file]
       result = Hashie::Mash.new
       begin
-        Open3.popen3(env, *args) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(env, "/bin/env", *args) do |stdin, stdout, stderr, wait_thr|
           stdin.close
           result.stdout      = stdout.read
           result.stderr      = stderr.read
@@ -452,11 +458,19 @@ module ASM
       raise("Error no value to encrypt provided") unless input_string
 
       env = {"VAULT" => vault_password_id}
-      args = ["ansible-vault", "encrypt_string", "--vault-password-file", vault_password_file]
+      args = []
+      %w[BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT].each do |e|
+        args.insert(0, "--unset=#{e}")
+      end
+      args.push("ansible-vault")
+      args.push("encrypt_string")
+      args.push("--vault-password-file")
+      args.push(vault_password_file)
+
       result = Hashie::Mash.new
 
       begin
-        Open3.popen3(env, *args) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(env, "/bin/env", *args) do |stdin, stdout, stderr, wait_thr|
           stdin.write(input_string)
           stdin.close
           result.stdout      = stdout.read
