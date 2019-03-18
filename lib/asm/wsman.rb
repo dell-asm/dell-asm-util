@@ -1412,8 +1412,7 @@ module ASM
     def find_boot_device(boot_device)
       boot_settings = boot_source_settings
       boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1", :virtual_floppy => "Floppy.iDRACVirtual.1-1"}
-      boot_device = Parser.enum_value("BootDevice", boot_order_map,
-                                      boot_device, :strict => false)
+      boot_device = Parser.enum_value("BootDevice", boot_order_map, boot_device, :strict => false)
       boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
     end
 
@@ -1440,12 +1439,14 @@ module ASM
     # @option params [String] :scheduled_start_time Schedules the "configuration job" and the optional "reboot job"
     #                         at the specified start time in the format: yyyymmddhhmmss. A special value of
     #                         "TIME_NOW" schedules the job(s) immediately.
+    # @option params [Array] :bootable_devices List of Devices that should be enabled. All the other available options of boot devices will be disabled.
     # @return [void]
     # @raise [ResponseError] if a command fails
     def set_boot_order(boot_device, options={})
       options = {:boot_mode => :bios,
                  :scheduled_start_time => "TIME_NOW",
-                 :reboot_job_type => :graceful_with_forced_shutdown}.merge(options)
+                 :reboot_job_type => :graceful_with_forced_shutdown,
+                 :bootable_devices => []}.merge(options)
 
       raise(ArgumentError, "Invalid boot mode: %s" % options[:boot_mode]) unless %i[bios uefi].include?(options[:boot_mode])
 
@@ -1483,6 +1484,8 @@ module ASM
         change_boot_source_state(:instance_id => boot_source_type, :enabled_state => "1",
                                  :source => target[:instance_id])
       end
+
+      set_bootable_devices(boot_source_type, options)
 
       run_bios_config_job(:target => boot_mode[:fqdd],
                           :scheduled_start_time => options[:scheduled_start_time],
@@ -1564,16 +1567,22 @@ module ASM
     # @option params [String] :reboot_job_type "1" or :power_cycle, "2" or :graceful, or "3" or :graceful_with_forced_shutdown
     # @option params [String] :reboot_start_time Schedules the "reboot job" at the specified start time in the
     #                         format: yyyymmddhhmmss. A special value of "TIME_NOW" schedules the job(s) immediately.
+    # @option params [String] :scheduled_start_time Schedules the "configuration job" and the optional "reboot job" at
+    #                          the specified start time in the format: yyyymmddhhmmss. A special value of "TIME_NOW"
+    #                          schedules the job(s) immediately.
     # @option params [FixNum] :timeout (600) The number of seconds to wait for the virtual CD to become available
     # @option options [Symbol] :attach or :auto_attach. Defaults to :attach. In :auto_attach mode the virtual CD will only be visible while connected.
+    # @option params [Array] :bootable_devices List of Devices that should be enabled. All the other available options of boot devices will be disabled.
     # @return [void]
     # @raise [ResponseError] if a command fails
     def boot_rfs_iso_image(options={})
       options = {:boot_mode => :bios,
                  :reboot_job_type => :graceful_with_forced_shutdown,
                  :reboot_start_time => "TIME_NOW",
+                 :scheduled_start_time => "TIME_NOW",
                  :attach_state => :attached,
-                 :timeout => 10 * 60}.merge(options)
+                 :timeout => 10 * 60,
+                 :bootable_devices => []}.merge(options)
 
       options[:boot_device] ||= boot_device_from_rfs_options(options)
 
@@ -1721,6 +1730,66 @@ module ASM
                     :required_params => :identify_state,
                     :optional_params => :duration_limit,
                     :return_value => "0")
+    end
+
+    # Get the FQDD of the first SATA Disk present on the node
+    #
+    # @return [String] FQDD of the first SATA Disk present on the node
+    def first_sata_disk
+      disks_enum = physical_disk_views
+      logger.info("disks enum from physical_disk_views is %s" % [disks_enum])
+      sata_disks = []
+      disks_enum.each do |x|
+        slot = x[:slot]
+        connector = x[:connector]
+        bus_protocol = x[:bus_protocol]
+        sata_disks << "%s-%s" % [slot, connector] if bus_protocol == "5"
+      end
+      return if sata_disks.empty?
+
+      logger.info("SATA Disk: #{sata_disks}")
+      suffix = sata_disks.min.split("-")
+      disk_name = ("A".."Z").to_a[suffix[0].to_i]
+      "Disk.SATAEmbedded.%s-%s" % [disk_name, "1"]
+    end
+
+    # Get the FQDD of the Boss controller if present on the node
+    #
+    # @return [String] FQDD of the Boss controller if present on the node
+    def boss_controller
+      disk_controllers = controller_views
+      disk_controller = disk_controllers.find { |c| c[:product_name].include?("BOSS") }
+      return nil unless disk_controller
+
+      disk_controller[:fqdd]
+    end
+
+    # This method will retain the boot devices that are passed in the options and disable all the other available boot devices on the node.
+    #
+    # @param options [Hash]
+    # @option options [String] :bootable_devices List of Devices that should be enabled. All the other available options of boot devices will be disabled.
+    def set_bootable_devices(boot_source_type, options)
+      bootable_devices = options[:bootable_devices]
+      logger.info("bootable devices are %s" % [bootable_devices.to_s])
+      unless bootable_devices.empty?
+        bootable_devices_instance_ids = []
+        bootable_devices.each do |bootable_device|
+          bootable_device = find_boot_device(bootable_device)
+          if bootable_device
+            logger.info("parsed boot device is %s" % [bootable_device.to_s])
+            bootable_devices_instance_ids << bootable_device[:instance_id]
+          end
+        end
+        instance_ids = boot_source_settings.map {|e| e[:instance_id]}
+        logger.info("instance ids are %s" % [instance_ids.to_s])
+        bootable_devices_to_disable = instance_ids.reject {|instance_id| bootable_devices_instance_ids.include? instance_id}
+        logger.info("instance ids to disable are %s " % [bootable_devices_to_disable.to_s])
+        bootable_devices_to_disable.each do |bootable_device_to_disable|
+          logger.info("Disabling boot device %s" % [bootable_device_to_disable])
+          change_boot_source_state(:instance_id => boot_source_type, :enabled_state => "0",
+                                   :source => bootable_device_to_disable)
+        end
+      end
     end
   end
 end

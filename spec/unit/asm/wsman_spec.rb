@@ -734,7 +734,9 @@ describe ASM::WsMan do
        :boot_device => :virtual_cd,
        :image_name => "rspec.iso",
        :reboot_job_type => :power_cycle,
-       :timeout => 600}
+       :timeout => 600,
+       :scheduled_start_time => "yyyymmddhhmmss",
+       :bootable_devices => []}
     end
 
     it "should connect iso, reboot if target device not found, wait and set boot order" do
@@ -906,6 +908,45 @@ describe ASM::WsMan do
                                    :required_params => %i[target],
                                    :return_value => "0")
       wsman.unblink_target(:target => "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1")
+    end
+  end
+
+  describe "#boss_controller" do
+    boss_controller_file_name = File.join(File.dirname(__FILE__), "..", "..",
+                                          "fixtures", "wsman", "boss_controller_view.json")
+    let(:boss_controller_data) { JSON.parse(File.read(boss_controller_file_name), :symbolize_names => true) }
+    it "should return boss device when present in list of disk_controllers" do
+      wsman.stubs(:controller_views).returns(boss_controller_data)
+      expect(wsman.boss_controller).to eq("AHCI.Slot.3-1")
+    end
+
+    controller_file_name = File.join(File.dirname(__FILE__),
+                                     "..", "..", "fixtures", "wsman", "controller_view.json")
+    let(:controller_data) { JSON.parse(File.read(controller_file_name), :symbolize_names => true) }
+    it "should return nil when no BOSS device present in the list of disk_controllers" do
+      wsman.stubs(:controller_views).returns(controller_data)
+      expect(wsman.boss_controller).to eq(nil)
+    end
+  end
+
+  describe "#find_first_sata_disk" do
+    physical_disks_file_name = File.join(File.dirname(__FILE__),
+                                         "..", "..", "fixtures", "wsman", "physical_disks.json")
+    let(:physical_disks_data) { JSON.parse(File.read(physical_disks_file_name), :symbolize_names => true) }
+    it "should return sata device when present in list of physical disks" do
+      wsman.stubs(:physical_disk_views).returns(physical_disks_data)
+      expect(wsman.first_sata_disk).to eq("Disk.SATAEmbedded.J-1")
+    end
+  end
+
+  describe "#set_bootable_devices" do
+    boot_source_file_name = File.join(File.dirname(__FILE__),
+                                      "..", "..", "fixtures", "wsman", "boot_source_settings.json")
+    let(:boot_source_data) { JSON.parse(File.read(boot_source_file_name), :symbolize_names => true) }
+    it "should disable the devices which are not present in the list that is passed" do
+      wsman.stubs(:boot_source_settings).returns(boot_source_data)
+      wsman.expects(:change_boot_source_state)
+      wsman.set_bootable_devices("bios-setup", :bootable_devices => [:virtual_floppy])
     end
   end
 end
