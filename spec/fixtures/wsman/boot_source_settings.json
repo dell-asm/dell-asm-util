@@ -1,0 +1,12 @@
+[
+  {
+    "instance_id": "UEFI:BIOS.Setup.1-1#UefiBootSeq#Floppy.iDRACVirtual.1-1#f64c2e3f049b92a8e71f61cf51fea794",
+    "boot_source": "uefi",
+    "boot_source_string": "Virtual Floppy Drive UefiBootSeq"
+  },
+  {
+    "instance_id": "UEFI:BIOS.Setup.1-1#UefiBootSeq#Optical.iDRACVirtual.1-1#375d3ecb49f87dd46ca6c60e34f6155d",
+    "boot_source": "uefi",
+    "boot_source_string": "Virtual Optical Drive UefiBootSeq"
+  }
+]
