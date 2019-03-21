@@ -528,6 +528,22 @@ module ASM
       end
     end
 
+    # Remove host entries in /home/razor/.ssh/known hosts file which can cause ansible run to fail
+    #
+    # @param ips [Array] List of host IPs to search and remove for in known_hosts file
+    # @return [List<String>] List of IPs that could not be removed
+    def self.remove_host_entries(ips, hosts_file=nil)
+      failed_ips = []
+      ips.each do |ip|
+        args = %w[ssh-keygen -R]
+        args.push(ip)
+        result = run_command(*args)
+        failed_ips.push(ip) unless result["exit_status"].zero?
+      end
+
+      failed_ips
+    end
+
     # ASM services send single-element arrays as just the single element (hash).
     # This method ensures we get a single-element array in that case
     def self.asm_json_array(elem)
