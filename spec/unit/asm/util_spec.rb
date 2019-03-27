@@ -363,6 +363,24 @@ describe ASM::Util do
     end
   end
 
+  describe "#remove_host_entries" do
+    it "should remove ips from host file if present" do
+      args = %w[ssh-keygen -R 100.68.106.193]
+      ASM::Util.expects(:run_command).with(*args).returns("exit_status" => 0)
+      args = %w[ssh-keygen -R 100.68.106.196]
+      ASM::Util.expects(:run_command).with(*args).returns("exit_status" => 0)
+      expect(ASM::Util.remove_host_entries(["100.68.106.193", "100.68.106.196"])).to eq([])
+    end
+
+    it "should return ips that failed to remove" do
+      args = %w[ssh-keygen -R 100.68.106.193]
+      ASM::Util.expects(:run_command).with(*args).returns("exit_status" => 1)
+      args = %w[ssh-keygen -R 100.68.106.196]
+      ASM::Util.expects(:run_command).with(*args).returns("exit_status" => 0)
+      expect(ASM::Util.remove_host_entries(["100.68.106.193", "100.68.106.196"])).to eq(["100.68.106.193"])
+    end
+  end
+
   describe "run_ansible_playbook_with_inventory" do
     before(:each) do
       @play = "/tmp/testplay.yaml"
