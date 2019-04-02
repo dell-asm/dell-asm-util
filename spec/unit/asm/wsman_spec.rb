@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "asm/wsman"
+require "asm/wsman/parser"
 
 describe ASM::WsMan do
   let(:logger) { stub(:debug => nil, :warn => nil, :info => nil) }
@@ -854,6 +855,39 @@ describe ASM::WsMan do
     it "should call identify and get valid hash response" do
       client.expects(:identify).with(10).returns(:product_name => "iDRAC")
       expect(wsman.identify(10)).to eq(:product_name => "iDRAC")
+    end
+  end
+
+  describe "#prepare_to_remove" do
+    it "should remove nvme device" do
+      fqdd = "Disk.Bay.12:Enclosure.Internal.0-1:PCIeExtender.Slot.8"
+      opts = {:target => fqdd}
+      wsman.expects(:poll_for_lc_ready).twice
+      client.expects(:invoke).with("PrepareToRemove",
+                                   ASM::WsMan::RAID_SERVICE,
+                                   :params => {:scheduled_start_time => "TIME_NOW",
+                                               :real_time => 1,
+                                               :start_time_interval => "TIME_NOW",
+                                               :until_time => nil,
+                                               :target => "Disk.Bay.12:Enclosure.Internal.0-1:PCIeExtender.Slot.8"},
+                                   :required_params => [:target],
+                                   :return_value => "0").returns(:return_value => "0")
+      client.expects(:invoke).with("CreateTargetedConfigJob",
+                                   ASM::WsMan::RAID_SERVICE,
+                                   :params => {:scheduled_start_time => "TIME_NOW",
+                                               :real_time => 1,
+                                               :start_time_interval => "TIME_NOW",
+                                               :until_time => nil,
+                                               :target => "Disk.Bay.12:Enclosure.Internal.0-1:PCIeExtender.Slot.8"},
+                                   :required_params => [:target],
+                                   :optional_params => %i[scheduled_start_time real_time],
+                                   :return_value => "4096").returns(:return_value => "4096", :job => "JID_542353679218")
+      wsman.expects(:poll_lc_job).with("JID_542353679218", :timeout => 300)
+      ASM::WsMan::Parser.stubs(:response_string).returns(" Job completed successfully. [elapsed_time_since_completion: 0, instance_id: \
+					     JID_542353679218, job_start_time: TIME_NOW, job_status: Completed, job_until_time: \
+					     TIME_NA, message_arguments: NA, message_id: PR19, name: \
+					     Config:RAID:Disk.Bay.12:Enclosure.Internal.0-1:PCIeExtender.Slot.8, percent_complete: 100]")
+      wsman.prepare_to_remove(opts)
     end
   end
 

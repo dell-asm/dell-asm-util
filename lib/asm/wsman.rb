@@ -1668,6 +1668,44 @@ module ASM
       60
     end
 
+    # Prepare the OS to eject a NVMe disk
+    #
+    # This method implements a call to iDRAC, through WsMan, to talk to ISM to eject NVMe disk
+    #
+    # @param options [Hash]
+    # @option options [String] :target The disk FQDD. Example: "Disk.Bay.1:Enclosure.Internal.0-1:NonRAID.Integrated.1-1"
+    #
+    # @return [Hash]
+    # @raise [RuntimeError] when invalid parameter option(s) are passed
+    # @raise [ResponseError] when it fails to turn on the LED
+    def prepare_to_remove(options={})
+      poll_for_lc_ready
+      logger.info("Waiting for LC ready on: %s" % host)
+      options = {:scheduled_start_time => "TIME_NOW",
+                 :real_time => 1,
+                 :start_time_interval => "TIME_NOW",
+                 :until_time => nil}.merge(options)
+      result = client.invoke("PrepareToRemove",
+                             RAID_SERVICE,
+                             :params => options,
+                             :required_params => %i[target],
+                             :return_value => "0")
+      raise unless result[:return_value] == "0"
+
+      job = client.invoke("CreateTargetedConfigJob",
+                          RAID_SERVICE,
+                          :params => options,
+                          :required_params => %i[target],
+                          :optional_params => %i[scheduled_start_time real_time],
+                          :return_value => "4096")
+      raise unless job[:job] && job[:return_value] == "4096"
+
+      resp = poll_lc_job(job[:job], :timeout => 5 * 60)
+      logger.info("Successfully executed Prepare To Remove job %s on host %s: %s" % [job[:job], host, Parser.response_string(resp)])
+      logger.info("Waiting for LC ready on: %s" % host)
+      poll_for_lc_ready
+    end
+
     # Turn on the identifying LED on a disk front panel
     #
     # This method implements a call to iDRAC, through WsMan, to turn on the LED blinker on a disk in a server.
