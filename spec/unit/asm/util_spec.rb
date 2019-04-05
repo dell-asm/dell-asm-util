@@ -398,6 +398,8 @@ describe ASM::Util do
       @arg10 = "/tmp/testplay.yaml"
       @arg11 = "--vault-password-file"
       @arg12 = "/tmp/script.sh"
+      @arg13 = "timeout"
+      @arg14 = "1800"
       @input = mock("input")
       @input.stubs(:write)
       @input.stubs(:close)
@@ -421,6 +423,8 @@ describe ASM::Util do
                  @arg4,
                  @arg5,
                  @arg6,
+                 @arg13,
+                 @arg14,
                  @arg7,
                  @arg8,
                  @arg9,
@@ -439,6 +443,8 @@ describe ASM::Util do
                  @arg4,
                  @arg5,
                  @arg6,
+                 @arg13,
+                 @arg14,
                  @arg7,
                  @arg8,
                  @arg9,
@@ -474,6 +480,8 @@ describe ASM::Util do
                  @arg4,
                  @arg5,
                  @arg6,
+                 @arg13,
+                 @arg14,
                  @arg7,
                  @arg8,
                  @arg9,
