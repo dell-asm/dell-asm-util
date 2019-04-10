@@ -391,7 +391,8 @@ module ASM
 
       options = {:verbose => false,
                  :host_key_check => false,
-                 :stdout_callback => "json"}.merge(options)
+                 :stdout_callback => "json",
+                 :timeout => 1800}.merge(options)
       env = {}
       env["VAULT"] = options[:vault_password_id] if options[:vault_password_id]
       env["ANSIBLE_STDOUT_CALLBACK"] = options[:stdout_callback]
@@ -402,6 +403,8 @@ module ASM
         args.insert(0, "--unset=#{e}")
       end
 
+      args.push("timeout")
+      args.push(options[:timeout].to_s)
       args.push("ansible-playbook")
       args.push("-v") if options[:verbose]
       args += ["-i", inventory_file, playbook_file]
@@ -416,7 +419,6 @@ module ASM
           result.pid         = wait_thr[:pid]
           result.exit_status = wait_thr.value.exitstatus
         end
-
         File.open(output_file, "w") do |fh|
           fh.write(result.stdout)
           fh.close
