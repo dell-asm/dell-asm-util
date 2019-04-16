@@ -1508,7 +1508,7 @@ module ASM
       state_map = {:detached => "Detached", :attached => "Attached", :auto_attach => "AutoAttach"}
       state_string = Parser.enum_value(nil, state_map, state)
 
-      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "RAC Virtual Media Attached" }
+      va = idrac_card_enumeration.find { |x| x[:attribute_display_name] == "RAC Virtual Media Attached" || x[:attribute_display_name] == "Virtual Media Attached"}
       if !va
         logger.warn("Attach State not found and will not be set for %s; may be an unsupported iDrac firmware" % host)
       elsif va[:current_value] != state_string
