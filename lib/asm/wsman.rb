@@ -232,6 +232,10 @@ module ASM
       client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_SoftwareIdentity")
     end
 
+    def memory_views
+      client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/DCIM/DCIM_MemoryView")
+    end
+
     # Retrieve list of BIOS settings
     #
     # @return [Array<Hash>]
