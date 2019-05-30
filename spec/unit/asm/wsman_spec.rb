@@ -625,6 +625,18 @@ describe ASM::WsMan do
       wsman.expects(:boot_source_settings).returns([])
       expect(wsman.find_boot_device(:hdd)).to be_nil
     end
+
+    it "should find boot device if it doesn't exist AHCI.Slot.1-1" do
+      boot_devices = [{:instance_id => "UEFI:BIOS.Setup.1-1#UefiBootSeq#AHCI.Slot.1-2#cb082d76bb00519faa38538ac6f646ca"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device("AHCI.Slot.1-1")).to eq(boot_devices.first)
+    end
+
+    it "should find boot device if it exist AHCI.Slot.1-2" do
+      boot_devices = [{:instance_id => "UEFI:BIOS.Setup.1-1#UefiBootSeq#AHCI.Slot.1-2#cb082d76bb00519faa38538ac6f646ca"}]
+      wsman.expects(:boot_source_settings).returns(boot_devices)
+      expect(wsman.find_boot_device("AHCI.Slot.1-2")).to eq(boot_devices.first)
+    end
   end
 
   describe "#set_boot_order" do

@@ -1417,7 +1417,11 @@ module ASM
       boot_settings = boot_source_settings
       boot_order_map = {:hdd => "HardDisk.List.1-1", :virtual_cd => "Optical.iDRACVirtual.1-1", :virtual_floppy => "Floppy.iDRACVirtual.1-1"}
       boot_device = Parser.enum_value("BootDevice", boot_order_map, boot_device, :strict => false)
-      boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
+      instance_id = boot_settings.find { |e| e[:instance_id].include?("#%s#" % boot_device) }
+      # if boot device not found for in boot_settings, look for part of boot_device
+      instance_id ||= boot_settings.find { |e| e[:instance_id].include?("#%s" % boot_device.split("-").first) }
+
+      instance_id
     end
 
     # Return the boot source type corresponding to the requested boot mode
