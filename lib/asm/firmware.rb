@@ -155,7 +155,7 @@ module ASM
       schema = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"
       resp = wsman.client.enumerate(schema)
       num_current_jobs = "NA"
-      
+
       num_current_jobs_arr = resp.map {|x| x[:current_number_of_jobs]}
       num_current_jobs = num_current_jobs_arr.first if num_current_jobs_arr
       logger.debug("Current number of jobs in the queue = %s" % num_current_jobs)
