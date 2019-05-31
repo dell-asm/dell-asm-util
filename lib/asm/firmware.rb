@@ -121,7 +121,9 @@ module ASM
         resp = wsman.delete_job_queue(:job_id => clear_job_id)
 
         if resp[:return_value] == "0"
-          logger.debug("Jobs in job queue was cleared successfully...")
+          logger.debug("Request to clear jobs from the queue was requested successfully...")
+          sleep 30
+          raise("The job queue has not been cleared") unless job_queue_clear?(wsman)
         else
           raise("Unable to clear all the job queue")
         end
@@ -139,12 +141,31 @@ module ASM
         if attempts < 3
           transport = ASM::Transport::Racadm.new(wsman.client.endpoint, logger)
           transport.reset_idrac
-          sleep 60
+          sleep 180
           retry
         else
           raise("Unable to find the LC status after clearing job queue")
         end
       end
+    end
+
+    def job_queue_clear?(wsman)
+      logger.debug("Waiting for job queue to be empty...")
+      result = false
+      schema = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_JobService"
+      resp = wsman.client.enumerate(schema)
+      num_current_jobs = "NA"
+
+      num_current_jobs_arr = resp.map {|x| x[:current_number_of_jobs]}
+      num_current_jobs = num_current_jobs_arr.first if num_current_jobs_arr
+      logger.debug("Current number of jobs in the queue = %s" % num_current_jobs)
+
+      if num_current_jobs == "0"
+        logger.info("Job Queue is empty.")
+        result = true
+      end
+
+      result
     end
 
     # Used to update the iDrac firmware
