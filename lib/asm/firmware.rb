@@ -76,6 +76,11 @@ module ASM
       options = {:host => device_config["host"], :user => device_config["user"], :password => device_config["password"]}
       firmware_instance = ASM::Firmware.new(options, :logger => logger)
       wsman_instance = ASM::WsMan.new(options, :logger => logger)
+
+      ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+        wsman_instance.poll_for_lc_ready
+      end
+
       firmware_instance.clear_job_queue_retry(wsman_instance)
       force_restart = config["asm::server_update"][cert_name]["force_restart"]
       logger.debug("Idrac FW update, force restart selected for %s" % cert_name) if force_restart
