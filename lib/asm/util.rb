@@ -378,6 +378,7 @@ module ASM
     # @option options [String] :vault_password_id credential id to be decrypted by vault password file
     # @option options [String] :vault_password_file path to python script to return vault password
     # @options options [String] :verbose run ansible playbook in verbose mode
+    # @options options [String] :ssl_cloud_link_certs turn on or off for CLOUDLINK_VALIDATE_CERTS
     # @options options [String] :host_key_check turn on or off ansible host key check
     # @options options [stdout_callback] : stdout_callback set output format, must be json to be parsed
     #                                      by method parse_ansible_log
@@ -395,6 +396,7 @@ module ASM
                  :timeout => 1800}.merge(options)
       env = {}
       env["VAULT"] = options[:vault_password_id] if options[:vault_password_id]
+      env["CLOUDLINK_VALIDATE_CERTS"] = "False" unless options[:ssl_cloud_link_certs]
       env["ANSIBLE_STDOUT_CALLBACK"] = options[:stdout_callback]
       env["ANSIBLE_HOST_KEY_CHECKING"] = "False" unless options[:host_key_check]
 

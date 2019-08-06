@@ -416,7 +416,7 @@ describe ASM::Util do
 
     it "should run ansible with the provided playbook and inventory files without verbose" do
       Open3.stubs(:popen3)
-           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False", "CLOUDLINK_VALIDATE_CERTS" => "False"},
                  @arg1,
                  @arg2,
                  @arg3,
@@ -436,7 +436,7 @@ describe ASM::Util do
 
     it "should run ansible with the provided playbook and inventory files" do
       Open3.stubs(:popen3)
-           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+           .with({"ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False", "CLOUDLINK_VALIDATE_CERTS" => "False"},
                  @arg1,
                  @arg2,
                  @arg3,
@@ -473,7 +473,7 @@ describe ASM::Util do
 
     it "should pass in options as environment variables" do
       Open3.expects(:popen3)
-           .with({"VAULT" => "test", "ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False"},
+           .with({"VAULT" => "test", "ANSIBLE_STDOUT_CALLBACK" => "json", "ANSIBLE_HOST_KEY_CHECKING" => "False", "CLOUDLINK_VALIDATE_CERTS" => "False"},
                  @arg1,
                  @arg2,
                  @arg3,

@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "listen"
   s.add_development_dependency "logger-colors"
   s.add_development_dependency "mocha"
-  s.add_development_dependency "puppet"
+  s.add_development_dependency "puppet", "6.4.2"
   s.add_development_dependency "puppetlabs_spec_helper", "0.4.1"
   s.add_development_dependency "rainbow"
   s.add_development_dependency "rake"
