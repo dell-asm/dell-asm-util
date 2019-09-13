@@ -1778,7 +1778,7 @@ module ASM
                     :return_value => "0")
     end
 
-    # Get the FQDD of the first SATA Disk present on the node
+    # Get the FQDD of the first SATA Disk (SATADOM model) present on the node
     #
     # @return [String] FQDD of the first SATA Disk present on the node
     def first_sata_disk
@@ -1788,8 +1788,7 @@ module ASM
       disks_enum.each do |x|
         slot = x[:slot]
         connector = x[:connector]
-        bus_protocol = x[:bus_protocol]
-        sata_disks << "%s-%s" % [slot, connector] if bus_protocol == "5"
+        sata_disks << "%s-%s" % [slot, connector] if x[:model] =~ /SATADOM/i
       end
       return if sata_disks.empty?
 
