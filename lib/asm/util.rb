@@ -397,6 +397,7 @@ module ASM
       env["VAULT"] = options[:vault_password_id] if options[:vault_password_id]
       env["ANSIBLE_STDOUT_CALLBACK"] = options[:stdout_callback]
       env["ANSIBLE_HOST_KEY_CHECKING"] = "False" unless options[:host_key_check]
+      env["ANSIBLE_SSH_ARGS"] = '"-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"'
 
       args = []
       %w[BUNDLE_BIN_PATH GEM_PATH RUBYLIB GEM_HOME RUBYOPT].each do |e|
