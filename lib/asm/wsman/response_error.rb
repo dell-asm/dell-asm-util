@@ -17,5 +17,17 @@ module ASM
         "%s: %s" % [super.to_s, Parser.response_string(response)]
       end
     end
+
+    # An exception that encapsulates a ws-man fault message.
+    class FaultError < StandardError
+      attr_reader :fault
+      attr_reader :reason
+
+      def initialize(fault_code, reason)
+        super("WS-MAN returned a fault code: %s (%s)" % [fault_code, reason])
+        @fault = fault
+        @reason = reason
+      end
+    end
   end
 end

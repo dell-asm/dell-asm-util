@@ -32,13 +32,13 @@ describe ASM::WsMan::Parser do
       expected = {:code => "wsman:InvalidParameter",
                   :reason => "CMPI_RC_ERR_INVALID_PARAMETER",
                   :detail => "http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MissingValues"}
-      expect(parser.parse(content)).to eq(expected)
+      expect {parser.parse(content)}.to raise_error(ASM::WsMan::FaultError, "WS-MAN returned a fault code: wsman:InvalidParameter (CMPI_RC_ERR_INVALID_PARAMETER)")
     end
 
     it "should parse timed out fault" do
       content = SpecHelper.load_fixture("wsman/timed_out_fault.xml")
       expected = {:code => "wsman:TimedOut", :reason => "The operation has timed out."}
-      expect(parser.parse(content)).to eq(expected)
+      expect {parser.parse(content)}.to raise_error(ASM::WsMan::FaultError, "WS-MAN returned a fault code: wsman:TimedOut (The operation has timed out.)")
     end
 
     it "should parse xsi:nil elements" do
@@ -71,7 +71,7 @@ describe ASM::WsMan::Parser do
       expected = {:code => "wsman:InvalidParameter",
                   :reason => "CMPI_RC_ERR_INVALID_PARAMETER",
                   :detail => "http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MissingValues"}
-      expect(parser.parse_enumeration(content)).to eq(expected)
+      expect {parser.parse_enumeration(content)}.to raise_error(ASM::WsMan::FaultError, "WS-MAN returned a fault code: wsman:InvalidParameter (CMPI_RC_ERR_INVALID_PARAMETER)")
     end
   end
 
