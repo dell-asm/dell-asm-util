@@ -40,12 +40,23 @@ module ASM
           return nil
         end
 
+        return_message_is_fault = false
         ret = {}
+
         response = body.children.first
+        return_message_is_fault = true if response.name.downcase == "fault"
+
         response.children.each do |e|
           key = snake_case(e.name).to_sym
           ret[key] = parse_element(e)
         end
+
+        if return_message_is_fault
+          code = ret[:code]
+          reason = ret[:reason]
+          raise ASM::WsMan::FaultError.new(code, reason)
+        end
+
         ret
       end
 
