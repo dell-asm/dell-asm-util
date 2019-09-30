@@ -356,6 +356,8 @@ module ASM
     # @example
     #   { [ :TeamInfo => { :networks => [...], :mac_addresses => [ ... ] ] }
     def teams(opt={})
+      @teams = nil if opt[:refresh_info]
+
       @teams ||= begin
         raise("NIC MAC Address information needs to updated to network configuration. Invoke nc.add_nics!") unless @network_config_add_nic
 
