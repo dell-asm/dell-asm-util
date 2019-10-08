@@ -149,10 +149,22 @@ module ASM
     def self.esxcli(cmd_array, endpoint, logger=nil, skip_parsing=false, time_out=600)
       unless cmd_array.empty?
         endpoint[:thumbprint] ||= begin
-          thumbprint_output = esxcli([], endpoint, logger, true, time_out)
+          thumbprint_output = esxcli([], endpoint, logger, true, time_out) || ""
           thumbprint_output.slice(/(?<=thumbprint: )(.*)(?= \(not)/)
         end
+
+        # Intermittently ESXCLI failure is observed as thumbprint is not set
+        if endpoint[:thumbprint].nil? || endpoint[:thumbprint].empty?
+          logger&.error("ESXCLI Thumbprint is not set. Retrying")
+          endpoint[:thumbprint] ||= begin
+            thumbprint_output = esxcli([], endpoint, logger, true, time_out)
+            thumbprint_output.slice(/(?<=thumbprint: )(.*)(?= \(not)/)
+          end
+        end
+
+        logger&.info("Thumprint for %s is %s" % [endpoint["host"], endpoint[:thumbprint]])
       end
+
       args = [time_out.to_s, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
       args += ["-s", endpoint[:host],
                "-u", endpoint[:user]]
