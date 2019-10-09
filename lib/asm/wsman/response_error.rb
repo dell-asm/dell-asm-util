@@ -19,7 +19,7 @@ module ASM
     end
 
     # An exception that encapsulates a ws-man fault message.
-    class FaultError < StandardError
+    class FaultError < ASM::WsMan::Error
       attr_reader :fault
       attr_reader :reason
 
