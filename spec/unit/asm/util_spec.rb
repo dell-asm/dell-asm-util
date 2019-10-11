@@ -2,6 +2,7 @@
 
 require "asm/util"
 require "asm/errors"
+require "net/ssh"
 require "spec_helper"
 require "tempfile"
 require "json"
@@ -129,6 +130,12 @@ describe ASM::Util do
     expect(ret[3]["Virtual Switch"]).to eq("vSwitch0")
     expect(ret[3]["Active Clients"]).to eq("1")
     expect(ret[3]["VLAN ID"]).to eq("28")
+  end
+
+  it "should fail if thumbprint not found" do
+    result = {"exit_status" => 2, "stdout" => "Bang!"}
+    ASM::Util.stubs(:run_command_with_args).returns(result)
+    expect { ASM::Util.esxcli(%w[system uuid get], :host => "rspec-host") }.to raise_error("Thumbprint retrieval failed for host rspec-host: Bang!")
   end
 
   describe "when hash is deep" do

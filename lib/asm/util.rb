@@ -150,7 +150,11 @@ module ASM
       unless cmd_array.empty?
         endpoint[:thumbprint] ||= begin
           thumbprint_output = esxcli([], endpoint, logger, true, time_out)
-          thumbprint_output.slice(/(?<=thumbprint: )(.*)(?= \(not)/)
+
+          thumbprint = thumbprint_output.slice(/(?<=thumbprint: )(.*)(?= \(not)/)
+          raise("Thumbprint retrieval failed for host %s: %s" % [endpoint[:host], thumbprint_output]) unless thumbprint
+
+          thumbprint
         end
       end
       args = [time_out.to_s, "env", "VI_PASSWORD=#{endpoint[:password]}", "esxcli"]
@@ -167,10 +171,10 @@ module ASM
       result = ASM::Util.run_command_with_args("timeout", *args)
 
       if result["exit_status"] != 0 && !cmd_array.empty?
-        msg = "Failed to execute esxcli command on host #{endpoint[:host]}"
-        logger&.error(msg)
         args[2] = "VI_PASSWORD=******" # mask password
-        raise("#{msg}: esxcli #{args.join(' ')}: #{result.inspect}")
+        msg = "Failed to execute esxcli command on host %s: esxcli %s: %s" % [endpoint[:host], args.join(" "), result.inspect]
+        logger&.error(msg)
+        raise(msg)
       end
 
       if skip_parsing
