@@ -649,6 +649,7 @@ describe ASM::WsMan do
     it "should fail if BootMode not found" do
       wsman.expects(:poll_for_lc_ready)
       wsman.expects(:bios_enumerations).returns([])
+      wsman.expects(:reboot).never
       expect {wsman.set_boot_order(:virtual_cd, opts)}.to raise_error("BootMode not found")
     end
 
@@ -660,6 +661,7 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
       wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.expects(:reboot).never
       wsman.set_boot_order(:virtual_cd, opts)
     end
 
@@ -671,6 +673,7 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "UEFI", :source => "rspec-id")
       wsman.expects(:change_boot_source_state).with(:instance_id => "UEFI", :enabled_state => "1", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.expects(:reboot).never
       wsman.set_boot_order(:virtual_cd, opts.merge(:boot_mode => :uefi))
     end
 
@@ -680,6 +683,7 @@ describe ASM::WsMan do
       wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Bios")
       wsman.expects(:find_boot_device).with(:virtual_cd).returns(nil)
       wsman.expects(:boot_source_settings).returns(%w[Hdd VirtualCd Nic].map { |e| {:element_name => e}})
+      wsman.expects(:reboot).never
       message = "Could not find virtual_cd boot device in current list: Hdd, VirtualCd, Nic"
       expect {wsman.set_boot_order(:virtual_cd, opts)}.to raise_error(message)
     end
@@ -694,6 +698,7 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_order_by_instance_id).never
       wsman.expects(:change_boot_source_state).never
       wsman.expects(:run_bios_config_job).never
+      wsman.expects(:reboot).never
       wsman.set_boot_order(:virtual_cd, opts)
     end
 
@@ -704,6 +709,7 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.expects(:change_boot_source_state).with(:instance_id => "IPL", :enabled_state => "1", :source => "rspec-id")
+      wsman.expects(:reboot).never
       wsman.set_boot_order(:virtual_cd, opts)
     end
 
@@ -714,7 +720,36 @@ describe ASM::WsMan do
       wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "IPL", :source => "rspec-id")
       wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
       wsman.expects(:change_boot_source_state).never
+      wsman.expects(:reboot).never
       wsman.set_boot_order(:virtual_cd, opts)
+    end
+
+    it "should reboot if :always_reboot specified" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:find_boot_device).with(:virtual_cd)
+           .returns(:instance_id => "rspec-id",
+                    :current_assigned_sequence => "0",
+                    :current_enabled_status => "1")
+      wsman.expects(:change_boot_order_by_instance_id).never
+      wsman.expects(:change_boot_source_state).never
+      wsman.expects(:run_bios_config_job).never
+
+      wsman.expects(:reboot).with(:reboot_job_type => :graceful_with_forced_shutdown)
+
+      wsman.set_boot_order(:virtual_cd, :reboot_job_type => :graceful_with_forced_shutdown, :always_reboot => true)
+    end
+
+    it "should not reboot if :always_reboot specified but bios mode was changed" do
+      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:bios_enumerations).returns([{:fqdd => "BiosFqdd", :attribute_name => "BootMode", :current_value => "Bios"}])
+      wsman.expects(:set_bios_attributes).with(:target => "BiosFqdd", :attribute_name => "BootMode", :attribute_value => "Uefi")
+      wsman.expects(:find_boot_device).with(:virtual_cd).returns(:instance_id => "rspec-id", :current_assigned_sequence => 5)
+      wsman.expects(:change_boot_order_by_instance_id).with(:instance_id => "UEFI", :source => "rspec-id")
+      wsman.expects(:change_boot_source_state).with(:instance_id => "UEFI", :enabled_state => "1", :source => "rspec-id")
+      wsman.expects(:run_bios_config_job).with(opts.merge(:target => "BiosFqdd"))
+      wsman.expects(:reboot).never
+      wsman.set_boot_order(:virtual_cd, opts.merge(:boot_mode => :uefi, :always_reboot => true))
     end
   end
 

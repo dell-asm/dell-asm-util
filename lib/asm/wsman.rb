@@ -1447,6 +1447,7 @@ module ASM
     # @option params [String] :scheduled_start_time Schedules the "configuration job" and the optional "reboot job"
     #                         at the specified start time in the format: yyyymmddhhmmss. A special value of
     #                         "TIME_NOW" schedules the job(s) immediately.
+    # @option params [Boolean] :always_reboot whether to reboot even if no boot order changes are required
     # @option params [Array] :bootable_devices List of Devices that should be enabled. All the other available options of boot devices will be disabled.
     # @return [void]
     # @raise [ResponseError] if a command fails
@@ -1454,7 +1455,8 @@ module ASM
       options = {:boot_mode => :bios,
                  :scheduled_start_time => "TIME_NOW",
                  :reboot_job_type => :graceful_with_forced_shutdown,
-                 :bootable_devices => []}.merge(options)
+                 :bootable_devices => [],
+                 :always_reboot => false}.merge(options)
 
       raise(ArgumentError, "Invalid boot mode: %s" % options[:boot_mode]) unless %i[bios uefi].include?(options[:boot_mode])
 
@@ -1464,12 +1466,14 @@ module ASM
       raise("BootMode not found") unless boot_mode
 
       desired_mode = options[:boot_mode].to_s.capitalize
+      rebooted = false
       unless boot_mode[:current_value] == desired_mode
         # Set back to requested boot mode
         logger.info("Current boot mode on %s is %s, resetting to %s BootMode" %
                         [host, boot_mode[:current_value], desired_mode])
         set_bios_attributes(:target => boot_mode[:fqdd], :attribute_name => "BootMode",
                             :attribute_value => desired_mode)
+        rebooted = true
       end
 
       target = find_boot_device(boot_device)
@@ -1480,6 +1484,9 @@ module ASM
 
       if target[:current_assigned_sequence] == "0" && target[:current_enabled_status] == "1"
         logger.info("%s is already configured to boot from %s" % [host, target[:element_name]])
+
+        reboot(:reboot_job_type => options[:reboot_job_type]) if !rebooted && options[:always_reboot]
+
         return
       end
 
