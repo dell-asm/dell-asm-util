@@ -21,6 +21,7 @@ module ASM
     POWER_STATE_CHANGE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_CSPowerManagementService?SystemCreationClassName=DCIM_SPComputerSystem&SystemName=systemmc&CreationClassName=DCIM_CSPowerManagementService&Name=pwrmgtsvc:1"
     SOFTWARE_INSTALLATION_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SoftwareInstallationService?CreationClassName=DCIM_SoftwareInstallationService&SystemCreationClassName=DCIM_ComputerSystem&SystemName=IDRAC:ID&Name=SoftwareUpdate"
     IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration?InstanceID=iDRAC.Embedded.1#VirtualConsole.1#AttachState"
+    GENERAL_IDRAC_CARD_ENUMERATION = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/DCIM_iDRACCardEnumeration"
     APPLY_ATTRIBUTES = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_iDRACCardService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_iDRACCardService&SystemName=DCIM:ComputerSystem&Name=DCIM:iDRACCardService"
     SYSTEM_MANAGEMENT_SERVICE = "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_SystemManagementService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_SystemManagementService&SystemName=srv:system&Name=DCIM:SystemManagementService"
     RAID_SERVICE = "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_RAIDService?SystemCreationClassName=DCIM_ComputerSystem&CreationClassName=DCIM_RAIDService&SystemName=DCIM:ComputerSystem&Name=DCIM:RAIDService"
@@ -337,6 +338,10 @@ module ASM
     #     ]
     def idrac_card_enumeration
       client.enumerate(IDRAC_CARD_ENUMERATION)
+    end
+
+    def ism_state
+      client.get(GENERAL_IDRAC_CARD_ENUMERATION, "iDRAC.Embedded.1#ServiceModule.1#ServiceModuleState")
     end
 
     # Get server power state
