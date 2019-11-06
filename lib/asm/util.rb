@@ -338,7 +338,7 @@ module ASM
       Net::SSH.start(server,
                      username,
                      :password => password,
-                     :verify_host_key => Net::SSH::Verifiers::Null.new,
+                     :verify_host_key => false,
                      :global_known_hosts_file => "/dev/null") do |ssh|
         cmd = ([command] + [arguments]).join(" ").strip
 
