@@ -114,6 +114,20 @@ describe ASM::NetworkConfiguration::NicInfo do
         expect(nic_infos[1].nic_type).to eq("2x25Gb")
         expect(nic_infos[1].card_prefix).to eq("NIC.Slot.2")
       end
+
+      it "should recognize Mellanox ConnectX-5 EX 100Gb slot card" do
+        nic_views_xml = SpecHelper.load_fixture("network_configuration/mellanox_connect_x_5_Ex_100_nic_view.xml")
+        ASM::WsMan.expects(:invoke)
+                  .with(endpoint, "enumerate", "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_NICView", :logger => logger)
+                  .returns(nic_views_xml)
+        ASM::WsMan.expects(:get_bios_enumeration).with(endpoint, logger).returns([])
+        nic_infos = ASM::NetworkConfiguration::NicInfo.fetch(endpoint, logger)
+        expect(nic_infos.size).to eq(2)
+        expect(nic_infos[0].nic_type).to eq("2x100Gb")
+        expect(nic_infos[0].card_prefix).to eq("NIC.Slot.2")
+        expect(nic_infos[1].nic_type).to eq("2x100Gb")
+        expect(nic_infos[1].card_prefix).to eq("NIC.Slot.3")
+      end
     end
 
     describe ".create" do
@@ -215,6 +229,18 @@ describe ASM::NetworkConfiguration::NicInfo do
     end
 
     describe "#nic_type" do
+      it "should recognize 2x100Gb" do
+        nic_views = 1.upto(2).map do |i|
+          {"FQDD" => "NIC.Slot.2-%d-1" % i,
+           "CurrentMACAddress" => "04:0A:F7:06:88:5%d" % i,
+           "PermanentMACAddress" => "04:0A:F7:06:88:5%d" % i,
+           "LinkSpeed" => "8",
+           "pci_device_id" => "1019"}
+        end
+        nic_info = build_nic_info(nic_views)
+        expect(nic_info.nic_type).to eq("2x100Gb")
+      end
+
       it "should recognize 2x10Gb" do
         nic_info = build_nic_info(integrated_2x10gb_partitioned_nic_views)
         expect(nic_info.nic_type).to eq("2x10Gb")
