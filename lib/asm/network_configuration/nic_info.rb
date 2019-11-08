@@ -167,6 +167,7 @@ module ASM
         return "2x1Gb" if ports.size == 2 && all_ports?(ports, "1000 Mbps")
         return "2x10Gb" if ports.size == 2 && all_ports?(ports, "10 Gbps")
         return "2x25Gb" if ports.size == 2 && all_ports?(ports, "25 Gbps")
+        return "2x100Gb" if ports.size == 2 && all_ports?(ports, "100 Gbps")
 
         return "4x1Gb" if ports.size == 4 && all_ports?(ports, "1000 Mbps")
         return "4x10Gb" if ports.size == 4 && all_ports?(ports, "10 Gbps")

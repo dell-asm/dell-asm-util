@@ -118,6 +118,10 @@ module ASM
         vendor == :mellanox && n_ports == 2 && nic_view.pci_device_id == "1015"
       end
 
+      def is_mellanox_connect_x_5_lx?
+        vendor == :mellanox && n_ports == 2 && nic_view.pci_device_id == "1019"
+      end
+
       # The NIC port speed as determined by NIC vendor and model information
       #
       # Currently recognizes speed values for Broadcom 57800, 57810 and 57840
@@ -137,6 +141,8 @@ module ASM
         return "10 Gbps" if is_intel_x710?
 
         return "25 Gbps" if is_mellanox_connect_x_4_lx?
+
+        return "100 Gbps" if is_mellanox_connect_x_5_lx?
 
         nil
       end
