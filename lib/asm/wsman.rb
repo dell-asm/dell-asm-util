@@ -1821,6 +1821,18 @@ module ASM
       disk_controller[:fqdd]
     end
 
+    # Get the FQDD of the PERC H730P or H740P RAID controller if present on the node
+    #
+    # @return [String] FQDD of the PERC RAID controller if present on the node
+    def perc_controller
+      disk_controllers = controller_views
+      disk_controller = disk_controllers.find { |c| c[:product_name].include?("H730P") }
+      disk_controller ||= disk_controllers.find { |c| c[:product_name].include?("H740P") }
+      return nil unless disk_controller
+
+      disk_controller[:fqdd]
+    end
+
     # This method will retain the boot devices that are passed in the options and disable all the other available boot devices on the node.
     #
     # @param options [Hash]
