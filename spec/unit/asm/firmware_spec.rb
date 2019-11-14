@@ -143,7 +143,7 @@ describe ASM::Firmware do
 
     it "should clear the job queue successfully" do
       wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response)
-      wsman.expects(:poll_for_lc_ready)
+      wsman.expects(:poll_for_lc_ready).twice
       firmware_obj.expects(:job_queue_clear?).returns(true)
       firmware_obj.clear_job_queue_retry(wsman)
     end
@@ -167,6 +167,7 @@ describe ASM::Firmware do
       firmware_obj.stubs(:sleep).returns(nil).at_least_once
       wsman.expects(:client).returns(stub(:endpoint => endpoint)).times(2)
       ASM::Transport::Racadm.expects(:new).with(endpoint, logger).returns(mock_transport).times(2)
+      wsman.expects(:poll_for_lc_ready).at_least_once
       wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL").returns(response2)
       wsman.expects(:delete_job_queue).with(:job_id => "JID_CLEARALL_FORCE").twice.returns(response2).times(2)
       expect do

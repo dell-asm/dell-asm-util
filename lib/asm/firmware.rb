@@ -121,20 +121,29 @@ module ASM
       attempts ||= 0
       begin
         attempts += 1
+
+        logger.debug("Waiting for LC ready prior to clearing job queue...")
+        ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+          wsman.poll_for_lc_ready
+        end
+
         logger.debug("Clearing the Job Queue...")
         clear_job_id = attempts > 1 ?  "JID_CLEARALL_FORCE" : "JID_CLEARALL"
         resp = wsman.delete_job_queue(:job_id => clear_job_id)
 
+        logger.debug("Sleeping 30 seconds after deleting job queue before polling LC ready...")
+        sleep 30
+
+        logger.debug("Waiting for LC ready after clearing job queue...")
+        ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
+          wsman.poll_for_lc_ready
+        end
+
         if resp[:return_value] == "0"
           logger.debug("Request to clear jobs from the queue was requested successfully...")
-          sleep 30
           raise("The job queue has not been cleared") unless job_queue_clear?(wsman)
         else
           raise("Unable to clear all the job queue")
-        end
-
-        ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
-          wsman.poll_for_lc_ready
         end
       rescue
         logger.debug("Job queue cannot be cleared.") if attempts > 1
