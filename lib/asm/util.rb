@@ -180,36 +180,61 @@ module ASM
       if skip_parsing
         result["stdout"]
       else
-        parse_esxcli_result(result["stdout"])
+        parse_table(result["stdout"])
       end
     end
 
-    def self.parse_esxcli_result(result_stdout)
-      lines = result_stdout.split(/\n/)
-      if lines.size >= 2
-        header_line = lines.shift
-        seps = lines.shift.split
-        headers = []
-        pos = 0
-        seps.each do |sep|
-          header = header_line.slice(pos, sep.length).strip
-          headers.push(header)
-          pos = pos + sep.length + 2
-        end
+    # Parse a text table as returned by many CLI tools
+    #
+    # Parses a text representation of a table as returned by many CLI tools. Assumptions made are:
+    #
+    # - First line will contain column headers that are separate by _more_ than one space
+    # - Second line will be a separator line that should be ignored
+    # - Values start on the same column as the column header
+    #
+    # @example
+    # > ASM::Util.parse_text_table(<<-TABLE
+    # * Column One  Column Two  Column Three
+    # * ------------------------------------
+    # * Value One   Value Two   Value Three
+    # * TABLE
+    # * )
+    # => [{"Column One"=>"Value One", "Column Two"=>"Value Two", "Column Three"=>"Value Three"}]
+    #
+    # @param uri [String] the textual table
+    # @return [Array<Hash>] List of hashes containing column header name and corresponding value, or empty list if no table found.
+    def self.parse_table(text)
+      lines = text.split(/\n/)
+      return [] unless lines.size >= 2
 
-        ret = []
-        lines.each do |line|
-          record = {}
-          pos = 0
-          seps.each_with_index do |sep, index|
-            value = line.slice(pos, sep.length).strip
-            record[headers[index]] = value
-            pos = pos + sep.length + 2
-          end
-          ret.push(record)
-        end
-        ret
+      header_line = lines.shift
+      headers = header_line.split(/\s\s+/).map(&:strip)
+
+      _seps = lines.shift
+
+      columns = []
+      start_pos = 0
+      headers[1...headers.length].each do |header|
+        end_pos = header_line.index(header)
+        columns << start_pos
+        start_pos = end_pos
       end
+
+      columns << start_pos
+
+      ret = []
+      lines.each do |line|
+        next unless line.length >= columns.last
+
+        record = {}
+        columns.each_with_index do |column, index|
+          end_pos = index < columns.size - 1 ? columns[index + 1] : line.length
+          value = line[column...end_pos].strip
+          record[headers[index]] = value
+        end
+        ret.push(record)
+      end
+      ret
     end
 
     def self.get_fcoe_adapters(esx_endpoint, logger=nil)
