@@ -530,4 +530,73 @@ describe ASM::Util do
       expect(result).to eq(:exit_code => -1, :stderr => "", :stdout => "test")
     end
   end
+
+  describe "#parse_table" do
+    it "should return an empty array for empty data" do
+      expect(ASM::Util.parse_table("")).to eq([])
+    end
+
+    it "should parse ftos lldp neighbors" do
+      table = <<-LLDP_NEIGHBORS
+ Loc PortID     Rem Host Name     Rem Port Id                        Rem Chassis Id
+ --------------------------------------------------------------------------------
+
+ Te 1/1         -                 24:8a:07:b9:d8:10                  24:8a:07:b9:d8:10
+ Te 1/2         -                 24:8a:07:b9:d8:11                  24:8a:07:b9:d8:11
+ Te 1/3         localhost.local...e4:1d:2d:bf:d7:e0                  e4:1d:2d:bf:d7:e0
+ Te 1/4         localhost.local...e4:1d:2d:bf:d7:e1                  e4:1d:2d:bf:d7:e1
+ Te 1/5         localhost.local...24:8a:07:5b:e7:90                  24:8a:07:5b:e7:90
+ Te 1/6         localhost.local...24:8a:07:5b:e7:91                  24:8a:07:5b:e7:91
+ Te 1/7         localhost.local...e4:1d:2d:bf:d6:a0                  e4:1d:2d:bf:d6:a0
+ Te 1/9         localhost.local...e4:1d:2d:bf:d6:a1                  e4:1d:2d:bf:d6:a1
+ Te 1/17        -                 e4:43:4b:12:98:88                  e4:43:4b:12:98:88
+ Te 1/18        -                 e4:43:4b:12:91:c0                  e4:43:4b:12:91:c0
+ Te 1/19        -                 00:0a:f7:14:fd:f0                  00:0a:f7:14:fd:f0
+ Te 1/20        -                 e4:43:4b:12:d0:aa                  e4:43:4b:12:d0:aa
+ Te 1/21        -                 e4:43:4b:12:92:8c                  e4:43:4b:12:92:8c
+ Te 1/27        -                 d0:43:1e:a1:d7:01                  d0:43:1e:a1:d7:01
+ Te 1/28        -                 d0:43:1e:a1:d7:ef                  d0:43:1e:a1:d7:ef
+ Te 1/29        -                 d0:43:1e:a1:d7:69                  d0:43:1e:a1:d7:69
+ Te 1/31        -                 d0:43:1e:a1:d7:1b                  d0:43:1e:a1:d7:1b
+ Te 1/32        -                 d0:43:1e:a1:d9:5d                  d0:43:1e:a1:d9:5d
+ Fo 1/49        -                 fortyGigE 0/60                     90:b1:1c:f4:27:78
+ Ma 1/1         -                 TenGigabitEthernet 0/13            90:b1:1c:f4:2e:8c
+      LLDP_NEIGHBORS
+
+      records = ASM::Util.parse_table(table)
+
+      expect(records.length).to eq(20)
+
+      expect(records[0]).to eq("Loc PortID" => "Te 1/1", "Rem Host Name" => "-", "Rem Port Id" => "24:8a:07:b9:d8:10", "Rem Chassis Id" => "24:8a:07:b9:d8:10")
+      expect(records[2]).to eq("Loc PortID" => "Te 1/3", "Rem Host Name" => "localhost.local...", "Rem Port Id" => "e4:1d:2d:bf:d7:e0", "Rem Chassis Id" => "e4:1d:2d:bf:d7:e0")
+      expect(records[19]).to eq("Loc PortID" => "Ma 1/1", "Rem Host Name" => "-", "Rem Port Id" => "TenGigabitEthernet 0/13", "Rem Chassis Id" => "90:b1:1c:f4:2e:8c")
+    end
+
+    it "should parse esxcli tables" do
+      table = <<~LLDP_NEIGHBORS
+        Name    PCI Device    Driver      Admin Status  Link Status  Speed  Duplex  MAC Address         MTU  Description
+        ------  ------------  ----------  ------------  -----------  -----  ------  -----------------  ----  ----------------------------------------------------
+        vmnic0  0000:18:00.0  i40en       Up            Up           10000  Full    24:6e:96:5c:d8:1c  1500  Intel(R) Ethernet Controller X710 for 10GbE SFP+
+        vmnic1  0000:18:00.1  i40en       Up            Up           10000  Full    24:6e:96:5c:d8:1e  1500  Intel(R) Ethernet Controller X710 for 10GbE SFP+
+        vmnic2  0000:01:00.0  igbn        Up            Down             0  Half    24:6e:96:5c:d8:3c  1500  Intel Corporation Gigabit 4P X710/I350 rNDC
+        vmnic3  0000:01:00.1  igbn        Up            Down             0  Half    24:6e:96:5c:d8:3d  1500  Intel Corporation Gigabit 4P X710/I350 rNDC
+        vmnic4  0000:3b:00.0  nmlx5_core  Up            Up           25000  Full    ec:0d:9a:7f:3a:96  1500  Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+        vmnic5  0000:3b:00.1  nmlx5_core  Up            Up           25000  Full    ec:0d:9a:7f:3a:97  9000  Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+        vmnic6  0000:5f:00.0  nmlx5_core  Up            Up           25000  Full    ec:0d:9a:7f:3b:46  1500  Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+        vmnic7  0000:5f:00.1  nmlx5_core  Up            Up           25000  Full    ec:0d:9a:7f:3b:47  9000  Mellanox Technologies MT27710 Family [ConnectX-4 Lx]
+        vusb0   Pseudo        cdce        Up            Up             100  Full    50:9a:4c:aa:24:c9  1500  DellTM iDRAC Virtual NIC USB Device
+      LLDP_NEIGHBORS
+
+      records = ASM::Util.parse_table(table)
+
+      expect(records.length).to eq(9)
+      expect(records[0]).to eq("Name" => "vmnic0", "PCI Device" => "0000:18:00.0", "Driver" => "i40en",
+                               "Admin Status" => "Up", "Link Status" => "Up", "Speed" => "10000", "Duplex" => "Full",
+                               "MAC Address" => "24:6e:96:5c:d8:1c  1", "MTU" => "500",
+                               "Description" => "Intel(R) Ethernet Controller X710 for 10GbE SFP+")
+      expect(records[8]).to eq("Name" => "vusb0", "PCI Device" => "Pseudo", "Driver" => "cdce", "Admin Status" => "Up",
+                               "Link Status" => "Up", "Speed" => "100", "Duplex" => "Full", "MAC Address" => "50:9a:4c:aa:24:c9  1",
+                               "MTU" => "500", "Description" => "DellTM iDRAC Virtual NIC USB Device")
+    end
+  end
 end
