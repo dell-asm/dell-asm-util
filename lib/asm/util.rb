@@ -210,27 +210,40 @@ module ASM
       header_line = lines.shift
       headers = header_line.split(/\s\s+/).map(&:strip)
 
-      _seps = lines.shift
+      seps = lines.shift
 
-      columns = []
-      start_pos = 0
-      headers[1...headers.length].each do |header|
-        end_pos = header_line.index(header)
-        columns << start_pos
-        start_pos = end_pos
+      columns = [0]
+      index = 1
+
+      loop do
+        index = seps.index(" ", index)
+        break unless index
+
+        columns << index + 2
+        index += 2
       end
 
-      columns << start_pos
+      if columns.size != headers.size
+        columns = []
+        start_pos = 0
+        headers[1...headers.length].each do |header|
+          end_pos = header_line.index(header)
+          columns << start_pos
+          start_pos = end_pos
+        end
+
+        columns << start_pos
+      end
 
       ret = []
       lines.each do |line|
         next unless line.length >= columns.last
 
         record = {}
-        columns.each_with_index do |column, index|
-          end_pos = index < columns.size - 1 ? columns[index + 1] : line.length
+        columns.each_with_index do |column, l_index|
+          end_pos = l_index < columns.size - 1 ? columns[l_index + 1] : line.length
           value = line[column...end_pos].strip
-          record[headers[index]] = value
+          record[headers[l_index]] = value
         end
         ret.push(record)
       end
