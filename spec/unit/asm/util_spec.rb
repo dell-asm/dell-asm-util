@@ -592,11 +592,11 @@ describe ASM::Util do
       expect(records.length).to eq(9)
       expect(records[0]).to eq("Name" => "vmnic0", "PCI Device" => "0000:18:00.0", "Driver" => "i40en",
                                "Admin Status" => "Up", "Link Status" => "Up", "Speed" => "10000", "Duplex" => "Full",
-                               "MAC Address" => "24:6e:96:5c:d8:1c  1", "MTU" => "500",
+                               "MAC Address" => "24:6e:96:5c:d8:1c", "MTU" => "1500",
                                "Description" => "Intel(R) Ethernet Controller X710 for 10GbE SFP+")
       expect(records[8]).to eq("Name" => "vusb0", "PCI Device" => "Pseudo", "Driver" => "cdce", "Admin Status" => "Up",
-                               "Link Status" => "Up", "Speed" => "100", "Duplex" => "Full", "MAC Address" => "50:9a:4c:aa:24:c9  1",
-                               "MTU" => "500", "Description" => "DellTM iDRAC Virtual NIC USB Device")
+                               "Link Status" => "Up", "Speed" => "100", "Duplex" => "Full", "MAC Address" => "50:9a:4c:aa:24:c9",
+                               "MTU" => "1500", "Description" => "DellTM iDRAC Virtual NIC USB Device")
     end
   end
 end
