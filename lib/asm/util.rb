@@ -10,6 +10,8 @@ require "uri"
 require "yaml"
 require "time"
 require "resolv"
+require "tempfile"
+require "shellwords"
 
 # Top-level module
 module ASM
@@ -538,12 +540,15 @@ module ASM
     # @return [String] Results of run in json format
     def self.parse_ansible_log(ansible_out)
       # Check results from output of ansible run
-      out_file = ""
-      File.readlines(ansible_out).each do |line|
-        # Throw out ansible non-json output when a failure occurs.
-        out_file += line unless line =~ /to retry(.*)retry/
-      end
-      JSON.parse(out_file)
+      out_file = Tempfile.new("parse_ansible")
+      out_path = out_file.path
+
+      cmd = "cat %s | egrep -v 'to retry.*retry' > %s" % [Shellwords.escape(ansible_out), Shellwords.escape(out_path)]
+      ASM::Util.run_command_success(cmd)
+
+      JSON.parse(File.read(out_path))
+    ensure
+      out_file.unlink
     end
 
     def self.block_and_retry_until_ready(timeout, exceptions=nil, max_sleep=nil, logger=nil, &block)
