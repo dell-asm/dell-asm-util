@@ -200,6 +200,24 @@ describe ASM::Firmware do
     end
   end
 
+  describe "schedule_reboot_job_queue" do
+    it "should not reboot the server after setting the job queue" do
+      wsman.expects(:create_reboot_job).never
+      wsman.expects(:get_lc_job).never
+      File.stubs(:read)
+      firmware_obj.expects(:setup_job_queue)
+      firmware_obj.schedule_reboot_job_queue(firmware_list, false, wsman)
+    end
+
+    it "should reboot the server after setting the job queue" do
+      wsman.expects(:create_reboot_job).returns(:reboot_job_id => "j12375")
+      wsman.expects(:get_lc_job).returns(:job_status => "Reboot Completed")
+      File.stubs(:read)
+      firmware_obj.expects(:setup_job_queue)
+      firmware_obj.schedule_reboot_job_queue(firmware_list, true, wsman)
+    end
+  end
+
   describe "#gets_install_uri_job" do
     let(:success_return) do
       {:job => "123", :return_value => "4096"}
