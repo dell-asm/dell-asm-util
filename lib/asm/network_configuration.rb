@@ -166,6 +166,10 @@ module ASM
     # with them such as iSCSI or public/private lan.
     def get_network(network_type)
       ret = get_networks(network_type)
+      # If we get an empty network, send back as nil
+      # We don't want to raise an error for brownfield where networks can be missing
+      return nil if ret.empty?
+
       if ret.size == 1
         ret[0]
       else
