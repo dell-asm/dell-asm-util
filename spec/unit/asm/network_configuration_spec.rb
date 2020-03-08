@@ -209,6 +209,11 @@ describe ASM::NetworkConfiguration do
       end.to raise_error('There should be only one STORAGE_ISCSI_SAN network but found 2: ["iSCSI", "iSCSI"]')
     end
 
+    it "should return nil if no networks found" do
+      net_config.stubs(:get_networks).with("PXE").returns([])
+      expect(net_config.get_network("PXE")).to eq(nil)
+    end
+
     it "should find storage networks with correct mac addresses" do
       fqdd_to_mac = {"NIC.Integrated.1-1-1" => "00:0E:1E:0D:8C:30",
                      "NIC.Integrated.1-1-2" => "00:0E:1E:0D:8C:32",
