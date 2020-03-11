@@ -81,8 +81,10 @@ module ASM
         wsman_instance.poll_for_lc_ready
       end
 
-      firmware_instance.clear_job_queue_retry(wsman_instance)
+      install_staged_firmware = config["asm::server_update"][cert_name]["install_staged_firmware"]
+      firmware_instance.clear_job_queue_retry(wsman_instance) unless install_staged_firmware
       force_restart = config["asm::server_update"][cert_name]["force_restart"]
+
       logger.debug("Idrac FW update, force restart selected for %s" % cert_name) if force_restart
       pre = []
       main = []
@@ -90,7 +92,7 @@ module ASM
       resource_hash.each do |firmware|
         logger.debug(firmware)
         if [LC_ID, IDRAC_ID].include? firmware["component_id"].to_i
-          pre << firmware
+          pre << firmware unless install_staged_firmware
         else
           main << firmware
         end
@@ -103,7 +105,8 @@ module ASM
           wsman_instance.poll_for_lc_ready
         end
       end
-      firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance)
+      require 'pry'; binding.pry
+      firmware_instance.update_idrac_firmware(main, force_restart, wsman_instance, install_staged_firmware)
 
       # After updating Ensure LC is up and in good state before exiting
       ASM::Util.block_and_retry_until_ready(MAX_WAIT_SECONDS, [ASM::WsMan::RetryException, ASM::WsMan::Error, ASM::WsMan::ResponseError], 60) do
@@ -182,6 +185,22 @@ module ASM
       result
     end
 
+    def scheduled_firmware_updates(firmware_list, wsman)
+      statuses = []
+      jobs = wsman.get_all_jobs("Scheduled")
+      firmware_list.each_with_index do |firmware, index|
+        status = {
+          :job_id => jobs[index][:instance_id],
+          :status => "Downloaded",
+          :firmware => firmware,
+          :start_time => Time.now
+        }
+        statuses << status
+      end
+
+      statuses
+    end
+
     # Used to update the iDrac firmware
     #
     # @param firmware_list [Array[<Hash>]] Each instance with mount and nfs path
@@ -189,16 +208,20 @@ module ASM
     # @param wsman [Object]
     # @return [void]
     # @raise [StandardError] if firmware gets_install_uri_job was not able to create job_id to receive or created duplicate job_ids or firmware update fails
-    def update_idrac_firmware(firmware_list, force_restart, wsman)
+    def update_idrac_firmware(firmware_list, force_restart, wsman, install_staged_firmware=false)
       statuses = []
 
       # Initiate all firmware update jobs
-      firmware_list.each do |fw|
-        logger.debug(fw)
-        job_id = gets_install_uri_job(fw, wsman)
-        raise("Failed to initiate the firmware job for %s" % fw) unless job_id
+      if install_staged_firmware
+        statuses = scheduled_firmware_updates(firmware_list, wsman)
+      else
+        firmware_list.each do |fw|
+          logger.debug(fw)
+          job_id = gets_install_uri_job(fw, wsman)
+          raise("Failed to initiate the firmware job for %s" % fw) unless job_id
 
-        statuses << block_until_downloaded(job_id, fw, wsman)
+          statuses << block_until_downloaded(job_id, fw, wsman)
+        end
       end
 
       logger.debug("First statuses set: %s" % statuses.to_s)
