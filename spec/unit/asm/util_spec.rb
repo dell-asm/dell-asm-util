@@ -16,6 +16,20 @@ describe ASM::Util do
     @tmpfile.unlink
   end
 
+  describe "execute_async" do
+    it "should execute async operation" do
+      logger = mock("rspec")
+
+      ASM.execute_async(logger) do
+        def test_method
+          raise("Error")
+        end
+
+        test_method
+      end
+    end
+  end
+
   describe "retries and timeouts" do
     it "should reraise unhandled exceptions" do
       expect do

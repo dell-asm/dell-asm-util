@@ -17,15 +17,18 @@ require "shellwords"
 module ASM
   # Use this instead of Thread.new, or your exceptions will disappear into the ether...
   def self.execute_async(logger, &block)
-    Thread.new do
+    thread = Thread.new do
       begin
         yield
       # NOTE: really do want to rescue Exception and not StandardError here,
       # otherwise these failures will not be logged anywhere.
       rescue Exception => e # rubocop:disable Lint/RescueException
         logger.error(e.message + "\n" + e.backtrace.join("\n"))
+        thread[:exception] = e
       end
     end
+
+    thread
   end
 
   # Various utility methods
