@@ -382,6 +382,7 @@ module ASM
                      username,
                      :password => password,
                      :verify_host_key => false,
+                     :non_interactive => true,
                      :global_known_hosts_file => "/dev/null") do |ssh|
         cmd = ([command] + [arguments]).join(" ").strip
 
