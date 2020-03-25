@@ -1247,6 +1247,16 @@ module ASM
       client.get("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LifecycleJob", job)
     end
 
+    def get_all_jobs(state=nil)
+      jobs = client.enumerate("http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_LifecycleJob")
+
+      if state
+        jobs.select {|j| j[:job_status] == "Scheduled"}
+      else
+        jobs
+      end
+    end
+
     # Check the LC job status until it is complete or times out
     #
     # @param job [String] the job instance id
